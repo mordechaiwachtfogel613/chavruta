@@ -311,9 +311,8 @@ function updateUserUI() {
 }
 
 function openAdmin() {
-  if (!isAdmin()) return;
   document.getElementById('modal-admin').classList.remove('hidden');
-  showAdminEditor();
+  if (isAdmin()) showAdminEditor();
 }
 
 function closeAdmin() {
