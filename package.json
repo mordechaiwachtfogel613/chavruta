@@ -1,0 +1,10 @@
+{
+  "name": "chavruta",
+  "version": "1.0.0",
+  "description": "אפליקציית לימוד תנ\"ך אינטראקטיבית עם AI",
+  "type": "module",
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
