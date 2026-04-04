@@ -1,29 +1,38 @@
 // ================================================================
 // חברותא – Vercel Serverless Function
 // Proxies requests to OpenRouter API (keeps API key server-side)
-// Docs: https://openrouter.ai/docs
 // ================================================================
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-// ── Change this to any model available on OpenRouter ────────────
-// Examples:
-//   anthropic/claude-opus-4          – Claude Opus 4 (strongest)
-//   anthropic/claude-sonnet-4-5      – Claude Sonnet (faster/cheaper)
-//   google/gemini-2.5-pro            – Google Gemini 2.5 Pro
-//   openai/gpt-4o                    – OpenAI GPT-4o
 const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 
-const SYSTEM_PROMPT = `אתה "חברותא" – מורה לתנ"ך דיגיטלי אינטראקטיבי.
-תפקידך: ללוות לומד פסוק אחר פסוק דרך פרק בתנ"ך בדיאלוג עידודי ומעמיק.
+// ── Default system prompt intros per collection ──────────────────
+const DEFAULT_PROMPTS = {
+  tanach: `אתה "חברותא" - מורה לתנ"ך אינטראקטיבי. תלמד את הלומד פסוק אחר פסוק.
+עליך לשאול שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
 
+  mishnah: `אתה "חברותא" - מורה למשנה אינטראקטיבי. תלמד את הלומד משנה אחת בכל פעם.
+שאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
+
+  shas: `אתה "חברותא" - מורה לגמרא אינטראקטיבי. תלמד את הלומד את עמוד הגמרא.
+שאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
+
+  rambam: `אתה "חברותא" - מורה לרמב"ם (משנה תורה) אינטראקטיבי. תלמד הלכה אחת בכל פעם.
+שאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
+
+  shulchan: `אתה "חברותא" - מורה לשולחן ערוך אינטראקטיבי. תלמד סעיף אחד בכל פעם.
+שאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
+};
+
+const UNIVERSAL_RULES = `
 חוקי הפעולה:
-1. פידבק: תן משפט עידוד קצר על התשובה הקודמת (ריק בהודעה הראשונה).
-2. ניקוד: הענק 5 (נכון לגמרי), 2 (חלקי/כיוון נכון), 0 (שגוי).
-3. פסוק: הצג את הפסוק הבא לפי הסדר – אל תדלג.
-4. שאלה: שאל שאלה אחת בלבד – מעמיקה, מעניינת, שמעוררת מחשבה.
-5. הסבר: אם המשתמש ביקש הסבר ("לא הבנתי", "פרש", "הסבר"), מלא את שדה explanation בהסבר קצר ומדויק. לאחר ההסבר – עבור לפסוק הבא.
-6. סיום: אחרי שתשאל על הפסוק האחרון בפרק ותקבל תשובה, כתוב ברכה חמה ב-feedback ושים is_finished=true. המספר next_verse_num יהיה מספר הפסוק האחרון.
+1. פידבק קצר על התשובה הקודמת (ריק בהודעה הראשונה).
+2. ניקוד: 5=נכון לגמרי | 2=חלקי/כיוון נכון | 0=שגוי.
+3. הצג את היחידה הבאה לפי הסדר – אל תדלג.
+4. שאל שאלה אחת בלבד – מעמיקה ומעוררת מחשבה.
+5. אם ביקשו הסבר – מלא שדה explanation בהסבר קצר ומדויק. לאחר ההסבר – עבור ליחידה הבאה.
+6. כשסיימת את כל היחידות – כתוב ברכה חמה ב-feedback ושים is_finished=true.
 
 כלל ברזל: החזר אך ורק JSON תקין – ללא טקסט לפניו, ללא \`\`\`json, ללא שום תוספות.
 
@@ -32,8 +41,8 @@ const SYSTEM_PROMPT = `אתה "חברותא" – מורה לתנ"ך דיגיטל
   "feedback":       "פידבק על התשובה האחרונה",
   "score":          0,
   "next_verse_num": 1,
-  "next_verse":     "הטקסט המלא של הפסוק הבא",
-  "next_question":  "שאלה אחת על הפסוק",
+  "next_verse":     "הטקסט המלא של היחידה הבאה",
+  "next_question":  "שאלה אחת על היחידה",
   "explanation":    "",
   "is_finished":    false
 }`;
@@ -49,7 +58,15 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')   { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   // ── Validate input ─────────────────────────────────────────────
-  const { messages, chapter_text, book_name, chapter_num, total_verses } = req.body || {};
+  const {
+    messages,
+    chapter_text,
+    book_name,
+    chapter_num,
+    total_verses,
+    collection_type,
+    custom_prompt,
+  } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
     res.status(400).json({ error: 'Missing required fields: messages, chapter_text' });
@@ -61,10 +78,16 @@ export default async function handler(req, res) {
     return;
   }
 
-  // ── Build system prompt with chapter context ───────────────────
+  // ── Build system prompt ────────────────────────────────────────
+  const collectionKey  = collection_type || 'tanach';
+  const introPrompt    = (custom_prompt && custom_prompt.trim())
+    ? custom_prompt.trim()
+    : (DEFAULT_PROMPTS[collectionKey] || DEFAULT_PROMPTS.tanach);
+
   const systemWithChapter =
-    `${SYSTEM_PROMPT}\n\n` +
-    `הפרק הנוכחי: ${book_name} פרק ${chapter_num} (${total_verses} פסוקים)\n` +
+    `${introPrompt}\n` +
+    `${UNIVERSAL_RULES}\n\n` +
+    `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)\n` +
     `──────────────────────────────\n` +
     `${chapter_text}\n` +
     `──────────────────────────────`;
@@ -74,10 +97,10 @@ export default async function handler(req, res) {
     const orRes = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
-        'Authorization':  `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type':   'application/json',
-        'HTTP-Referer':   process.env.APP_URL || 'https://chavruta.vercel.app',
-        'X-Title':        'Chavruta - Tanach Learning',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type':  'application/json',
+        'HTTP-Referer':  process.env.APP_URL || 'https://chavruta.vercel.app',
+        'X-Title':       'Chavruta - Jewish Learning App',
       },
       body: JSON.stringify({
         model:      MODEL,
@@ -97,7 +120,7 @@ export default async function handler(req, res) {
     const orData = await orRes.json();
     const raw    = orData.choices?.[0]?.message?.content ?? '';
 
-    // ── Parse JSON (robust: strip any wrapping markdown) ──────────
+    // ── Parse JSON ────────────────────────────────────────────────
     let parsed;
     try {
       parsed = JSON.parse(raw);
@@ -107,7 +130,7 @@ export default async function handler(req, res) {
       parsed = JSON.parse(m[0]);
     }
 
-    // ── Sanitize fields ────────────────────────────────────────────
+    // ── Sanitize ──────────────────────────────────────────────────
     parsed.score       = Number(parsed.score) || 0;
     parsed.is_finished = Boolean(parsed.is_finished);
     parsed.explanation = parsed.explanation || '';

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>חברותא – לימוד תנ"ך אינטראקטיבי</title>
+  <title>חברותא – לימוד אינטראקטיבי</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,8 +29,8 @@
   </script>
   <style>
     * { font-family: 'Noto Serif Hebrew', serif; }
-
-    body { background-color: #FDF8EF; color: #2C1810; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body { background-color: #FDF8EF; color: #2C1810; display: flex; flex-direction: column; }
 
     /* ── Verse box ── */
     .verse-box {
@@ -65,36 +65,179 @@
     ::-webkit-scrollbar-thumb { background: #D4C5A9; border-radius: 3px; }
 
     /* ── Select styling ── */
-    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 12px center; padding-left: 36px; }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: left 8px center;
+      padding-left: 28px;
+    }
 
     .start-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(27,58,107,0.35); }
     .start-btn { transition: all .2s ease; }
+
+    /* ── App layout ── */
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+
+    /* ── Header ── */
+    #app-header {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #1B3A6B, #0F2240);
+      color: #fff;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    #app-header .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #app-header .header-left  { display: flex; align-items: center; gap: 8px; }
+
+    #logo-btn {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #F0C040;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .header-select {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      border-radius: 8px;
+      padding: 5px 28px 5px 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .header-select option { background: #1B3A6B; color: #fff; }
+    .header-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #header-start-btn {
+      background: #F0C040;
+      color: #0F2240;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    #header-start-btn:hover:not(:disabled) { background: #FFD700; transform: translateY(-1px); }
+    #header-start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #score-badge-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #F0C040, #B8860B);
+      flex-shrink: 0;
+    }
+
+    /* ── Chat area ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      overscroll-behavior: contain;
+    }
+
+    /* ── Input area ── */
+    #input-area {
+      flex-shrink: 0;
+      background: #fff;
+      border-top: 1px solid #E8DCC8;
+      padding: 10px 12px;
+    }
+
+    /* ── Modal overlay ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #FDF8EF;
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+      border: 1px solid #E8DCC8;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* ── Admin textarea ── */
+    .admin-textarea {
+      width: 100%;
+      border: 1px solid #D4C5A9;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.8rem;
+      background: #fff;
+      resize: vertical;
+      direction: rtl;
+      line-height: 1.5;
+    }
+
+    /* ── Loading spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+
+    /* ── Welcome ── */
+    #welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      color: #9CA3AF;
+      gap: 12px;
+    }
   </style>
 </head>
-<body class="min-h-screen">
+<body>
 
 <!-- ═══════════════════════════════════════════════
-     SCREEN 0 — Registration
+     REGISTRATION MODAL
 ═══════════════════════════════════════════════ -->
-<div id="screen-register" class="hidden min-h-screen flex flex-col items-center justify-center px-4 py-12">
-  <div class="text-6xl mb-4">📖</div>
-  <h1 class="text-4xl font-bold text-navy mb-2">ברוכים הבאים לחברותא</h1>
-  <p class="text-gray-500 mb-8 text-center text-lg">לומדים תנ"ך פסוק אחר פסוק, בדיאלוג עם AI</p>
-
-  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm border border-parchmentDark">
-    <h2 class="text-xl font-semibold text-center text-navy mb-6">הרשמה לאתר</h2>
+<div id="modal-register" class="modal-overlay">
+  <div class="modal-card">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-3">📖</div>
+      <h1 class="text-3xl font-bold text-navy mb-1">ברוכים הבאים לחברותא</h1>
+      <p class="text-gray-500 text-sm">לומדים תנ"ך, משנה, גמרא ועוד — בדיאלוג עם AI</p>
+    </div>
 
     <div class="mb-4">
       <label class="block text-sm font-semibold text-gray-600 mb-1">שם מלא <span class="text-red-500">*</span></label>
       <input type="text" id="reg-name" placeholder="ישראל ישראלי" maxlength="50"
-             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment text-right"
+             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white text-right"
              onkeydown="regHandleKey(event)">
     </div>
 
     <div class="mb-6">
       <label class="block text-sm font-semibold text-gray-600 mb-1">כתובת מייל <span class="text-red-500">*</span></label>
       <input type="email" id="reg-email" placeholder="israel@example.com" maxlength="100"
-             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment"
+             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white"
              dir="ltr" onkeydown="regHandleKey(event)">
     </div>
 
@@ -109,120 +252,164 @@
 
 
 <!-- ═══════════════════════════════════════════════
-     SCREEN 1 — Book & Chapter Selection
+     ADMIN MODAL
 ═══════════════════════════════════════════════ -->
-<div id="screen-selection" class="hidden min-h-screen flex flex-col">
+<div id="modal-admin" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width:560px;">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-bold text-navy">⚙️ פאנל ניהול – חברותא</h2>
+      <button onclick="closeAdmin()" class="text-gray-400 hover:text-red-500 text-2xl leading-none">&times;</button>
+    </div>
 
-  <!-- User greeting + logout -->
-  <div class="fixed top-4 right-4 z-10 flex items-center gap-2">
-    <span id="user-greeting" class="text-sm text-gray-600 font-medium bg-white px-3 py-1.5 rounded-full shadow border border-gray-200"></span>
-    <button onclick="logout()" title="התנתק"
-            class="text-xs text-gray-400 hover:text-red-500 transition-colors bg-white px-2 py-1.5 rounded-full shadow border border-gray-200">
-      יציאה
-    </button>
-  </div>
+    <!-- Password gate -->
+    <div id="admin-pw-gate">
+      <p class="text-sm text-gray-500 mb-3">הזן סיסמת מנהל:</p>
+      <div class="flex gap-2">
+        <input type="password" id="admin-pw-input" placeholder="סיסמה"
+               class="flex-1 p-3 border border-gray-300 rounded-xl text-base"
+               dir="ltr" onkeydown="adminPwKey(event)">
+        <button onclick="checkAdminPw()"
+                class="px-5 py-2 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
+          כניסה
+        </button>
+      </div>
+      <div id="admin-pw-error" class="hidden mt-2 text-red-600 text-sm text-center">סיסמה שגויה</div>
+    </div>
 
-  <!-- Score badge -->
-  <div class="fixed top-4 left-4 z-10">
-    <div id="score-badge" class="relative w-16 h-16 rounded-full flex flex-col items-center justify-center shadow-lg cursor-default"
-         style="background: radial-gradient(circle at 30% 30%, #F0C040, #B8860B)">
-      <span class="text-white text-xs font-medium" style="line-height:1">ניקוד</span>
-      <span class="text-white text-xl font-bold" id="score-sel">0</span>
+    <!-- Editor panel (shown after auth) -->
+    <div id="admin-editor" class="hidden">
+      <p class="text-sm text-gray-500 mb-4">עריכת הנחיות מערכת לכל אוסף (ריק = ברירת מחדל):</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">תנ"ך</label>
+          <textarea id="admin-prompt-tanach" class="admin-textarea" rows="3"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">משנה</label>
+          <textarea id="admin-prompt-mishnah" class="admin-textarea" rows="3"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">ש"ס בבלי</label>
+          <textarea id="admin-prompt-shas" class="admin-textarea" rows="3"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">רמב"ם</label>
+          <textarea id="admin-prompt-rambam" class="admin-textarea" rows="3"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-navy mb-1">שולחן ערוך</label>
+          <textarea id="admin-prompt-shulchan" class="admin-textarea" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="saveAdminPrompts()"
+                class="flex-1 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
+          שמור הנחיות
+        </button>
+        <button onclick="closeAdmin()"
+                class="py-3 px-6 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+          סגור
+        </button>
+      </div>
+      <div id="admin-save-msg" class="hidden mt-3 text-green-700 text-sm text-center font-semibold">✓ נשמר בהצלחה</div>
     </div>
   </div>
-
-  <!-- Header -->
-  <header class="pt-16 pb-8 text-center px-4">
-    <div class="text-6xl mb-3">📖</div>
-    <h1 class="text-5xl font-bold text-navy mb-2">חברותא</h1>
-    <p class="text-gray-500 text-lg">לומדים תנ"ך פסוק אחר פסוק, בדיאלוג עם AI</p>
-  </header>
-
-  <!-- Selection card -->
-  <main class="flex-1 flex items-start justify-center px-4 pb-12">
-    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-parchmentDark">
-
-      <h2 class="text-2xl font-semibold text-center text-navy mb-6">בחר את מסלול הלימוד</h2>
-
-      <!-- Book -->
-      <div class="mb-4">
-        <label class="block text-sm font-semibold text-gray-600 mb-1">ספר</label>
-        <select id="book-select" onchange="onBookChange()"
-                class="w-full p-3 pr-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment">
-          <option value="">— בחר ספר —</option>
-        </select>
-      </div>
-
-      <!-- Chapter -->
-      <div class="mb-6">
-        <label class="block text-sm font-semibold text-gray-600 mb-1">פרק</label>
-        <select id="chapter-select" disabled onchange="onChapterChange()"
-                class="w-full p-3 pr-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment disabled:opacity-40 disabled:cursor-not-allowed">
-          <option value="">— קודם בחר ספר —</option>
-        </select>
-      </div>
-
-      <!-- Start button -->
-      <button id="start-btn" onclick="startLearning()" disabled
-              class="start-btn w-full py-4 bg-navy text-white text-xl font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed">
-        התחל ללמוד ✦
-      </button>
-
-      <!-- Loading -->
-      <div id="loading-sel" class="hidden flex items-center justify-center gap-3 mt-4 text-gray-500">
-        <svg class="animate-spin w-5 h-5 text-navy" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-        </svg>
-        טוען את הפרק מ-Sefaria...
-      </div>
-
-      <!-- Error -->
-      <div id="error-sel" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center"></div>
-    </div>
-  </main>
-
-  <footer class="pb-6 text-center text-xs text-gray-400">
-    הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" class="underline">Sefaria</a> • הלימוד מנוהל ע"י Claude AI
-  </footer>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════
-     SCREEN 2 — Chat / Learning
+     FINISHED MODAL
 ═══════════════════════════════════════════════ -->
-<div id="screen-chat" class="hidden flex flex-col" style="height:100dvh; height:100vh;">
-
-  <!-- Header bar -->
-  <header class="flex-shrink-0 flex items-center justify-between px-4 py-3 text-white shadow-md"
-          style="background: linear-gradient(135deg, #1B3A6B, #0F2240)">
-    <button onclick="goHome()" title="חזרה לבחירת פרק"
-            class="flex items-center gap-1 text-sm text-blue-200 hover:text-white transition-colors">
-      &#8592; חזרה
+<div id="modal-finished" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width:360px; text-align:center;">
+    <div class="text-6xl mb-3">🎉</div>
+    <h3 class="text-2xl font-bold text-navy mb-2">כל הכבוד!</h3>
+    <p class="text-gray-600 mb-1" id="fin-msg">סיימת את היחידה!</p>
+    <p class="text-xl font-bold mb-6" style="color:#B8860B" id="fin-score">+0 נקודות</p>
+    <button onclick="resetSession()"
+            class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
+      בחר יחידה חדשה
     </button>
-    <div class="text-center">
-      <h2 class="font-bold text-lg leading-tight" id="chat-title">—</h2>
-      <p class="text-xs text-blue-300" id="chat-subtitle">מתחיל...</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCORE POPUP
+═══════════════════════════════════════════════ -->
+<div id="score-popup" class="fixed top-24 left-1/2 -translate-x-1/2 pointer-events-none z-50 hidden">
+  <div id="score-popup-inner"
+       class="text-white text-2xl font-bold px-6 py-2 rounded-full shadow-2xl"
+       style="background: radial-gradient(circle, #F0C040, #B8860B)">+5</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header id="app-header">
+    <!-- Right side: logo + selects + start -->
+    <div class="header-right">
+      <button id="logo-btn" onclick="logoClick()" title="חברותא">📖 חברותא</button>
+
+      <select id="sel-collection" class="header-select" onchange="onCollectionChange()">
+        <option value="tanach">תנ"ך</option>
+        <option value="mishnah">משנה</option>
+        <option value="shas">ש"ס בבלי</option>
+        <option value="rambam">רמב"ם</option>
+        <option value="shulchan">שולחן ערוך</option>
+      </select>
+
+      <select id="sel-book" class="header-select" onchange="onBookChange()">
+        <option value="">— ספר —</option>
+      </select>
+
+      <select id="sel-unit" class="header-select" disabled onchange="onUnitChange()">
+        <option value="">— יחידה —</option>
+      </select>
+
+      <button id="header-start-btn" onclick="startLearning()" disabled>
+        התחל ✦
+      </button>
+
+      <!-- Loading spinner (inline) -->
+      <svg id="header-spinner" class="hidden spinner w-5 h-5 text-goldLight" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+      </svg>
     </div>
-    <div class="text-center">
-      <div class="text-xs text-blue-300">ניקוד</div>
-      <div class="text-xl font-bold text-goldLight" id="score-chat">0</div>
+
+    <!-- Left side: score + greeting + logout -->
+    <div class="header-left">
+      <div id="score-badge-header">
+        <span class="text-white text-xs font-medium" style="line-height:1">ניקוד</span>
+        <span class="text-white text-lg font-bold" id="score-display">0</span>
+      </div>
+      <span id="user-greeting" class="text-sm text-blue-200 hidden"></span>
+      <button onclick="logout()" id="logout-btn"
+              class="hidden text-xs text-blue-300 hover:text-white transition-colors border border-blue-400 rounded-full px-3 py-1">
+        יציאה
+      </button>
     </div>
   </header>
 
-  <!-- Messages area -->
-  <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4" style="min-height:0; overscroll-behavior:contain;">
-    <!-- dynamically filled -->
+  <!-- ── Chat area ── -->
+  <div id="chat">
+    <!-- Welcome state -->
+    <div id="welcome">
+      <div class="text-5xl">📖</div>
+      <p class="text-xl font-semibold" style="color:#9CA3AF;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>
+      <p class="text-sm" style="color:#C4B5A0;">הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" class="underline" style="color:#B8860B;">Sefaria</a> • הלימוד מנוהל ע"י Claude AI</p>
+    </div>
   </div>
 
-  <!-- Score popup -->
-  <div id="score-popup" class="fixed top-20 left-1/2 -translate-x-1/2 pointer-events-none z-50 hidden">
-    <div class="text-white text-2xl font-bold px-6 py-2 rounded-full shadow-2xl"
-         style="background: radial-gradient(circle, #F0C040, #B8860B)">+0</div>
-  </div>
-
-  <!-- Input area -->
-  <div id="input-area" class="flex-shrink-0 bg-white border-t border-gray-200 p-3">
+  <!-- ── Input area (hidden until session starts) ── -->
+  <div id="input-area" class="hidden">
     <div class="mb-2">
       <button onclick="sendExplain()"
               class="text-sm px-3 py-1 rounded-full border border-gray-300 bg-parchment text-gray-600 hover:bg-parchmentDark transition-colors">
@@ -240,20 +427,7 @@
     </div>
   </div>
 
-</div>
-
-<!-- Finished modal -->
-<div id="finished-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-    <div class="text-6xl mb-3">🎉</div>
-    <h3 class="text-2xl font-bold text-navy mb-2">כל הכבוד!</h3>
-    <p class="text-gray-600 mb-1" id="fin-msg">סיימת את הפרק!</p>
-    <p class="text-xl font-bold mb-6" style="color:#B8860B" id="fin-score">+0 נקודות</p>
-    <button onclick="goHome()" class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
-      בחר פרק חדש
-    </button>
-  </div>
-</div>
+</div><!-- /#app -->
 
 <script src="app.js"></script>
 </body>
