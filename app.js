@@ -331,7 +331,7 @@ function adminPwKey(e) {
 
 function checkAdminPw() {
   const input = document.getElementById('admin-pw-input').value;
-  const stored = localStorage.getItem('chavruta_admin_pw') || 'chavruta2024';
+  const stored = localStorage.getItem('chavruta_admin_pw') || 'A089557176';
   if (input === stored) {
     S.adminAuthed = true;
     document.getElementById('admin-pw-input').value = '';
