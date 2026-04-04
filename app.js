@@ -496,6 +496,7 @@ async function startLearning() {
 
     // Show input area
     document.getElementById('input-area').classList.remove('hidden');
+    document.getElementById('header-new-btn').classList.remove('hidden');
     document.getElementById('modal-finished').classList.add('hidden');
 
     // Add session header inside chat
@@ -752,6 +753,7 @@ function showFinished() {
 function resetSession() {
   document.getElementById('modal-finished').classList.add('hidden');
   document.getElementById('input-area').classList.add('hidden');
+  document.getElementById('header-new-btn').classList.add('hidden');
   S.messages     = [];
   S.sessionScore = 0;
   S.loading      = false;
