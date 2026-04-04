@@ -74,9 +74,53 @@
 <body class="min-h-screen">
 
 <!-- ═══════════════════════════════════════════════
+     SCREEN 0 — Registration
+═══════════════════════════════════════════════ -->
+<div id="screen-register" class="hidden min-h-screen flex flex-col items-center justify-center px-4 py-12">
+  <div class="text-6xl mb-4">📖</div>
+  <h1 class="text-4xl font-bold text-navy mb-2">ברוכים הבאים לחברותא</h1>
+  <p class="text-gray-500 mb-8 text-center text-lg">לומדים תנ"ך פסוק אחר פסוק, בדיאלוג עם AI</p>
+
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm border border-parchmentDark">
+    <h2 class="text-xl font-semibold text-center text-navy mb-6">הרשמה לאתר</h2>
+
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-gray-600 mb-1">שם מלא <span class="text-red-500">*</span></label>
+      <input type="text" id="reg-name" placeholder="ישראל ישראלי" maxlength="50"
+             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment text-right"
+             onkeydown="regHandleKey(event)">
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-sm font-semibold text-gray-600 mb-1">כתובת מייל <span class="text-red-500">*</span></label>
+      <input type="email" id="reg-email" placeholder="israel@example.com" maxlength="100"
+             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-parchment"
+             dir="ltr" onkeydown="regHandleKey(event)">
+    </div>
+
+    <div id="reg-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center"></div>
+
+    <button onclick="register()" id="reg-btn"
+            class="start-btn w-full py-4 bg-navy text-white text-xl font-bold rounded-xl">
+      כניסה ✦
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
      SCREEN 1 — Book & Chapter Selection
 ═══════════════════════════════════════════════ -->
-<div id="screen-selection" class="min-h-screen flex flex-col">
+<div id="screen-selection" class="hidden min-h-screen flex flex-col">
+
+  <!-- User greeting + logout -->
+  <div class="fixed top-4 right-4 z-10 flex items-center gap-2">
+    <span id="user-greeting" class="text-sm text-gray-600 font-medium bg-white px-3 py-1.5 rounded-full shadow border border-gray-200"></span>
+    <button onclick="logout()" title="התנתק"
+            class="text-xs text-gray-400 hover:text-red-500 transition-colors bg-white px-2 py-1.5 rounded-full shadow border border-gray-200">
+      יציאה
+    </button>
+  </div>
 
   <!-- Score badge -->
   <div class="fixed top-4 left-4 z-10">

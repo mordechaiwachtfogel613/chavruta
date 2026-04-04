@@ -76,11 +76,76 @@ const S = {
   loading:       false,
 };
 
+// ── User / Registration ──────────────────────────────────────────
+function getUser() {
+  try { return JSON.parse(localStorage.getItem('chavruta_user') || 'null'); }
+  catch { return null; }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function register() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const errEl = document.getElementById('reg-error');
+  errEl.classList.add('hidden');
+
+  if (!name || name.length < 2) {
+    errEl.textContent = 'נא להזין שם מלא (לפחות 2 תווים)';
+    errEl.classList.remove('hidden');
+    document.getElementById('reg-name').focus();
+    return;
+  }
+  if (!email || !isValidEmail(email)) {
+    errEl.textContent = 'נא להזין כתובת מייל תקינה';
+    errEl.classList.remove('hidden');
+    document.getElementById('reg-email').focus();
+    return;
+  }
+
+  localStorage.setItem('chavruta_user', JSON.stringify({ name, email }));
+  showSelectionScreen();
+}
+
+function regHandleKey(e) {
+  if (e.key === 'Enter') register();
+}
+
+function logout() {
+  if (!confirm('להתנתק? הניקוד שלך יישמר.')) return;
+  localStorage.removeItem('chavruta_user');
+  showRegisterScreen();
+}
+
+function showRegisterScreen() {
+  document.getElementById('screen-register').classList.remove('hidden');
+  document.getElementById('screen-selection').classList.add('hidden');
+  setTimeout(() => document.getElementById('reg-name').focus(), 100);
+}
+
+function showSelectionScreen() {
+  document.getElementById('screen-register').classList.add('hidden');
+  document.getElementById('screen-selection').classList.remove('hidden');
+  const user = getUser();
+  if (user) {
+    document.getElementById('user-greeting').textContent = `שלום, ${user.name} 👋`;
+  }
+}
+
 // ── Init ─────────────────────────────────────────────────────────
 function init() {
   S.totalScore = parseInt(localStorage.getItem('chavruta_score') || '0', 10);
   refreshScores();
   buildBookDropdown();
+
+  // Route to registration or selection based on stored user
+  if (getUser()) {
+    showSelectionScreen();
+  } else {
+    showRegisterScreen();
+  }
 }
 
 // ── Dropdowns ────────────────────────────────────────────────────
