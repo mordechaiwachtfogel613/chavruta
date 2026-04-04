@@ -289,12 +289,11 @@ function logout() {
   document.getElementById('logout-btn').classList.add('hidden');
 }
 
-const ADMIN_NAME  = 'מרדכי וכטפוגל';
 const ADMIN_EMAIL = 'a0583298194@gmail.com';
 
 function isAdmin() {
   const user = getUser();
-  return user && user.name === ADMIN_NAME && user.email === ADMIN_EMAIL;
+  return user && user.email && user.email.trim().toLowerCase() === ADMIN_EMAIL;
 }
 
 function updateUserUI() {
