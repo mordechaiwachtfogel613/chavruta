@@ -224,7 +224,6 @@ const S = {
   sessionScore:  0,
   loading:       false,
   adminAuthed:   false,
-  logoClickCount: 0,
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -290,6 +289,14 @@ function logout() {
   document.getElementById('logout-btn').classList.add('hidden');
 }
 
+const ADMIN_NAME  = 'מרדכי וכטפוגל';
+const ADMIN_EMAIL = 'a0583298194@gmail.com';
+
+function isAdmin() {
+  const user = getUser();
+  return user && user.name === ADMIN_NAME && user.email === ADMIN_EMAIL;
+}
+
 function updateUserUI() {
   const user = getUser();
   if (user) {
@@ -297,28 +304,17 @@ function updateUserUI() {
     greet.textContent = `שלום, ${user.name} 👋`;
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
-  }
-}
-
-// ── Admin panel ──────────────────────────────────────────────────
-function logoClick() {
-  S.logoClickCount++;
-  if (S.logoClickCount >= 5) {
-    S.logoClickCount = 0;
-    openAdmin();
+    if (isAdmin()) {
+      document.getElementById('admin-btn').classList.remove('hidden');
+      S.adminAuthed = true;
+    }
   }
 }
 
 function openAdmin() {
+  if (!isAdmin()) return;
   document.getElementById('modal-admin').classList.remove('hidden');
-  if (S.adminAuthed) {
-    showAdminEditor();
-  } else {
-    document.getElementById('admin-pw-gate').classList.remove('hidden');
-    document.getElementById('admin-editor').classList.add('hidden');
-    document.getElementById('admin-pw-error').classList.add('hidden');
-    setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
-  }
+  showAdminEditor();
 }
 
 function closeAdmin() {
