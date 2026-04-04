@@ -77,7 +77,7 @@ export default async function handler(req, res) {
         'Authorization':  `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type':   'application/json',
         'HTTP-Referer':   process.env.APP_URL || 'https://chavruta.vercel.app',
-        'X-Title':        'חברותא – לימוד תנ"ך',
+        'X-Title':        'Chavruta - Tanach Learning',
       },
       body: JSON.stringify({
         model:      MODEL,
