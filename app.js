@@ -346,6 +346,10 @@ function showAdminEditor() {
   document.getElementById('admin-editor').classList.remove('hidden');
   document.getElementById('admin-save-msg').classList.add('hidden');
 
+  // Pre-fill model selector
+  const savedModel = localStorage.getItem('chavruta_model') || 'anthropic/claude-opus-4';
+  document.getElementById('admin-model-select').value = savedModel;
+
   // Pre-fill from localStorage
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
@@ -355,6 +359,10 @@ function showAdminEditor() {
 }
 
 function saveAdminPrompts() {
+  // Save model
+  const model = document.getElementById('admin-model-select').value;
+  localStorage.setItem('chavruta_model', model);
+
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
     const val = document.getElementById(`admin-prompt-${k}`).value.trim();
@@ -564,6 +572,8 @@ async function callAI() {
       collection_type: S.collectionKey,
     };
     if (customPrompt) body.custom_prompt = customPrompt;
+    const savedModel = localStorage.getItem('chavruta_model');
+    if (savedModel) body.model = savedModel;
 
     const res = await fetch('/api/chat', {
       method:  'POST',

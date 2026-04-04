@@ -5,7 +5,7 @@
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 
 // ── Default system prompt intros per collection ──────────────────
 const DEFAULT_PROMPTS = {
@@ -66,6 +66,7 @@ export default async function handler(req, res) {
     total_verses,
     collection_type,
     custom_prompt,
+    model,
   } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
         'X-Title':       'Chavruta - Jewish Learning App',
       },
       body: JSON.stringify({
-        model:      MODEL,
+        model:      model || DEFAULT_MODEL,
         max_tokens: 1024,
         messages: [
           { role: 'system', content: systemWithChapter },

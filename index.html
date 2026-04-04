@@ -278,6 +278,42 @@
 
     <!-- Editor panel (shown after auth) -->
     <div id="admin-editor" class="hidden">
+      <!-- Model selector -->
+      <div class="mb-5">
+        <label class="block text-sm font-semibold text-navy mb-1">מודל AI</label>
+        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white">
+          <optgroup label="Anthropic (Claude)">
+            <option value="anthropic/claude-opus-4">Claude Opus 4</option>
+            <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+            <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5</option>
+          </optgroup>
+          <optgroup label="Google (Gemini)">
+            <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro Preview</option>
+            <option value="google/gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
+            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
+            <option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
+          </optgroup>
+          <optgroup label="DeepSeek">
+            <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+            <option value="deepseek/deepseek-chat-v3-5">DeepSeek V3.5</option>
+            <option value="deepseek/deepseek-r1-distill-llama-70b">DeepSeek R1 Distill 70B</option>
+          </optgroup>
+          <optgroup label="Qwen (Alibaba)">
+            <option value="qwen/qwen3-235b-a22b">Qwen3 235B</option>
+            <option value="qwen/qwen3-30b-a3b">Qwen3 30B</option>
+            <option value="qwen/qwq-32b">QwQ 32B</option>
+            <option value="qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B</option>
+          </optgroup>
+          <optgroup label="Mistral">
+            <option value="mistralai/mistral-large-2411">Mistral Large 2411</option>
+            <option value="mistralai/mistral-medium-3">Mistral Medium 3</option>
+            <option value="mistralai/mistral-small-3.2-24b-instruct">Mistral Small 3.2 24B</option>
+            <option value="mistralai/codestral-2501">Codestral 2501</option>
+          </optgroup>
+        </select>
+      </div>
+      <hr class="border-gray-200 mb-4">
+
       <p class="text-sm text-gray-500 mb-4">עריכת הנחיות מערכת לכל אוסף (ריק = ברירת מחדל):</p>
 
       <div class="space-y-4">
