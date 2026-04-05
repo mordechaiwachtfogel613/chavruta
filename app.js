@@ -253,9 +253,9 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function register() {
+async function register() {
   const name  = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
+  const email = document.getElementById('reg-email').value.trim().toLowerCase();
   const errEl = document.getElementById('reg-error');
   errEl.classList.add('hidden');
 
@@ -272,9 +272,34 @@ function register() {
     return;
   }
 
-  localStorage.setItem('chavruta_user', JSON.stringify({ name, email }));
-  document.getElementById('modal-register').classList.add('hidden');
-  updateUserUI();
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  btn.textContent = 'שולח...';
+
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email })
+    });
+    const data = await res.json();
+    localStorage.setItem('chavruta_user', JSON.stringify({ name, email }));
+    document.getElementById('modal-register').classList.add('hidden');
+    if (data.status === 'approved') {
+      updateUserUI();
+    } else {
+      showPendingScreen();
+    }
+  } catch {
+    errEl.textContent = 'שגיאת רשת, נסה שוב';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'כניסה ✦';
+  }
+}
+
+function showPendingScreen() {
+  document.getElementById('pending-screen').classList.remove('hidden');
 }
 
 function regHandleKey(e) {
@@ -284,9 +309,11 @@ function regHandleKey(e) {
 function logout() {
   if (!confirm('להתנתק? הניקוד שלך יישמר.')) return;
   localStorage.removeItem('chavruta_user');
+  document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('modal-register').classList.remove('hidden');
   document.getElementById('user-greeting').classList.add('hidden');
   document.getElementById('logout-btn').classList.add('hidden');
+  document.getElementById('admin-btn').classList.add('hidden');
 }
 
 const ADMIN_EMAIL = 'a0583298194@gmail.com';
@@ -340,16 +367,55 @@ function showAdminEditor() {
   document.getElementById('admin-editor').classList.remove('hidden');
   document.getElementById('admin-save-msg').classList.add('hidden');
 
-  // Pre-fill model selector
   const savedModel = localStorage.getItem('chavruta_model') || 'anthropic/claude-opus-4';
   document.getElementById('admin-model-select').value = savedModel;
 
-  // Pre-fill from localStorage
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
     const saved = localStorage.getItem(`chavruta_prompt_${k}`) || '';
     document.getElementById(`admin-prompt-${k}`).value = saved;
   }
+
+  loadAdminUsers();
+}
+
+async function loadAdminUsers() {
+  const user = getUser();
+  const container = document.getElementById('admin-users-list');
+  container.innerHTML = '<p class="text-sm text-gray-400 text-center">טוען...</p>';
+  try {
+    const res = await fetch(`/api/users?adminEmail=${encodeURIComponent(user.email)}`);
+    const users = await res.json();
+    if (!Array.isArray(users) || !users.length) {
+      container.innerHTML = '<p class="text-sm text-gray-400 text-center">אין משתמשים רשומים.</p>';
+      return;
+    }
+    container.innerHTML = users.map(u => `
+      <div class="flex items-center justify-between gap-2 p-2 rounded-lg ${u.status === 'pending' ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-100'}">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-navy">${esc(u.name)}</div>
+          <div class="text-xs text-gray-500 truncate">${esc(u.email)}</div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          ${u.status === 'pending'
+            ? `<button onclick="setUserStatus('${u.email}','approved')" class="text-xs px-2 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700">אשר</button>`
+            : (u.email !== ADMIN_EMAIL ? `<button onclick="setUserStatus('${u.email}','pending')" class="text-xs px-2 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500">בטל</button>` : '')}
+          <span class="text-xs px-2 py-1 rounded-lg ${u.status === 'pending' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}">${u.status === 'pending' ? 'ממתין' : 'מאושר'}</span>
+        </div>
+      </div>`).join('');
+  } catch {
+    container.innerHTML = '<p class="text-sm text-red-500 text-center">שגיאה בטעינה.</p>';
+  }
+}
+
+async function setUserStatus(email, status) {
+  const user = getUser();
+  await fetch('/api/users', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, status, adminEmail: user.email })
+  });
+  loadAdminUsers();
 }
 
 function saveAdminPrompts() {
@@ -795,17 +861,35 @@ function esc(str) {
 }
 
 // ── Init ─────────────────────────────────────────────────────────
-function init() {
+async function init() {
   S.totalScore = parseInt(localStorage.getItem('chavruta_score') || '0', 10);
   refreshScores();
-
-  // Build initial dropdowns for tanach
   buildBookDropdown();
 
-  // Registration gate
-  if (getUser()) {
+  const user = getUser();
+  if (user) {
     document.getElementById('modal-register').classList.add('hidden');
-    updateUserUI();
+    try {
+      const res = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+      const data = await res.json();
+      if (data.status === 'approved') {
+        updateUserUI();
+      } else if (data.status === 'not_found') {
+        // Re-register (migration: user exists locally but not in KV)
+        const r2 = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: user.name, email: user.email })
+        });
+        const d2 = await r2.json();
+        if (d2.status === 'approved') updateUserUI(); else showPendingScreen();
+      } else {
+        showPendingScreen();
+      }
+    } catch {
+      // Network error – allow access if already locally registered
+      updateUserUI();
+    }
   } else {
     document.getElementById('modal-register').classList.remove('hidden');
     setTimeout(() => document.getElementById('reg-name').focus(), 200);

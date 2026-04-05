@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "אפליקציית לימוד תנ\"ך אינטראקטיבית עם AI",
   "type": "module",
-  "dependencies": {},
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  },
   "engines": {
     "node": ">=18"
   }
