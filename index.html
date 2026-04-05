@@ -393,7 +393,7 @@
     <div class="header-right">
       <button id="logo-btn" onclick="resetSession()" title="שיחה חדשה">📖 חברותא</button>
 
-      <button id="admin-btn" onclick="openAdmin()"
+      <button id="admin-btn" onclick="openAdmin()" class="hidden"
               style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;">
         ⚙️ ניהול
       </button>
@@ -456,12 +456,6 @@
 
   <!-- ── Input area (hidden until session starts) ── -->
   <div id="input-area" class="hidden">
-    <div class="mb-2">
-      <button onclick="sendExplain()"
-              class="text-sm px-3 py-1 rounded-full border border-gray-300 bg-parchment text-gray-600 hover:bg-parchmentDark transition-colors">
-        🤔 לא הבנתי, תסביר לי
-      </button>
-    </div>
     <div class="flex gap-2 items-end">
       <button onclick="sendMessage()"
               class="flex-shrink-0 px-5 py-2.5 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
