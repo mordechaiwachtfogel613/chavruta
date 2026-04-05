@@ -546,12 +546,19 @@ async function fetchContent(collectionKey, item, unit) {
   const col = COLLECTIONS[collectionKey];
   const ref = col.fetchRef(item, unit);
   const url = `https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?lang=he&commentary=0&context=0`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Sefaria החזיר ${res.status}`);
+  let res;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error('SEFARIA_DOWN');
+  }
+  if (!res.ok) throw new Error(res.status === 404 ? 'SEFARIA_NOT_FOUND' : 'SEFARIA_DOWN');
   const data = await res.json();
   let he = data.he;
   if (Array.isArray(he) && Array.isArray(he[0])) he = he.flat();
-  return he.map(v => typeof v === 'string' ? v.replace(/<[^>]+>/g, '').trim() : '').filter(Boolean);
+  const verses = he.map(v => typeof v === 'string' ? v.replace(/<[^>]+>/g, '').trim() : '').filter(Boolean);
+  if (!verses.length) throw new Error('SEFARIA_NOT_FOUND');
+  return verses;
 }
 
 // ── Start Learning ───────────────────────────────────────────────
@@ -574,7 +581,6 @@ async function startLearning() {
 
   try {
     S.verses = await fetchContent(S.collectionKey, S.book, S.unit);
-    if (!S.verses.length) throw new Error('לא נמצאו נתונים ביחידה זו');
 
     // Show input area
     document.getElementById('input-area').classList.remove('hidden');
@@ -600,17 +606,24 @@ async function startLearning() {
 
   } catch (e) {
     console.error(e);
+    const isNotFound = e.message === 'SEFARIA_NOT_FOUND';
+    const isDown     = e.message === 'SEFARIA_DOWN';
+    const title   = isNotFound ? 'היחידה לא נמצאה בספריא' : isDown ? 'ספריא אינה זמינה כרגע' : 'אירעה שגיאה';
+    const detail  = isNotFound
+      ? 'ייתכן שהפרק שביקשת עדיין לא קיים בספריא, נסה יחידה אחרת.'
+      : isDown
+        ? 'שרת ספריא.org אינו מגיב. זה לרוב זמני — נסה שוב בעוד כמה דקות.'
+        : e.message;
     chatEl.innerHTML = '';
-    const errDiv = document.createElement('div');
-    errDiv.className = 'bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm text-center m-4';
-    errDiv.textContent = `שגיאה: ${e.message}`;
-    chatEl.appendChild(errDiv);
-    // Restore welcome state
-    const welcome = document.createElement('div');
-    welcome.id = 'welcome';
-    welcome.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:#9CA3AF;gap:12px;';
-    welcome.innerHTML = `<div style="font-size:3rem">📖</div><p style="font-size:1.2rem;font-weight:600;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>`;
-    chatEl.appendChild(welcome);
+    rabbiSayBubble(`
+      <div style="font-weight:700;color:#B91C1C;margin-bottom:6px;">😔 ${title}</div>
+      <div style="color:#6B7280;">${detail}</div>
+      <div style="margin-top:10px;font-size:0.85rem;color:#9CA3AF;">בחר יחידה אחרת מהתפריט או נסה שוב.</div>
+    `);
+    document.getElementById('input-area').classList.remove('hidden');
+    setInput(true);
+    S.greetingMode = true;
+    document.getElementById('user-input').placeholder = 'לדוגמה: בראשית פרק א, בבא קמא דף ב...';
     btn.disabled = !S.unit;
   } finally {
     spinner.classList.add('hidden');
