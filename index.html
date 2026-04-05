@@ -236,9 +236,24 @@
       justify-content: center;
       height: 100%;
       text-align: center;
-      color: #9CA3AF;
-      gap: 12px;
+      gap: 14px;
     }
+    .rabbi-avatar-lg {
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #B8860B;
+      box-shadow: 0 8px 36px rgba(27,58,107,0.22);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim-line { opacity: 0; animation: fadeUp 0.65s ease forwards; }
+    .anim-1 { animation-delay: 0.15s; }
+    .anim-2 { animation-delay: 0.85s; }
+    .anim-3 { animation-delay: 1.6s;  }
+    .anim-sub { animation-delay: 2.4s; }
   </style>
 </head>
 <body>
@@ -518,10 +533,11 @@
   <div id="chat">
     <!-- Welcome state -->
     <div id="welcome">
-      <img src="rabbi.png" alt="רבי בניהו" style="width:140px;border-radius:18px;box-shadow:0 8px 32px rgba(27,58,107,0.15);margin-bottom:4px;">
-      <p class="text-lg font-bold" style="color:#1B3A6B;">שלום! אני <span style="color:#B8860B;">רבי בניהו</span></p>
-      <p class="text-base" style="color:#9CA3AF;">בחרו אוסף, ספר ויחידה — ונלמד יחד!</p>
-      <p class="text-xs" style="color:#C4B5A0;">הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" class="underline" style="color:#B8860B;">Sefaria</a></p>
+      <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
+      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
+      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
+      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+      <p class="anim-line anim-sub" style="font-size:0.78rem;color:#C4B5A0;margin-top:6px;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>
     </div>
   </div>
 

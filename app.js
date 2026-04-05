@@ -876,10 +876,11 @@ function resetSession() {
   welcome.id = 'welcome';
   welcome.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:#9CA3AF;gap:12px;';
   welcome.innerHTML = `
-    <img src="rabbi.png" alt="רבי בניהו" style="width:140px;border-radius:18px;box-shadow:0 8px 32px rgba(27,58,107,0.15);margin-bottom:4px;">
-    <p style="font-size:1.1rem;font-weight:700;color:#1B3A6B;">שלום! אני <span style="color:#B8860B;">רבי בניהו</span></p>
-    <p style="font-size:1rem;color:#9CA3AF;">בחרו אוסף, ספר ויחידה — ונלמד יחד!</p>
-    <p style="font-size:0.8rem;color:#C4B5A0;">הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" style="text-decoration:underline;color:#B8860B;">Sefaria</a></p>
+    <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
+    <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
+    <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
+    <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+    <p class="anim-line anim-sub" style="font-size:0.78rem;color:#C4B5A0;margin-top:6px;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>
   `;
   chatEl.appendChild(welcome);
 
