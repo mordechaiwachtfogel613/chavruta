@@ -94,6 +94,33 @@
     #app-header .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     #app-header .header-left  { display: flex; align-items: center; gap: 8px; }
 
+    /* ── Streak badge ── */
+    #streak-badge {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.12); border-radius: 10px;
+      padding: 3px 8px; font-size: 0.7rem; color: rgba(255,255,255,0.8);
+      white-space: nowrap; min-width: 44px;
+    }
+    #streak-badge .streak-num { font-size: 1rem; font-weight: 800; color: #FFA500; line-height: 1; }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      #app-header { flex-direction: column; align-items: stretch; padding: 6px 8px; gap: 4px; }
+      .header-left { order: 1; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 5px; }
+      .header-right { order: 2; flex-wrap: wrap; justify-content: center; gap: 5px; }
+      .header-select { font-size: 0.75rem; padding: 4px 22px 4px 5px; max-width: 100px; }
+      #logo-btn { font-size: 0.95rem; }
+      #score-badge-header { width: 40px; height: 40px; }
+      #user-greeting { display: none !important; }
+      #history-btn { font-size: 0.7rem; padding: 3px 8px; }
+      #logout-btn { font-size: 0.7rem; padding: 3px 8px; }
+      #header-start-btn { font-size: 0.8rem; padding: 5px 10px; }
+      .modal-card { padding: 20px; }
+      #chat { padding: 10px 8px; }
+      #input-area { padding: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+      .bubble-ai, .bubble-user { font-size: 0.9rem; padding: 10px 13px; }
+    }
+
     #logo-btn {
       font-size: 1.1rem;
       font-weight: 700;
@@ -390,6 +417,11 @@
     <h3 class="text-2xl font-bold text-navy mb-2">כל הכבוד!</h3>
     <p class="text-gray-600 mb-1" id="fin-msg">סיימת את היחידה!</p>
     <p class="text-xl font-bold mb-6" style="color:#B8860B" id="fin-score">+0 נקודות</p>
+    <button onclick="shareSession()"
+            class="w-full py-3 mb-3 font-bold rounded-xl transition-colors"
+            style="background:#25D366;color:#fff;">
+      📱 שתף בוואטסאפ
+    </button>
     <button onclick="resetSession()"
             class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
       בחר יחידה חדשה
@@ -461,6 +493,10 @@
       <div id="score-badge-header">
         <span class="text-white text-xs font-medium" style="line-height:1">ניקוד</span>
         <span class="text-white text-lg font-bold" id="score-display">0</span>
+      </div>
+      <div id="streak-badge" class="hidden">
+        <span class="streak-num" id="streak-num">0</span>
+        <span>🔥 ימים</span>
       </div>
       <span id="user-greeting" class="text-sm text-blue-200 hidden"></span>
       <button onclick="openHistory()" id="history-btn"

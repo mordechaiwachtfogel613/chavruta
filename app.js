@@ -333,6 +333,7 @@ function updateUserUI() {
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
     document.getElementById('history-btn').classList.remove('hidden');
+    renderStreak();
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
       S.adminAuthed = true;
@@ -834,14 +835,18 @@ function resetSession() {
   // Save to history if session had activity
   if (S.sessionStarted && S.sessionScore > 0 && S.book) {
     const col = COLLECTIONS[S.collectionKey];
+    const bookTotal = col.type === 'daf' ? S.book.daf - 1 : (S.book.ch || 0);
     saveSessionToHistory({
       collection: S.collectionKey,
       collectionLabel: col.label,
       book: S.book.he,
       unit: buildUnitLabel(),
+      unitRaw: S.unit,
       score: S.sessionScore,
       exchanges: Math.floor((S.messages.length - 1) / 2),
+      bookTotal,
     });
+    updateStreak();
   }
 
   S.messages      = [];
@@ -879,6 +884,40 @@ function esc(str) {
   const d = document.createElement('div');
   d.textContent = str ?? '';
   return d.innerHTML;
+}
+
+// ── Streak ───────────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function getStreak() {
+  try { return JSON.parse(localStorage.getItem('chavruta_streak') || '{"count":0,"lastDate":""}'); }
+  catch { return { count: 0, lastDate: '' }; }
+}
+
+function updateStreak() {
+  const today = todayStr();
+  const s = getStreak();
+  if (s.lastDate === today) return; // already counted today
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  s.count = (s.lastDate === yesterday) ? s.count + 1 : 1;
+  s.lastDate = today;
+  localStorage.setItem('chavruta_streak', JSON.stringify(s));
+  renderStreak();
+}
+
+function renderStreak() {
+  const s = getStreak();
+  if (s.count > 0) {
+    document.getElementById('streak-num').textContent = s.count;
+    document.getElementById('streak-badge').classList.remove('hidden');
+  }
+}
+
+// ── Share ─────────────────────────────────────────────────────────
+function shareSession() {
+  const col  = COLLECTIONS[S.collectionKey];
+  const text = `למדתי ${S.book.he} ${buildUnitLabel()} וצברתי ${S.sessionScore} נקודות ב-חברותא 📖\nhttps://chavruta.vercel.app`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 // ── Learning History ─────────────────────────────────────────────
@@ -944,31 +983,65 @@ async function loadHistory() {
       groups[key].push(r);
     });
 
-    list.innerHTML = Object.entries(groups).map(([date, records]) => `
-      <div class="mb-5">
-        <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
-          <span class="flex-1 border-t border-gray-200"></span>
-          <span>${date}</span>
-          <span class="flex-1 border-t border-gray-200"></span>
-        </div>
-        <div class="space-y-2">
-          ${records.map(r => `
-            <div style="background:white;border-radius:14px;padding:14px 16px;border:1px solid #e8e0d0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-              <div style="font-size:1.8rem;flex-shrink:0;">${COLLECTION_ICONS[r.collection] || '📖'}</div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-weight:700;color:#1a2744;font-size:0.95rem;">${esc(r.book)}</div>
-                <div style="color:#6B7280;font-size:0.8rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
-                ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.75rem;margin-top:2px;">${r.exchanges} תגובות</div>` : ''}
-              </div>
-              <div style="text-align:center;flex-shrink:0;">
-                <div style="color:#B8860B;font-weight:800;font-size:1.1rem;">★ ${r.score}</div>
-                <div style="color:#9CA3AF;font-size:0.7rem;">${new Date(r.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div>
-              </div>
+    // Build book progress
+    const bookMap = {};
+    history.forEach(r => {
+      const key = `${r.collection}|${r.book}`;
+      if (!bookMap[key]) bookMap[key] = { book: r.book, collectionLabel: r.collectionLabel, icon: COLLECTION_ICONS[r.collection] || '📖', units: new Set(), total: r.bookTotal || 0 };
+      if (r.unitRaw) bookMap[key].units.add(String(r.unitRaw));
+    });
+
+    const progressHTML = Object.values(bookMap).map(b => {
+      const studied = b.units.size;
+      const total   = b.total;
+      const pct     = total ? Math.round((studied / total) * 100) : 0;
+      return `
+        <div style="background:white;border-radius:12px;padding:12px 14px;border:1px solid #e8e0d0;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:1.3rem;">${b.icon}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#1a2744;font-size:0.9rem;">${esc(b.book)}</div>
+              <div style="color:#9CA3AF;font-size:0.72rem;">${esc(b.collectionLabel)}</div>
             </div>
-          `).join('')}
+            <div style="font-weight:700;color:#B8860B;font-size:0.85rem;">${studied}${total ? `/${total}` : ''}</div>
+          </div>
+          ${total ? `
+            <div style="background:#f0e6c8;border-radius:99px;height:6px;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,#B8860B,#F0C040);height:100%;width:${pct}%;border-radius:99px;transition:width 0.6s;"></div>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+
+    list.innerHTML = `
+      <div class="mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">📅 שיחות אחרונות</div>
+      ${Object.entries(groups).map(([date, records]) => `
+        <div class="mb-5">
+          <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
+            <span class="flex-1 border-t border-gray-200"></span>
+            <span>${date}</span>
+            <span class="flex-1 border-t border-gray-200"></span>
+          </div>
+          <div class="space-y-2">
+            ${records.map(r => `
+              <div style="background:white;border-radius:14px;padding:12px 14px;border:1px solid #e8e0d0;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                <div style="font-size:1.6rem;flex-shrink:0;">${COLLECTION_ICONS[r.collection] || '📖'}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-weight:700;color:#1a2744;font-size:0.9rem;">${esc(r.book)}</div>
+                  <div style="color:#6B7280;font-size:0.78rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
+                  ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:1px;">${r.exchanges} תגובות</div>` : ''}
+                </div>
+                <div style="text-align:center;flex-shrink:0;">
+                  <div style="color:#B8860B;font-weight:800;font-size:1rem;">★ ${r.score}</div>
+                  <div style="color:#9CA3AF;font-size:0.68rem;">${new Date(r.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('')}
+      <div class="mt-4 mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">📊 התקדמות לפי ספר</div>
+      ${progressHTML}
+    `;
 
   } catch {
     list.innerHTML = '<div class="text-center text-red-500 py-8">שגיאה בטעינת ההיסטוריה.</div>';
