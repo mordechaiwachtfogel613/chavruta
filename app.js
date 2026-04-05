@@ -376,8 +376,8 @@ function showAdminEditor() {
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
-    const saved = localStorage.getItem(`chavruta_prompt_${k}`) || '';
-    document.getElementById(`admin-prompt-${k}`).value = saved;
+    const saved = localStorage.getItem(`chavruta_prompt_${k}`);
+    document.getElementById(`admin-prompt-${k}`).value = saved !== null ? saved : DEFAULT_ADMIN_PROMPTS[k];
   }
 
   loadAdminUsers();
@@ -422,6 +422,11 @@ async function setUserStatus(email, status) {
   loadAdminUsers();
 }
 
+function resetPrompt(k) {
+  document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
+  localStorage.removeItem(`chavruta_prompt_${k}`);
+}
+
 function saveAdminPrompts() {
   // Save model
   const model = document.getElementById('admin-model-select').value;
@@ -430,10 +435,11 @@ function saveAdminPrompts() {
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
     const val = document.getElementById(`admin-prompt-${k}`).value.trim();
-    if (val) {
+    // Save whatever is in the box (even if same as default — user explicitly chose it)
+    if (val && val !== DEFAULT_ADMIN_PROMPTS[k]) {
       localStorage.setItem(`chavruta_prompt_${k}`, val);
     } else {
-      localStorage.removeItem(`chavruta_prompt_${k}`);
+      localStorage.removeItem(`chavruta_prompt_${k}`); // use server default
     }
   }
   const msg = document.getElementById('admin-save-msg');
@@ -902,6 +908,16 @@ function esc(str) {
   d.textContent = str ?? '';
   return d.innerHTML;
 }
+
+// ── Default prompts (mirrors api/chat.js) ────────────────────────
+const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
+const DEFAULT_ADMIN_PROMPTS = {
+  tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
+  mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
+  shas:     RABBI_PERSONA + `תלמד גמרא עמוד אחר עמוד, ותשאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
+  rambam:   RABBI_PERSONA + `תלמד רמב"ם הלכה אחת בכל פעם, ותשאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
+  shulchan: RABBI_PERSONA + `תלמד שולחן ערוך סעיף אחד בכל פעם, ותשאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
+};
 
 // ── Streak ───────────────────────────────────────────────────────
 function todayStr() { return new Date().toISOString().slice(0, 10); }

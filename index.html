@@ -383,28 +383,43 @@
       </div>
       <hr class="border-gray-200 mb-4">
 
-      <p class="text-sm text-gray-500 mb-4">עריכת הנחיות מערכת לכל אוסף (ריק = ברירת מחדל):</p>
+      <p class="text-sm text-gray-500 mb-4">עריכת הנחיות מערכת לכל אוסף. הטקסט הנוכחי מוצג כברירת מחדל — ערוך ושמור לשינוי:</p>
 
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-semibold text-navy mb-1">תנ"ך</label>
-          <textarea id="admin-prompt-tanach" class="admin-textarea" rows="3"></textarea>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">תנ"ך</label>
+            <button onclick="resetPrompt('tanach')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-tanach" class="admin-textarea" rows="4"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-navy mb-1">משנה</label>
-          <textarea id="admin-prompt-mishnah" class="admin-textarea" rows="3"></textarea>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">משנה</label>
+            <button onclick="resetPrompt('mishnah')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-mishnah" class="admin-textarea" rows="4"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-navy mb-1">ש"ס בבלי</label>
-          <textarea id="admin-prompt-shas" class="admin-textarea" rows="3"></textarea>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">ש"ס בבלי</label>
+            <button onclick="resetPrompt('shas')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-shas" class="admin-textarea" rows="4"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-navy mb-1">רמב"ם</label>
-          <textarea id="admin-prompt-rambam" class="admin-textarea" rows="3"></textarea>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">רמב"ם</label>
+            <button onclick="resetPrompt('rambam')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-rambam" class="admin-textarea" rows="4"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-navy mb-1">שולחן ערוך</label>
-          <textarea id="admin-prompt-shulchan" class="admin-textarea" rows="3"></textarea>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">שולחן ערוך</label>
+            <button onclick="resetPrompt('shulchan')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-shulchan" class="admin-textarea" rows="4"></textarea>
         </div>
       </div>
 
