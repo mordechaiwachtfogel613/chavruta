@@ -222,9 +222,10 @@ const S = {
   messages:      [],
   totalScore:    0,
   sessionScore:  0,
-  loading:       false,
-  adminAuthed:   false,
+  loading:        false,
+  adminAuthed:    false,
   sessionStarted: false,
+  greetingMode:   false,
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -338,6 +339,7 @@ function updateUserUI() {
       document.getElementById('admin-btn').classList.remove('hidden');
       S.adminAuthed = true;
     }
+    showGreeting();
   }
 }
 
@@ -556,9 +558,10 @@ async function fetchContent(collectionKey, item, unit) {
 async function startLearning() {
   if (!S.book || !S.unit) return;
 
-  S.messages      = [];
-  S.sessionScore  = 0;
+  S.messages       = [];
+  S.sessionScore   = 0;
   S.sessionStarted = false;
+  S.greetingMode   = false;
 
   const btn     = document.getElementById('header-start-btn');
   const spinner = document.getElementById('header-spinner');
@@ -701,6 +704,7 @@ async function sendMessage() {
   if (!text || S.loading) return;
   ta.value = '';
   renderUser(text);
+  if (S.greetingMode) { await handleGreetingResponse(text); return; }
   S.messages.push({ role: 'user', content: text });
   await callAI();
 }
@@ -870,28 +874,13 @@ function resetSession() {
     updateStreak();
   }
 
-  S.messages      = [];
-  S.sessionScore  = 0;
-  S.loading       = false;
+  S.messages       = [];
+  S.sessionScore   = 0;
+  S.loading        = false;
   S.sessionStarted = false;
 
-  // Restore welcome state
-  const chatEl = document.getElementById('chat');
-  chatEl.innerHTML = '';
-  const welcome = document.createElement('div');
-  welcome.id = 'welcome';
-  welcome.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:#9CA3AF;gap:12px;';
-  welcome.innerHTML = `
-    <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-    <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
-    <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
-    <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
-    <p class="anim-line anim-sub" style="font-size:0.78rem;color:#C4B5A0;margin-top:6px;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>
-  `;
-  chatEl.appendChild(welcome);
-
-  // Re-enable start button if unit still selected
   document.getElementById('header-start-btn').disabled = !S.unit;
+  showGreeting();
 }
 
 // ── Utils ────────────────────────────────────────────────────────
@@ -1078,6 +1067,125 @@ async function loadHistory() {
 
   } catch {
     list.innerHTML = '<div class="text-center text-red-500 py-8">שגיאה בטעינת ההיסטוריה.</div>';
+  }
+}
+
+// ── Greeting mode ────────────────────────────────────────────────
+function showGreeting() {
+  S.greetingMode = true;
+  const chatEl = document.getElementById('chat');
+  chatEl.innerHTML = '';
+
+  const outer = document.createElement('div');
+  outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
+  outer.innerHTML = `
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
+      <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
+    </div>
+    <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
+      <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
+      <div>יחד נעמיק בתורה הקדושה.</div>
+      <div style="margin-top:6px;">אתה תבחר <strong>ספר ופרק</strong> מהתנ"ך, <strong>מסכת ודף</strong>, או כל ספר אחר — ואני אתחיל ללמוד איתך חברותא.</div>
+      <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
+    </div>`;
+  chatEl.appendChild(outer);
+
+  document.getElementById('input-area').classList.remove('hidden');
+  setInput(true);
+  const ta = document.getElementById('user-input');
+  ta.placeholder = 'לדוגמה: בראשית פרק א, בבא קמא דף ב...';
+  ta.focus();
+  document.getElementById('header-new-btn').classList.add('hidden');
+}
+
+// Hebrew numeral → integer
+const HEB_NUMS = {
+  'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,
+  'י':10,'יא':11,'יב':12,'יג':13,'יד':14,'טו':15,'טז':16,
+  'יז':17,'יח':18,'יט':19,'כ':20,'כא':21,'כב':22,'כג':23,
+  'כד':24,'כה':25,'כו':26,'כז':27,'כח':28,'כט':29,'ל':30,
+  'לא':31,'לב':32,'לג':33,'לד':34,'לה':35,'לו':36,'לז':37,
+  'לח':38,'לט':39,'מ':40,'מא':41,'מב':42,'מג':43,'מד':44,
+  'מה':45,'מו':46,'מז':47,'מח':48,'מט':49,'נ':50,
+};
+function heNum(s) { return HEB_NUMS[s.replace(/['׳\s]/g,'')] || null; }
+
+function extractUnit(text, type) {
+  if (type === 'daf') {
+    const mH = text.match(/דף\s+([\u05D0-\u05EA]{1,3})['׳]?\s*(?:עמוד\s*)?([אב])?/);
+    if (mH) { const n=heNum(mH[1]); if(n) return `${n}${mH[2]==='ב'?'b':'a'}`; }
+    const mA = text.match(/דף\s+(\d+)\s*([אב])?/);
+    if (mA) return `${mA[1]}${mA[2]==='ב'?'b':'a'}`;
+    return '2a';
+  } else {
+    const mH = text.match(/פרק\s+([\u05D0-\u05EA]{1,3})['׳]?/);
+    if (mH) { const n=heNum(mH[1]); if(n) return n; }
+    const mA = text.match(/פרק\s+(\d+)/);
+    if (mA) return parseInt(mA[1]);
+    const mN = text.match(/(\d+)/);
+    if (mN) return parseInt(mN[1]);
+    return 1;
+  }
+}
+
+function parseStudyRequest(text) {
+  const isDaf      = /דף|גמרא|בבלי/.test(text);
+  const isMishnah  = /משנה(?! תורה)/.test(text) && !isDaf;
+  const isRambam   = /רמב"?ם|משנה תורה|הלכות/.test(text);
+  const isShulchan = /שולחן|אורח חיים|יורה דעה|חושן משפט|אבן העזר/.test(text);
+
+  let order = ['tanach','mishnah','shas','rambam','shulchan'];
+  if (isDaf)      order = ['shas','mishnah','tanach','rambam','shulchan'];
+  if (isMishnah)  order = ['mishnah','shas','tanach','rambam','shulchan'];
+  if (isRambam)   order = ['rambam','shulchan','mishnah','tanach','shas'];
+  if (isShulchan) order = ['shulchan','rambam','mishnah','tanach','shas'];
+
+  for (const collKey of order) {
+    const coll = COLLECTIONS[collKey];
+    for (const item of coll.items) {
+      if (text.includes(item.he)) {
+        const unit = extractUnit(text, coll.type);
+        return { collection: collKey, bookSf: item.sf, unit };
+      }
+    }
+  }
+  return null;
+}
+
+function rabbiSayBubble(html) {
+  const box = document.getElementById('chat');
+  const outer = document.createElement('div');
+  outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;';
+  outer.innerHTML = `
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
+      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;">רבי בניהו</div>
+    </div>
+    <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.75;">${html}</div>`;
+  box.appendChild(outer);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function handleGreetingResponse(text) {
+  const parsed = parseStudyRequest(text);
+  if (parsed) {
+    document.getElementById('sel-collection').value = parsed.collection;
+    onCollectionChange();
+    document.getElementById('sel-book').value = parsed.bookSf;
+    onBookChange();
+    document.getElementById('sel-unit').value = String(parsed.unit);
+    onUnitChange();
+    S.greetingMode = false;
+    await startLearning();
+  } else {
+    rabbiSayBubble(`
+      לא הצלחתי להבין מה תרצה ללמוד. נסה כך:<br>
+      <span style="display:block;margin-top:8px;">📖 <strong>בראשית פרק א</strong></span>
+      <span style="display:block;">📜 <strong>ברכות פרק א</strong> (משנה)</span>
+      <span style="display:block;">🕍 <strong>בבא קמא דף ב</strong></span>
+      <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">או בחר מהתפריט למעלה ולחץ <strong>התחל</strong>.</span>
+    `);
   }
 }
 
