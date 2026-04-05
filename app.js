@@ -224,6 +224,7 @@ const S = {
   sessionScore:  0,
   loading:       false,
   adminAuthed:   false,
+  sessionStarted: false,
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -313,6 +314,7 @@ function logout() {
   document.getElementById('modal-register').classList.remove('hidden');
   document.getElementById('user-greeting').classList.add('hidden');
   document.getElementById('logout-btn').classList.add('hidden');
+  document.getElementById('history-btn').classList.add('hidden');
   document.getElementById('admin-btn').classList.add('hidden');
 }
 
@@ -330,6 +332,7 @@ function updateUserUI() {
     greet.textContent = `שלום, ${user.name} 👋`;
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
+    document.getElementById('history-btn').classList.remove('hidden');
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
       S.adminAuthed = true;
@@ -546,8 +549,9 @@ async function fetchContent(collectionKey, item, unit) {
 async function startLearning() {
   if (!S.book || !S.unit) return;
 
-  S.messages     = [];
-  S.sessionScore = 0;
+  S.messages      = [];
+  S.sessionScore  = 0;
+  S.sessionStarted = false;
 
   const btn     = document.getElementById('header-start-btn');
   const spinner = document.getElementById('header-spinner');
@@ -574,6 +578,8 @@ async function startLearning() {
     sessionHeader.className = 'text-center text-sm text-gray-400 mb-4 pb-2 border-b border-parchmentDark';
     sessionHeader.innerHTML = `<span class="font-semibold" style="color:#B8860B;">${col.label}</span> | <span class="font-semibold text-navy">${S.book.he}</span> | ${unitLabel}`;
     chatEl.appendChild(sessionHeader);
+
+    S.sessionStarted = true;
 
     // First AI call
     S.messages.push({
@@ -824,9 +830,24 @@ function resetSession() {
   document.getElementById('modal-finished').classList.add('hidden');
   document.getElementById('input-area').classList.add('hidden');
   document.getElementById('header-new-btn').classList.add('hidden');
-  S.messages     = [];
-  S.sessionScore = 0;
-  S.loading      = false;
+
+  // Save to history if session had activity
+  if (S.sessionStarted && S.sessionScore > 0 && S.book) {
+    const col = COLLECTIONS[S.collectionKey];
+    saveSessionToHistory({
+      collection: S.collectionKey,
+      collectionLabel: col.label,
+      book: S.book.he,
+      unit: buildUnitLabel(),
+      score: S.sessionScore,
+      exchanges: Math.floor((S.messages.length - 1) / 2),
+    });
+  }
+
+  S.messages      = [];
+  S.sessionScore  = 0;
+  S.loading       = false;
+  S.sessionStarted = false;
 
   // Restore welcome state
   const chatEl = document.getElementById('chat');
@@ -858,6 +879,100 @@ function esc(str) {
   const d = document.createElement('div');
   d.textContent = str ?? '';
   return d.innerHTML;
+}
+
+// ── Learning History ─────────────────────────────────────────────
+const COLLECTION_ICONS = { tanach:'📖', mishnah:'📜', shas:'🕍', rambam:'✍️', shulchan:'⚖️' };
+
+async function saveSessionToHistory(record) {
+  const user = getUser();
+  if (!user) return;
+  try {
+    await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, record })
+    });
+  } catch { /* silent */ }
+}
+
+function openHistory() {
+  document.getElementById('modal-history').classList.remove('hidden');
+  loadHistory();
+}
+
+function closeHistory() {
+  document.getElementById('modal-history').classList.add('hidden');
+}
+
+async function loadHistory() {
+  const user = getUser();
+  if (!user) return;
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="text-center text-gray-400 py-8">טוען...</div>';
+
+  try {
+    const res = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`);
+    const history = await res.json();
+
+    if (!history.length) {
+      list.innerHTML = `
+        <div class="text-center py-12">
+          <div style="font-size:3rem;margin-bottom:12px;">🌱</div>
+          <p class="text-gray-500 font-medium">עדיין לא למדת יחידות</p>
+          <p class="text-gray-400 text-sm mt-1">התחל ללמוד ותתחיל לבנות את מסע הלמידה שלך!</p>
+        </div>`;
+      document.getElementById('stat-units').textContent = '0';
+      document.getElementById('stat-score').textContent = '0';
+      document.getElementById('stat-books').textContent = '0';
+      return;
+    }
+
+    // Stats
+    const totalScore = history.reduce((s, r) => s + (r.score || 0), 0);
+    const uniqueBooks = new Set(history.map(r => r.book)).size;
+    document.getElementById('stat-units').textContent = history.length;
+    document.getElementById('stat-score').textContent = totalScore.toLocaleString();
+    document.getElementById('stat-books').textContent = uniqueBooks;
+
+    // Group by date
+    const groups = {};
+    history.forEach(r => {
+      const d = new Date(r.ts);
+      const key = d.toLocaleDateString('he-IL', { year:'numeric', month:'long', day:'numeric' });
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+
+    list.innerHTML = Object.entries(groups).map(([date, records]) => `
+      <div class="mb-5">
+        <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
+          <span class="flex-1 border-t border-gray-200"></span>
+          <span>${date}</span>
+          <span class="flex-1 border-t border-gray-200"></span>
+        </div>
+        <div class="space-y-2">
+          ${records.map(r => `
+            <div style="background:white;border-radius:14px;padding:14px 16px;border:1px solid #e8e0d0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+              <div style="font-size:1.8rem;flex-shrink:0;">${COLLECTION_ICONS[r.collection] || '📖'}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;color:#1a2744;font-size:0.95rem;">${esc(r.book)}</div>
+                <div style="color:#6B7280;font-size:0.8rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
+                ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.75rem;margin-top:2px;">${r.exchanges} תגובות</div>` : ''}
+              </div>
+              <div style="text-align:center;flex-shrink:0;">
+                <div style="color:#B8860B;font-weight:800;font-size:1.1rem;">★ ${r.score}</div>
+                <div style="color:#9CA3AF;font-size:0.7rem;">${new Date(r.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+  } catch {
+    list.innerHTML = '<div class="text-center text-red-500 py-8">שגיאה בטעינת ההיסטוריה.</div>';
+  }
 }
 
 // ── Init ─────────────────────────────────────────────────────────

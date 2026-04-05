@@ -463,6 +463,10 @@
         <span class="text-white text-lg font-bold" id="score-display">0</span>
       </div>
       <span id="user-greeting" class="text-sm text-blue-200 hidden"></span>
+      <button onclick="openHistory()" id="history-btn"
+              class="hidden text-xs border border-yellow-400 text-yellow-300 hover:bg-yellow-400 hover:text-navy rounded-full px-3 py-1 transition-colors">
+        📚 הלמידה שלי
+      </button>
       <button onclick="logout()" id="logout-btn"
               class="hidden text-xs text-blue-300 hover:text-white transition-colors border border-blue-400 rounded-full px-3 py-1">
         יציאה
@@ -494,6 +498,42 @@
   </div>
 
 </div><!-- /#app -->
+
+<!-- ═══════════════════════════════════════════════
+     HISTORY MODAL
+═══════════════════════════════════════════════ -->
+<div id="modal-history" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width:640px;max-height:82vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1a2744 0%,#2d4373 100%);padding:24px 28px 20px;border-radius:20px 20px 0 0;flex-shrink:0;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-white text-xl font-bold">📚 מסע הלמידה שלי</h2>
+        <button onclick="closeHistory()" class="text-white opacity-60 hover:opacity-100 text-2xl leading-none">&times;</button>
+      </div>
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3" id="history-stats">
+        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
+          <div class="text-2xl font-bold text-white" id="stat-units">—</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);">יחידות שנלמדו</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
+          <div class="text-2xl font-bold" style="color:#F0C040;" id="stat-score">—</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);">נקודות כוללות</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
+          <div class="text-2xl font-bold text-white" id="stat-books">—</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);">ספרים שנלמדו</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="history-list" style="overflow-y:auto;flex:1;padding:20px 24px;background:#faf8f3;">
+      <div class="text-center text-gray-400 py-8">טוען...</div>
+    </div>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>
