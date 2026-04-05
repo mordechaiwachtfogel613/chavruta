@@ -311,7 +311,7 @@
      ADMIN MODAL
 ═══════════════════════════════════════════════ -->
 <div id="modal-admin" class="modal-overlay hidden">
-  <div class="modal-card" style="max-width:560px;">
+  <div class="modal-card" style="max-width:580px;max-height:88vh;overflow-y:auto;">
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-xl font-bold text-navy">⚙️ פאנל ניהול – חברותא</h2>
       <button onclick="closeAdmin()" class="text-gray-400 hover:text-red-500 text-2xl leading-none">&times;</button>
@@ -434,6 +434,58 @@
         </button>
       </div>
       <div id="admin-save-msg" class="hidden mt-3 text-green-700 text-sm text-center font-semibold">✓ נשמר בהצלחה</div>
+
+      <!-- Email Templates -->
+      <hr class="border-gray-200 my-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-navy">✉️ תבניות מיילים</span>
+        <span class="text-xs text-gray-400">משתנים: <code>&#123;&#123;name&#125;&#125;</code> <code>&#123;&#123;email&#125;&#125;</code></span>
+      </div>
+
+      <!-- Welcome -->
+      <div class="mb-3 border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">📧 מייל ברוכים הבאים (בעת הרשמה)</div>
+        <div class="p-3 space-y-2">
+          <input id="email-subj-welcome" type="text" placeholder="נושא המייל" dir="rtl"
+                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+          <textarea id="email-body-welcome" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
+          <div class="flex items-center gap-2">
+            <button onclick="saveEmailTemplate('welcome')"
+                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
+            <span id="email-save-msg-welcome" class="hidden text-green-600 text-xs">✓ נשמר</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval -->
+      <div class="mb-3 border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">✅ מייל אישור משתמש</div>
+        <div class="p-3 space-y-2">
+          <input id="email-subj-approval" type="text" placeholder="נושא המייל" dir="rtl"
+                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+          <textarea id="email-body-approval" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
+          <div class="flex items-center gap-2">
+            <button onclick="saveEmailTemplate('approval')"
+                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
+            <span id="email-save-msg-approval" class="hidden text-green-600 text-xs">✓ נשמר</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Notify -->
+      <div class="mb-1 border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">🔔 התראה למנהל (משתמש חדש)</div>
+        <div class="p-3 space-y-2">
+          <input id="email-subj-admin_notify" type="text" placeholder="נושא המייל" dir="rtl"
+                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+          <textarea id="email-body-admin_notify" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
+          <div class="flex items-center gap-2">
+            <button onclick="saveEmailTemplate('admin_notify')"
+                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
+            <span id="email-save-msg-admin_notify" class="hidden text-green-600 text-xs">✓ נשמר</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

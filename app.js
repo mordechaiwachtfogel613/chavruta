@@ -383,6 +383,7 @@ function showAdminEditor() {
   }
 
   loadAdminUsers();
+  loadEmailTemplates();
 }
 
 async function loadAdminUsers() {
@@ -1200,6 +1201,49 @@ async function handleGreetingResponse(text) {
       <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">או בחר מהתפריט למעלה ולחץ <strong>התחל</strong>.</span>
     `);
   }
+}
+
+// ── Email Templates (Admin) ──────────────────────────────────────
+const DEFAULT_EMAIL_SUBJECTS = {
+  welcome:      'קיבלנו את בקשתך – חברותא',
+  approval:     'אושרת לחברותא! 🎉',
+  admin_notify: 'משתמש חדש נרשם – חברותא',
+};
+const DEFAULT_EMAIL_BODIES = {
+  welcome:      `<h2 style="color:#1a2744;">שלום {{name}}! 👋</h2>\n<p style="color:#444;line-height:1.7;">קיבלנו את בקשת ההרשמה שלך לאפליקציית <strong>חברותא</strong>.</p>\n<p style="color:#444;line-height:1.7;">בקשתך בבדיקה ותקבל מייל נוסף ברגע שתאושר.</p>\n<p style="color:#B8860B;font-weight:bold;margin-top:24px;">יחד נעמיק בתורה הקדושה 📖</p>`,
+  approval:     `<h2 style="color:#1a2744;">בשורות טובות, {{name}}! 🎉</h2>\n<p style="color:#444;line-height:1.7;">הרשמתך לאפליקציית <strong>חברותא</strong> <strong style="color:green;">אושרה!</strong></p>\n<p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם רבי בניהו.</p>\n<p style="color:#B8860B;font-weight:bold;margin-top:28px;">יחד נעמיק בתורה הקדושה 📖</p>`,
+  admin_notify: `<h2 style="color:#1a2744;">משתמש חדש נרשם</h2>\n<p style="color:#444;"><strong>שם:</strong> {{name}}</p>\n<p style="color:#444;"><strong>מייל:</strong> {{email}}</p>\n<p style="color:#888;font-size:0.9rem;">כנס לפאנל הניהול כדי לאשר או לדחות.</p>`,
+};
+
+async function loadEmailTemplates() {
+  const user = getUser();
+  if (!user) return;
+  try {
+    const res  = await fetch(`/api/email-templates?adminEmail=${encodeURIComponent(user.email)}`);
+    const data = await res.json();
+    for (const type of ['welcome', 'approval', 'admin_notify']) {
+      const tmpl = data[type];
+      document.getElementById(`email-subj-${type}`).value = tmpl?.subject || DEFAULT_EMAIL_SUBJECTS[type];
+      document.getElementById(`email-body-${type}`).value = tmpl?.body    || DEFAULT_EMAIL_BODIES[type];
+    }
+  } catch { /* silent */ }
+}
+
+async function saveEmailTemplate(type) {
+  const user    = getUser();
+  const subject = document.getElementById(`email-subj-${type}`).value.trim();
+  const body    = document.getElementById(`email-body-${type}`).value.trim();
+  if (!subject || !body) return;
+  try {
+    await fetch('/api/email-templates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminEmail: user.email, type, subject, body })
+    });
+    const msg = document.getElementById(`email-save-msg-${type}`);
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+  } catch { /* silent */ }
 }
 
 // ── Init ─────────────────────────────────────────────────────────
