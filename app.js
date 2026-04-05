@@ -713,9 +713,18 @@ function handleKey(e) {
 
 // ── Render helpers ───────────────────────────────────────────────
 function renderAI(data) {
-  const box  = document.getElementById('chat');
-  const wrap = document.createElement('div');
-  wrap.className = 'bubble-ai rounded-2xl p-4 max-w-2xl mb-4';
+  const box      = document.getElementById('chat');
+  const outer    = document.createElement('div');
+  outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;';
+  outer.innerHTML = `
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;display:block;">
+      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;white-space:nowrap;">רבי בניהו</div>
+    </div>
+    <div class="rabbi-bubble-inner" style="flex:1;min-width:0;"></div>`;
+  box.appendChild(outer);
+  const wrap = outer.querySelector('.rabbi-bubble-inner');
+  wrap.className += ' bubble-ai rounded-2xl p-4';
 
   let html = '';
 
@@ -747,7 +756,6 @@ function renderAI(data) {
   }
 
   wrap.innerHTML = html;
-  box.appendChild(wrap);
   box.scrollTop = box.scrollHeight;
 }
 
@@ -774,11 +782,18 @@ function showTyping() {
   const id  = 'typing-' + Date.now();
   const d   = document.createElement('div');
   d.id = id;
-  d.className = 'bubble-ai rounded-2xl p-4 inline-flex items-center gap-1.5 text-sm text-gray-400 mb-4';
-  d.innerHTML = `<span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-                 <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-                 <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-                 <span class="mr-2">חברותא חושב…</span>`;
+  d.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;';
+  d.innerHTML = `
+    <div style="flex-shrink:0;text-align:center;">
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
+      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;">רבי בניהו</div>
+    </div>
+    <div class="bubble-ai rounded-2xl px-4 py-3 inline-flex items-center gap-1.5 text-sm text-gray-400">
+      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+      <span class="mr-2">רבי בניהו חושב…</span>
+    </div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
   return id;
@@ -861,9 +876,10 @@ function resetSession() {
   welcome.id = 'welcome';
   welcome.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:#9CA3AF;gap:12px;';
   welcome.innerHTML = `
-    <div style="font-size:3rem">📖</div>
-    <p style="font-size:1.2rem;font-weight:600;">בחרו אוסף, ספר ויחידה ולחצו התחל</p>
-    <p style="font-size:0.85rem;color:#C4B5A0;">הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" style="text-decoration:underline;color:#B8860B;">Sefaria</a> • הלימוד מנוהל ע"י Claude AI</p>
+    <img src="rabbi.png" alt="רבי בניהו" style="width:140px;border-radius:18px;box-shadow:0 8px 32px rgba(27,58,107,0.15);margin-bottom:4px;">
+    <p style="font-size:1.1rem;font-weight:700;color:#1B3A6B;">שלום! אני <span style="color:#B8860B;">רבי בניהו</span></p>
+    <p style="font-size:1rem;color:#9CA3AF;">בחרו אוסף, ספר ויחידה — ונלמד יחד!</p>
+    <p style="font-size:0.8rem;color:#C4B5A0;">הטקסט מסופק ע"י <a href="https://www.sefaria.org" target="_blank" style="text-decoration:underline;color:#B8860B;">Sefaria</a></p>
   `;
   chatEl.appendChild(welcome);
 
