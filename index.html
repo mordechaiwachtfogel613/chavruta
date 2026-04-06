@@ -350,7 +350,7 @@
       <!-- Model selector -->
       <div class="mb-5">
         <label class="block text-sm font-semibold text-navy mb-1">מודל AI</label>
-        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white" onchange="localStorage.setItem('chavruta_model',this.value)">
+        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white" onchange="GLOBAL_MODEL=this.value">
           <optgroup label="Anthropic (Claude)">
             <option value="anthropic/claude-opus-4">Claude Opus 4</option>
             <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>

@@ -2,6 +2,16 @@
 // חברותא – אפליקציית לימוד | Frontend Logic
 // ================================================================
 
+let GLOBAL_MODEL = null; // loaded from server on init
+async function loadGlobalModel() {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    GLOBAL_MODEL = d.model;
+  } catch { GLOBAL_MODEL = 'anthropic/claude-opus-4'; }
+}
+loadGlobalModel();
+
 // ── תנ"ך ────────────────────────────────────────────────────────
 const TANACH = [
   // תורה
@@ -373,8 +383,7 @@ function showAdminEditor() {
   document.getElementById('admin-editor').classList.remove('hidden');
   document.getElementById('admin-save-msg').classList.add('hidden');
 
-  const savedModel = localStorage.getItem('chavruta_model') || 'anthropic/claude-opus-4';
-  document.getElementById('admin-model-select').value = savedModel;
+  document.getElementById('admin-model-select').value = GLOBAL_MODEL || 'anthropic/claude-opus-4';
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
@@ -431,9 +440,15 @@ function resetPrompt(k) {
 }
 
 function saveAdminPrompts() {
-  // Save model
+  // Save model to server (affects all users)
   const model = document.getElementById('admin-model-select').value;
-  localStorage.setItem('chavruta_model', model);
+  GLOBAL_MODEL = model;
+  const user = getUser();
+  fetch('/api/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adminEmail: user.email, model })
+  });
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
@@ -666,8 +681,7 @@ async function callAI() {
       collection_type: S.collectionKey,
     };
     if (customPrompt) body.custom_prompt = customPrompt;
-    const savedModel = localStorage.getItem('chavruta_model');
-    if (savedModel) body.model = savedModel;
+    if (GLOBAL_MODEL) body.model = GLOBAL_MODEL;
 
     const res = await fetch('/api/chat', {
       method:  'POST',
