@@ -350,17 +350,17 @@
       <!-- Model selector -->
       <div class="mb-5">
         <label class="block text-sm font-semibold text-navy mb-1">מודל AI</label>
-        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white">
+        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white" onchange="localStorage.setItem('chavruta_model',this.value)">
           <optgroup label="Anthropic (Claude)">
             <option value="anthropic/claude-opus-4">Claude Opus 4</option>
             <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
             <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5</option>
           </optgroup>
           <optgroup label="Google (Gemini)">
-            <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro Preview</option>
-            <option value="google/gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
+            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
-            <option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
+            <option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
           </optgroup>
           <optgroup label="DeepSeek">
             <option value="deepseek/deepseek-r1">DeepSeek R1</option>
