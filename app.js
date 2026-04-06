@@ -1180,29 +1180,44 @@ function showGreeting() {
   S.greetingMode = true;
   const chatEl = document.getElementById('chat');
   chatEl.innerHTML = '';
-
-  const outer = document.createElement('div');
-  outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
-  outer.innerHTML = `
-    <div style="flex-shrink:0;text-align:center;">
-      <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-      <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
-    </div>
-    <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
-      <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
-      <div>יחד נעמיק בתורה הקדושה.</div>
-      <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
-      <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
-    </div>`;
-  chatEl.appendChild(outer);
-
-  // Show picker instead of free text
-  document.getElementById('greeting-picker').classList.remove('hidden');
-  document.getElementById('chat-input-row').classList.add('hidden');
-  document.getElementById('input-area').classList.remove('hidden');
-  setInput(true);
-  gpCollectionChange(); // init picker with current collection
+  document.getElementById('input-area').classList.add('hidden');
   document.getElementById('header-new-btn').classList.add('hidden');
+
+  // Phase 1 — animated welcome
+  const welcomeDiv = document.createElement('div');
+  welcomeDiv.id = 'welcome';
+  welcomeDiv.innerHTML = `
+    <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
+    <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
+    <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
+    <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+  `;
+  chatEl.appendChild(welcomeDiv);
+
+  // Phase 2 — after animations complete, show rabbi bubble + picker
+  setTimeout(() => {
+    chatEl.innerHTML = '';
+    const outer = document.createElement('div');
+    outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
+    outer.innerHTML = `
+      <div style="flex-shrink:0;text-align:center;">
+        <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
+        <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
+      </div>
+      <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
+        <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
+        <div>יחד נעמיק בתורה הקדושה.</div>
+        <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
+        <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
+      </div>`;
+    chatEl.appendChild(outer);
+
+    document.getElementById('greeting-picker').classList.remove('hidden');
+    document.getElementById('chat-input-row').classList.add('hidden');
+    document.getElementById('input-area').classList.remove('hidden');
+    setInput(true);
+    gpCollectionChange();
+  }, 3200); // last anim starts at 2.4s + 0.65s ≈ 3.05s
 }
 
 // Hebrew numeral → integer
