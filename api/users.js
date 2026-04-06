@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     await kv.set(key, user);
     await kv.sadd('users:all', email.trim().toLowerCase());
     if (!isAdm) {
-      Promise.all([
+      await Promise.all([
         dispatchEmail('welcome',      user.email, name, user.email),
         dispatchEmail('admin_notify', ADMIN,      name, user.email),
       ]).catch(() => {});
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
     if (!user) return res.status(404).end();
     await kv.set(key, { ...user, status });
     if (status === 'approved') {
-      dispatchEmail('approval', user.email, user.name, user.email).catch(() => {});
+      await dispatchEmail('approval', user.email, user.name, user.email).catch(() => {});
     }
     return res.json({ ok: true });
   }
