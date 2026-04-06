@@ -1119,33 +1119,33 @@ function showGreeting() {
   `;
   chatEl.appendChild(welcomeDiv);
 
-  // Phase 2 — after animations complete, show rabbi bubble + picker
+  // Phase 2 — after animations complete, show ONLY the start button
   _greetingTimer = setTimeout(() => {
     _greetingTimer = null;
-    // Guard: if session already started (user was fast), don't overwrite
     if (S.sessionStarted) return;
     chatEl.innerHTML = '';
-    const outer = document.createElement('div');
-    outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
-    outer.innerHTML = `
-      <div style="flex-shrink:0;text-align:center;">
-        <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-        <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
-      </div>
-      <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
-        <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
-        <div>יחד נעמיק בתורה הקדושה.</div>
-        <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
-        <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
-      </div>`;
-    chatEl.appendChild(outer);
     const startBtn = document.createElement('button');
     startBtn.textContent = 'התחלת לימוד עם רבי בניהו ✦';
-    startBtn.style.cssText = 'display:block;margin:0 auto 16px;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 28px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
+    startBtn.style.cssText = 'display:block;margin:40px auto 16px;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 28px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
     startBtn.onmouseenter = () => { startBtn.style.transform='translateY(-2px)'; startBtn.style.boxShadow='0 8px 24px rgba(27,58,107,0.35)'; };
     startBtn.onmouseleave = () => { startBtn.style.transform=''; startBtn.style.boxShadow=''; };
     startBtn.onclick = () => {
       startBtn.remove();
+      // Now show rabbi bubble
+      const outer = document.createElement('div');
+      outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
+      outer.innerHTML = `
+        <div style="flex-shrink:0;text-align:center;">
+          <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
+          <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
+        </div>
+        <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
+          <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
+          <div>יחד נעמיק בתורה הקדושה.</div>
+          <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
+          <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
+        </div>`;
+      chatEl.appendChild(outer);
       document.getElementById('greeting-picker').classList.remove('hidden');
       document.getElementById('chat-input-row').classList.add('hidden');
       document.getElementById('input-area').classList.remove('hidden');
