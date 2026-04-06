@@ -727,30 +727,64 @@ function appendError(msg) {
   box.scrollTop = box.scrollHeight;
 }
 
+const THINKING_MSGS = [
+  'רבי בניהו הולך לאוצר הספרים',
+  'רבי בניהו מצא את הספר במדף גבוה',
+  'רבי בניהו מעלעל בדפי הספר',
+  'רבי בניהו חוכך בדעתו',
+  'רבי בניהו לוגם מהקפה שלו (אחרי שהתקרר)',
+  'רבי בניהו נזכר בסברא מיוחדת',
+  'רבי בניהו מתעמק בסוגיא',
+];
+
 function showTyping() {
   const box = document.getElementById('chat');
   const id  = 'typing-' + Date.now();
   const d   = document.createElement('div');
   d.id = id;
-  d.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;';
+  d.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;';
+
+  // Pick random subset of messages (shuffle, take up to all)
+  const msgs = [...THINKING_MSGS].sort(() => Math.random() - 0.5);
+  let idx = 0;
+
   d.innerHTML = `
     <div style="flex-shrink:0;text-align:center;">
       <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
       <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;">רבי בניהו</div>
     </div>
-    <div class="bubble-ai rounded-2xl px-4 py-3 inline-flex items-center gap-1.5 text-sm text-gray-400">
-      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-      <span class="dot w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
-      <span class="mr-2">רבי בניהו חושב…</span>
+    <div class="bubble-ai rounded-2xl px-4 py-3" style="flex:1;">
+      <div id="${id}-msg" style="font-size:0.97rem;font-weight:700;color:#1B3A6B;margin-bottom:10px;">${msgs[0]}</div>
+      <div style="background:#e8e0d0;border-radius:99px;height:6px;overflow:hidden;">
+        <div id="${id}-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#B8860B,#F0C040);border-radius:99px;transition:width 0.4s ease;"></div>
+      </div>
     </div>`;
+
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
+
+  // Animate progress bar and cycle messages
+  let pct = 0;
+  const interval = setInterval(() => {
+    if (!document.getElementById(id)) { clearInterval(interval); return; }
+    pct = Math.min(pct + (Math.random() * 8 + 3), 90);
+    const bar = document.getElementById(`${id}-bar`);
+    if (bar) bar.style.width = pct + '%';
+    idx = (idx + 1) % msgs.length;
+    const msgEl = document.getElementById(`${id}-msg`);
+    if (msgEl) {
+      msgEl.style.opacity = '0';
+      setTimeout(() => { if (msgEl) { msgEl.textContent = msgs[idx]; msgEl.style.opacity = '1'; } }, 200);
+    }
+  }, 1800);
+
+  d._interval = interval;
   return id;
 }
 
 function removeTyping(id) {
-  document.getElementById(id)?.remove();
+  const el = document.getElementById(id);
+  if (el) { clearInterval(el._interval); el.remove(); }
 }
 
 // ── Score ────────────────────────────────────────────────────────
