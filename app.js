@@ -1099,39 +1099,43 @@ function gpStart() {
 let _greetingTimer = null;
 
 function showGreeting() {
-  // Cancel any previous pending greeting timer
   if (_greetingTimer) { clearTimeout(_greetingTimer); _greetingTimer = null; }
-
   S.greetingMode = true;
   const chatEl = document.getElementById('chat');
-  chatEl.innerHTML = '';
   document.getElementById('input-area').classList.add('hidden');
   document.getElementById('header-new-btn').classList.add('hidden');
 
-  // Phase 1 — animated welcome
-  const welcomeDiv = document.createElement('div');
-  welcomeDiv.id = 'welcome';
-  welcomeDiv.innerHTML = `
-    <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-    <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
-    <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
-    <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
-  `;
-  chatEl.appendChild(welcomeDiv);
+  // If welcome div doesn't exist (after a previous session), recreate it with animation
+  if (!document.getElementById('welcome')) {
+    chatEl.innerHTML = '';
+    const welcomeDiv = document.createElement('div');
+    welcomeDiv.id = 'welcome';
+    welcomeDiv.innerHTML = `
+      <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
+      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
+      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
+      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+    `;
+    chatEl.appendChild(welcomeDiv);
+  }
 
-  // Phase 2 — after animations complete, show ONLY the start button
+  // After animations complete, add button inside the welcome div
   _greetingTimer = setTimeout(() => {
     _greetingTimer = null;
     if (S.sessionStarted) return;
-    chatEl.innerHTML = '';
+    const welcome = document.getElementById('welcome');
+    if (!welcome) return;
+    // Remove old button if exists
+    const old = welcome.querySelector('.start-learning-btn');
+    if (old) old.remove();
     const startBtn = document.createElement('button');
-    startBtn.textContent = 'התחלת לימוד עם רבי בניהו ✦';
-    startBtn.style.cssText = 'display:block;margin:40px auto 16px;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 28px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
+    startBtn.className = 'start-learning-btn';
+    startBtn.textContent = 'אני רוצה ללמוד עם רבי בניהו';
+    startBtn.style.cssText = 'display:block;margin:28px auto 0;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 32px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
     startBtn.onmouseenter = () => { startBtn.style.transform='translateY(-2px)'; startBtn.style.boxShadow='0 8px 24px rgba(27,58,107,0.35)'; };
     startBtn.onmouseleave = () => { startBtn.style.transform=''; startBtn.style.boxShadow=''; };
     startBtn.onclick = () => {
-      startBtn.remove();
-      // Now show rabbi bubble
+      chatEl.innerHTML = '';
       const outer = document.createElement('div');
       outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
       outer.innerHTML = `
@@ -1152,7 +1156,7 @@ function showGreeting() {
       setInput(true);
       gpCollectionChange();
     };
-    chatEl.appendChild(startBtn);
+    welcome.appendChild(startBtn);
   }, 3200);
 }
 
