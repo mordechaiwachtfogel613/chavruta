@@ -583,7 +583,9 @@ async function startLearning() {
   try {
     S.verses = await fetchContent(S.collectionKey, S.book, S.unit);
 
-    // Show input area
+    // Show input area (learning mode — hide picker, show textarea)
+    document.getElementById('greeting-picker').classList.add('hidden');
+    document.getElementById('chat-input-row').classList.remove('hidden');
     document.getElementById('input-area').classList.remove('hidden');
     document.getElementById('header-new-btn').classList.remove('hidden');
     document.getElementById('modal-finished').classList.add('hidden');
@@ -621,10 +623,12 @@ async function startLearning() {
       <div style="color:#6B7280;">${detail}</div>
       <div style="margin-top:10px;font-size:0.85rem;color:#9CA3AF;">בחר יחידה אחרת מהתפריט או נסה שוב.</div>
     `);
+    document.getElementById('greeting-picker').classList.remove('hidden');
+    document.getElementById('chat-input-row').classList.add('hidden');
     document.getElementById('input-area').classList.remove('hidden');
     setInput(true);
     S.greetingMode = true;
-    document.getElementById('user-input').placeholder = 'לדוגמה: בראשית פרק א, בבא קמא דף ב...';
+    gpCollectionChange();
     btn.disabled = !S.unit;
   } finally {
     spinner.classList.add('hidden');
@@ -1084,6 +1088,93 @@ async function loadHistory() {
   }
 }
 
+// ── Greeting picker ──────────────────────────────────────────────
+function gpCollectionChange() {
+  const key = document.getElementById('gp-collection').value;
+  S.collectionKey = key;
+  S.book = null; S.unit = null;
+  document.getElementById('sel-collection').value = key;
+  const col = COLLECTIONS[key];
+  const bookSel = document.getElementById('gp-book');
+  bookSel.innerHTML = '<option value="">— ספר —</option>';
+  // Group by g field if available
+  const groups = {};
+  col.items.forEach(item => {
+    const g = item.g || '';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(item);
+  });
+  Object.entries(groups).forEach(([g, items]) => {
+    if (g) {
+      const og = document.createElement('optgroup');
+      og.label = g;
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.sf;
+        opt.textContent = item.he;
+        og.appendChild(opt);
+      });
+      bookSel.appendChild(og);
+    } else {
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.sf;
+        opt.textContent = item.he;
+        bookSel.appendChild(opt);
+      });
+    }
+  });
+  const unitSel = document.getElementById('gp-unit');
+  unitSel.innerHTML = '<option value="">— יחידה —</option>';
+  unitSel.disabled = true;
+  const btn = document.getElementById('gp-start');
+  btn.disabled = true; btn.style.opacity = '0.5';
+}
+
+function gpBookChange() {
+  const sf = document.getElementById('gp-book').value;
+  const col = COLLECTIONS[S.collectionKey];
+  S.book = col.items.find(b => b.sf === sf) || null;
+  S.unit = null;
+  document.getElementById('sel-book').value = sf;
+  const unitSel = document.getElementById('gp-unit');
+  unitSel.innerHTML = '<option value="">— יחידה —</option>';
+  const btn = document.getElementById('gp-start');
+  if (!S.book) { unitSel.disabled = true; btn.disabled = true; btn.style.opacity='0.5'; return; }
+  unitSel.disabled = false;
+  if (col.type === 'daf') {
+    for (let d = 2; d <= S.book.daf; d++) {
+      for (const a of ['a','b']) {
+        const opt = document.createElement('option');
+        opt.value = `${d}${a}`;
+        opt.textContent = `דף ${toHebrew(d)}' עמוד ${a==='a'?'א':'ב'}'`;
+        unitSel.appendChild(opt);
+      }
+    }
+  } else {
+    for (let i = 1; i <= S.book.ch; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${col.unitLabel} ${toHebrew(i)}'`;
+      unitSel.appendChild(opt);
+    }
+  }
+}
+
+function gpUnitChange() {
+  S.unit = document.getElementById('gp-unit').value || null;
+  const btn = document.getElementById('gp-start');
+  btn.disabled = !S.unit; btn.style.opacity = S.unit ? '1' : '0.5';
+}
+
+function gpStart() {
+  if (!S.book || !S.unit) return;
+  S.greetingMode = false;
+  document.getElementById('greeting-picker').classList.add('hidden');
+  document.getElementById('chat-input-row').classList.remove('hidden');
+  startLearning();
+}
+
 // ── Greeting mode ────────────────────────────────────────────────
 function showGreeting() {
   S.greetingMode = true;
@@ -1100,16 +1191,17 @@ function showGreeting() {
     <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
       <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
       <div>יחד נעמיק בתורה הקדושה.</div>
-      <div style="margin-top:6px;">אתה תבחר <strong>ספר ופרק</strong> מהתנ"ך, <strong>מסכת ודף</strong>, או כל ספר אחר — ואני אתחיל ללמוד איתך חברותא.</div>
+      <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
       <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
     </div>`;
   chatEl.appendChild(outer);
 
+  // Show picker instead of free text
+  document.getElementById('greeting-picker').classList.remove('hidden');
+  document.getElementById('chat-input-row').classList.add('hidden');
   document.getElementById('input-area').classList.remove('hidden');
   setInput(true);
-  const ta = document.getElementById('user-input');
-  ta.placeholder = 'לדוגמה: בראשית פרק א, בבא קמא דף ב...';
-  ta.focus();
+  gpCollectionChange(); // init picker with current collection
   document.getElementById('header-new-btn').classList.add('hidden');
 }
 
