@@ -465,98 +465,6 @@ function saveAdminPrompts() {
   setTimeout(() => msg.classList.add('hidden'), 2500);
 }
 
-// ── Dropdown builders ────────────────────────────────────────────
-function buildBookDropdown() {
-  const col = COLLECTIONS[S.collectionKey];
-  const sel = document.getElementById('sel-book');
-  sel.innerHTML = '<option value="">— ספר —</option>';
-
-  const groups = {};
-  for (const item of col.items) {
-    if (!groups[item.g]) groups[item.g] = [];
-    groups[item.g].push(item);
-  }
-  for (const [grp, items] of Object.entries(groups)) {
-    const og = document.createElement('optgroup');
-    og.label = grp;
-    for (const item of items) {
-      const o = document.createElement('option');
-      o.value = item.sf;
-      o.textContent = item.he;
-      og.appendChild(o);
-    }
-    sel.appendChild(og);
-  }
-
-  // Reset unit and start button
-  document.getElementById('sel-unit').innerHTML = '<option value="">— יחידה —</option>';
-  document.getElementById('sel-unit').disabled = true;
-  document.getElementById('header-start-btn').disabled = true;
-  S.book = null;
-  S.unit = null;
-}
-
-function buildUnitDropdown() {
-  const col = COLLECTIONS[S.collectionKey];
-  const sel = document.getElementById('sel-unit');
-  sel.innerHTML = '';
-
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = `— ${col.unitLabel} —`;
-  sel.appendChild(placeholder);
-
-  if (!S.book) { sel.disabled = true; return; }
-
-  sel.disabled = false;
-
-  if (col.type === 'daf') {
-    // Shas: daf from 2 to item.daf, each with amud א and ב
-    for (let d = 2; d <= S.book.daf; d++) {
-      const oA = document.createElement('option');
-      oA.value = `${d}a`;
-      oA.textContent = `דף ${toHebrew(d)}' עמוד א'`;
-      sel.appendChild(oA);
-
-      const oB = document.createElement('option');
-      oB.value = `${d}b`;
-      oB.textContent = `דף ${toHebrew(d)}' עמוד ב'`;
-      sel.appendChild(oB);
-    }
-  } else {
-    // Chapter-based
-    for (let i = 1; i <= S.book.ch; i++) {
-      const o = document.createElement('option');
-      o.value = i;
-      o.textContent = `${col.unitLabel} ${toHebrew(i)}'`;
-      sel.appendChild(o);
-    }
-  }
-}
-
-// ── Dropdown event handlers ──────────────────────────────────────
-function onCollectionChange() {
-  S.collectionKey = document.getElementById('sel-collection').value;
-  S.book = null;
-  S.unit = null;
-  buildBookDropdown();
-}
-
-function onBookChange() {
-  const col = COLLECTIONS[S.collectionKey];
-  const sf  = document.getElementById('sel-book').value;
-  S.book    = col.items.find(b => b.sf === sf) || null;
-  S.unit    = null;
-  document.getElementById('header-start-btn').disabled = true;
-  buildUnitDropdown();
-}
-
-function onUnitChange() {
-  const val = document.getElementById('sel-unit').value;
-  S.unit = val || null;
-  document.getElementById('header-start-btn').disabled = !S.unit;
-}
-
 // ── Fetch content from Sefaria ───────────────────────────────────
 async function fetchContent(collectionKey, item, unit) {
   const col = COLLECTIONS[collectionKey];
@@ -586,9 +494,9 @@ async function startLearning() {
   S.sessionStarted = false;
   S.greetingMode   = false;
 
-  const btn     = document.getElementById('header-start-btn');
+  const btn     = document.getElementById('gp-start');
   const spinner = document.getElementById('header-spinner');
-  btn.disabled  = true;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   spinner.classList.remove('hidden');
 
   // Clear chat and hide welcome
@@ -644,7 +552,7 @@ async function startLearning() {
     setInput(true);
     S.greetingMode = true;
     gpCollectionChange();
-    btn.disabled = !S.unit;
+    if (btn) { btn.disabled = !S.unit; btn.style.opacity = S.unit ? '1' : '0.5'; }
   } finally {
     spinner.classList.add('hidden');
   }
@@ -869,7 +777,7 @@ function popScore(pts) {
   setTimeout(() => {
     el.classList.add('hidden');
     inner.classList.remove('score-pop');
-  }, 1600);
+  }, 2500);
 }
 
 // ── Finished ─────────────────────────────────────────────────────
@@ -911,7 +819,6 @@ function resetSession() {
   S.loading        = false;
   S.sessionStarted = false;
 
-  document.getElementById('header-start-btn').disabled = !S.unit;
   showGreeting();
 }
 
@@ -1107,7 +1014,6 @@ function gpCollectionChange() {
   const key = document.getElementById('gp-collection').value;
   S.collectionKey = key;
   S.book = null; S.unit = null;
-  document.getElementById('sel-collection').value = key;
   const col = COLLECTIONS[key];
   const bookSel = document.getElementById('gp-book');
   bookSel.innerHTML = '<option value="">— ספר —</option>';
@@ -1150,7 +1056,6 @@ function gpBookChange() {
   const col = COLLECTIONS[S.collectionKey];
   S.book = col.items.find(b => b.sf === sf) || null;
   S.unit = null;
-  document.getElementById('sel-book').value = sf;
   const unitSel = document.getElementById('gp-unit');
   unitSel.innerHTML = '<option value="">— יחידה —</option>';
   const btn = document.getElementById('gp-start');
@@ -1234,11 +1139,20 @@ function showGreeting() {
         <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
       </div>`;
     chatEl.appendChild(outer);
-    document.getElementById('greeting-picker').classList.remove('hidden');
-    document.getElementById('chat-input-row').classList.add('hidden');
-    document.getElementById('input-area').classList.remove('hidden');
-    setInput(true);
-    gpCollectionChange();
+    const startBtn = document.createElement('button');
+    startBtn.textContent = 'התחלת לימוד עם רבי בניהו ✦';
+    startBtn.style.cssText = 'display:block;margin:0 auto 16px;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 28px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
+    startBtn.onmouseenter = () => { startBtn.style.transform='translateY(-2px)'; startBtn.style.boxShadow='0 8px 24px rgba(27,58,107,0.35)'; };
+    startBtn.onmouseleave = () => { startBtn.style.transform=''; startBtn.style.boxShadow=''; };
+    startBtn.onclick = () => {
+      startBtn.remove();
+      document.getElementById('greeting-picker').classList.remove('hidden');
+      document.getElementById('chat-input-row').classList.add('hidden');
+      document.getElementById('input-area').classList.remove('hidden');
+      setInput(true);
+      gpCollectionChange();
+    };
+    chatEl.appendChild(startBtn);
   }, 3200);
 }
 
@@ -1313,12 +1227,12 @@ function rabbiSayBubble(html) {
 async function handleGreetingResponse(text) {
   const parsed = parseStudyRequest(text);
   if (parsed) {
-    document.getElementById('sel-collection').value = parsed.collection;
-    onCollectionChange();
-    document.getElementById('sel-book').value = parsed.bookSf;
-    onBookChange();
-    document.getElementById('sel-unit').value = String(parsed.unit);
-    onUnitChange();
+    document.getElementById('gp-collection').value = parsed.collection;
+    gpCollectionChange();
+    document.getElementById('gp-book').value = parsed.bookSf;
+    gpBookChange();
+    document.getElementById('gp-unit').value = String(parsed.unit);
+    gpUnitChange();
     S.greetingMode = false;
     await startLearning();
   } else {
@@ -1327,7 +1241,7 @@ async function handleGreetingResponse(text) {
       <span style="display:block;margin-top:8px;">📖 <strong>בראשית פרק א</strong></span>
       <span style="display:block;">📜 <strong>ברכות פרק א</strong> (משנה)</span>
       <span style="display:block;">🕍 <strong>בבא קמא דף ב</strong></span>
-      <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">או בחר מהתפריט למעלה ולחץ <strong>התחל</strong>.</span>
+      <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">או בחר מהתפריט ולחץ <strong>התחל</strong>.</span>
     `);
   }
 }
@@ -1379,7 +1293,6 @@ async function saveEmailTemplate(type) {
 async function init() {
   S.totalScore = parseInt(localStorage.getItem('chavruta_score') || '0', 10);
   refreshScores();
-  buildBookDropdown();
 
   const user = getUser();
   if (user) {

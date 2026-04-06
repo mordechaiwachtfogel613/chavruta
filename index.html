@@ -46,9 +46,13 @@
     /* ── Score pop-up ── */
     @keyframes scoreFloat {
       0%   { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-60px) scale(1.4); }
+      15%  { transform: translateY(-8px) scale(1.55); }
+      30%  { transform: translateY(-4px) scale(1.4); }
+      45%  { transform: translateY(-18px) scale(1.5); }
+      75%  { opacity: 1; transform: translateY(-70px) scale(1.35); }
+      100% { opacity: 0; transform: translateY(-110px) scale(1.1); }
     }
-    .score-pop { animation: scoreFloat 1.5s ease-out forwards; }
+    .score-pop { animation: scoreFloat 2.4s ease-out forwards; }
 
     /* ── Typing dots ── */
     .dot { animation: bounce 1.2s infinite; }
@@ -114,7 +118,7 @@
       #user-greeting { display: none !important; }
       #history-btn { font-size: 0.7rem; padding: 3px 8px; }
       #logout-btn { font-size: 0.7rem; padding: 3px 8px; }
-      #header-start-btn { font-size: 0.8rem; padding: 5px 10px; }
+
       .modal-card { padding: 20px; }
       #chat { padding: 10px 8px; }
       #input-area { padding: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -145,20 +149,6 @@
     .header-select option { background: #1B3A6B; color: #fff; }
     .header-select:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    #header-start-btn {
-      background: #F0C040;
-      color: #0F2240;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all .2s;
-      white-space: nowrap;
-    }
-    #header-start-btn:hover:not(:disabled) { background: #FFD700; transform: translateY(-1px); }
-    #header-start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     #score-badge-header {
       display: flex;
@@ -540,26 +530,6 @@
       <button id="admin-btn" onclick="openAdmin()" class="hidden"
               style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;">
         ⚙️ ניהול
-      </button>
-
-      <select id="sel-collection" class="header-select" onchange="onCollectionChange()">
-        <option value="tanach">תנ"ך</option>
-        <option value="mishnah">משנה</option>
-        <option value="shas">ש"ס בבלי</option>
-        <option value="rambam">רמב"ם</option>
-        <option value="shulchan">שולחן ערוך</option>
-      </select>
-
-      <select id="sel-book" class="header-select" onchange="onBookChange()">
-        <option value="">— ספר —</option>
-      </select>
-
-      <select id="sel-unit" class="header-select" disabled onchange="onUnitChange()">
-        <option value="">— יחידה —</option>
-      </select>
-
-      <button id="header-start-btn" onclick="startLearning()" disabled>
-        התחל ✦
       </button>
 
       <button id="header-new-btn" onclick="resetSession()" class="hidden"

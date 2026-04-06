@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>חברותא – לימוד תורה אינטראקטיבי</title>
+  <link rel="icon" href="rabbi.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Serif Hebrew', serif; }
+
+    body {
+      min-height: 100vh;
+      background: #FDF8EF;
+      color: #2C1810;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* subtle parchment texture via radial gradients */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(184,134,11,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(27,58,107,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .card {
+      max-width: 620px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .rabbi-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #B8860B;
+      box-shadow: 0 8px 40px rgba(27,58,107,0.22);
+      margin-bottom: 28px;
+    }
+
+    .headline {
+      font-size: clamp(2.4rem, 8vw, 3.8rem);
+      font-weight: 900;
+      color: #1B3A6B;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .headline span {
+      color: #B8860B;
+    }
+
+    .sub1 {
+      font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+      font-weight: 700;
+      color: #2C1810;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .sub2 {
+      font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+      font-weight: 400;
+      color: #6B5744;
+      line-height: 1.7;
+      margin-bottom: 44px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #1B3A6B, #0F2240);
+      color: #F0C040;
+      border: none;
+      border-radius: 16px;
+      padding: 18px 42px;
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 8px 32px rgba(27,58,107,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 40px rgba(27,58,107,0.4);
+    }
+
+    .divider {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #B8860B, #F0C040);
+      border-radius: 2px;
+      margin: 28px auto;
+    }
+
+    .collections {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .collections span {
+      background: rgba(27,58,107,0.08);
+      border: 1px solid rgba(184,134,11,0.3);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.82rem;
+      color: #1B3A6B;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="rabbi.png" alt="רבי בניהו" class="rabbi-img">
+
+    <h1 class="headline">קשה לך <span>ללמוד?</span></h1>
+
+    <p class="sub1">רבי בניהו — החברותא שלך — יגרום לך<br>להתמכר ללימוד תורה</p>
+
+    <div class="divider"></div>
+
+    <p class="sub2">שיטה חדשנית ללימוד תורה ביחד עם חברותא מותאמת אישית.<br>שואלת, מסבירה, ומתקדמת בדיוק בקצב שלך.</p>
+
+    <a href="index.html" class="cta-btn">אני רוצה להתמכר ללימוד תורה ✦</a>
+
+    <div class="collections">
+      <span>תנ"ך</span>
+      <span>משנה</span>
+      <span>ש"ס בבלי</span>
+      <span>רמב"ם</span>
+      <span>שולחן ערוך</span>
+    </div>
+  </div>
+</body>
+</html>
