@@ -1169,6 +1169,7 @@ function gpUnitChange() {
 
 function gpStart() {
   if (!S.book || !S.unit) return;
+  if (_greetingTimer) { clearTimeout(_greetingTimer); _greetingTimer = null; }
   S.greetingMode = false;
   document.getElementById('greeting-picker').classList.add('hidden');
   document.getElementById('chat-input-row').classList.remove('hidden');
@@ -1176,7 +1177,12 @@ function gpStart() {
 }
 
 // ── Greeting mode ────────────────────────────────────────────────
+let _greetingTimer = null;
+
 function showGreeting() {
+  // Cancel any previous pending greeting timer
+  if (_greetingTimer) { clearTimeout(_greetingTimer); _greetingTimer = null; }
+
   S.greetingMode = true;
   const chatEl = document.getElementById('chat');
   chatEl.innerHTML = '';
@@ -1195,7 +1201,10 @@ function showGreeting() {
   chatEl.appendChild(welcomeDiv);
 
   // Phase 2 — after animations complete, show rabbi bubble + picker
-  setTimeout(() => {
+  _greetingTimer = setTimeout(() => {
+    _greetingTimer = null;
+    // Guard: if session already started (user was fast), don't overwrite
+    if (S.sessionStarted) return;
     chatEl.innerHTML = '';
     const outer = document.createElement('div');
     outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
@@ -1211,13 +1220,12 @@ function showGreeting() {
         <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
       </div>`;
     chatEl.appendChild(outer);
-
     document.getElementById('greeting-picker').classList.remove('hidden');
     document.getElementById('chat-input-row').classList.add('hidden');
     document.getElementById('input-area').classList.remove('hidden');
     setInput(true);
     gpCollectionChange();
-  }, 3200); // last anim starts at 2.4s + 0.65s ≈ 3.05s
+  }, 3200);
 }
 
 // Hebrew numeral → integer
