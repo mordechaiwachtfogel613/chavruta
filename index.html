@@ -3,662 +3,219 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>חברותא – לימוד אינטראקטיבי</title>
-  <link rel="icon" href="rabbi.png">
+  <title>מכון בינת אמת – מפתחות לספרי קודש</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { hebrew: ['Noto Serif Hebrew', 'serif'] },
-          colors: {
-            parchment:     '#FDF8EF',
-            parchmentDark: '#F0E6C8',
-            ink:           '#2C1810',
-            navy:          '#1B3A6B',
-            navyDark:      '#0F2240',
-            gold:          '#B8860B',
-            goldLight:     '#F0C040',
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    * { font-family: 'Noto Serif Hebrew', serif; }
-    html, body { height: 100%; margin: 0; padding: 0; }
-    body { background-color: #FDF8EF; color: #2C1810; display: flex; flex-direction: column; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Verse box ── */
-    .verse-box {
-      background: linear-gradient(135deg, #FFFBF0, #FFF5D0);
-      border-right: 5px solid #B8860B;
-      border-radius: 0 12px 12px 0;
+    body {
+      font-family: 'Noto Serif Hebrew', serif;
+      background-color: #FDF8EF;
+      color: #2C1810;
+      direction: rtl;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-
-    /* ── Chat bubbles ── */
-    .bubble-ai   { background: #fff; border: 1px solid #E8DCC8; }
-    .bubble-user { background: #1B3A6B; color: #fff; }
-
-    /* ── Score pop-up ── */
-    @keyframes scoreFloat {
-      0%   { opacity: 1; transform: translateY(0) scale(1); }
-      15%  { transform: translateY(-8px) scale(1.55); }
-      30%  { transform: translateY(-4px) scale(1.4); }
-      45%  { transform: translateY(-18px) scale(1.5); }
-      75%  { opacity: 1; transform: translateY(-70px) scale(1.35); }
-      100% { opacity: 0; transform: translateY(-110px) scale(1.1); }
-    }
-    .score-pop { animation: scoreFloat 2.4s ease-out forwards; }
-
-    /* ── Typing dots ── */
-    .dot { animation: bounce 1.2s infinite; }
-    .dot:nth-child(2) { animation-delay: .2s; }
-    .dot:nth-child(3) { animation-delay: .4s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); }
-      40%           { transform: translateY(-8px); }
-    }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #D4C5A9; border-radius: 3px; }
-
-    /* ── Select styling ── */
-    select {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: left 8px center;
-      padding-left: 28px;
-    }
-
-    .start-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(27,58,107,0.35); }
-    .start-btn { transition: all .2s ease; }
-
-    /* ── App layout ── */
-    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 
     /* ── Header ── */
-    #app-header {
-      flex-shrink: 0;
-      background: linear-gradient(135deg, #1B3A6B, #0F2240);
-      color: #fff;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
+    header {
+      background: linear-gradient(135deg, #1B3A6B 0%, #0F2240 100%);
+      color: #FDF8EF;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+      border-bottom: 4px solid #B8860B;
     }
-    #app-header .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    #app-header .header-left  { display: flex; align-items: center; gap: 8px; }
-
-    /* ── Streak badge ── */
-    #streak-badge {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.12); border-radius: 10px;
-      padding: 3px 8px; font-size: 0.7rem; color: rgba(255,255,255,0.8);
-      white-space: nowrap; min-width: 44px;
+    header .ornament {
+      font-size: 2rem;
+      color: #F0C040;
+      letter-spacing: 0.5rem;
+      margin-bottom: 0.6rem;
     }
-    #streak-badge .streak-num { font-size: 1rem; font-weight: 800; color: #FFA500; line-height: 1; }
-
-    /* ── Mobile ── */
-    @media (max-width: 640px) {
-      #app-header { flex-direction: column; align-items: stretch; padding: 6px 8px; gap: 4px; }
-      .header-left { order: 1; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 5px; }
-      .header-right { order: 2; flex-wrap: wrap; justify-content: center; gap: 5px; }
-      .header-select { font-size: 0.75rem; padding: 4px 22px 4px 5px; max-width: 100px; }
-      #logo-btn { font-size: 0.95rem; }
-      #score-badge-header { width: 40px; height: 40px; }
-      #user-greeting { display: none !important; }
-      #history-btn { font-size: 0.7rem; padding: 3px 8px; }
-      #logout-btn { font-size: 0.7rem; padding: 3px 8px; }
-
-      .modal-card { padding: 20px; }
-      #chat { padding: 10px 8px; }
-      #input-area { padding: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-      .bubble-ai, .bubble-user { font-size: 0.9rem; padding: 10px 13px; }
+    header h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    header h2 {
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: #F0C040;
+      letter-spacing: 0.08em;
     }
 
-    #logo-btn {
-      font-size: 1.1rem;
+    /* ── Main ── */
+    main {
+      flex: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      width: 100%;
+    }
+
+    .intro {
+      background: #fff;
+      border: 1px solid #e0d5be;
+      border-right: 5px solid #B8860B;
+      border-radius: 6px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      line-height: 2;
+      font-size: 1.08rem;
+    }
+    .intro p + p { margin-top: 0.9rem; }
+
+    /* ── Cards grid ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2.5rem;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e0d5be;
+      border-top: 4px solid #1B3A6B;
+      border-radius: 6px;
+      padding: 1.4rem 1.5rem;
+      text-align: center;
+    }
+    .card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .card h3 { font-size: 1.05rem; font-weight: 700; color: #1B3A6B; margin-bottom: 0.4rem; }
+    .card p  { font-size: 0.92rem; line-height: 1.7; color: #4a3828; }
+
+    /* ── Contact ── */
+    .contact-section {
+      background: #1B3A6B;
+      color: #FDF8EF;
+      border-radius: 8px;
+      padding: 2rem 2rem 1.8rem;
+      text-align: center;
+    }
+    .contact-section h3 {
+      font-size: 1.4rem;
       font-weight: 700;
       color: #F0C040;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 0;
-      white-space: nowrap;
-      user-select: none;
+      margin-bottom: 1.4rem;
+      letter-spacing: 0.05em;
     }
-
-    .header-select {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: #fff;
-      border-radius: 8px;
-      padding: 5px 28px 5px 8px;
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .contact-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(240,192,64,0.3);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .contact-item .label {
       font-size: 0.85rem;
-      cursor: pointer;
+      color: #F0C040;
+      margin-bottom: 0.3rem;
     }
-    .header-select option { background: #1B3A6B; color: #fff; }
-    .header-select:disabled { opacity: 0.4; cursor: not-allowed; }
-
-
-    #score-badge-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #F0C040, #B8860B);
-      flex-shrink: 0;
+    .contact-item .value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      direction: ltr;
     }
+    .contact-item .value a {
+      color: #FDF8EF;
+      text-decoration: none;
+    }
+    .contact-item .value a:hover { text-decoration: underline; }
 
-    /* ── Chat area ── */
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      overscroll-behavior: contain;
+    .hours {
+      font-size: 0.9rem;
+      color: #c8d8f0;
+      margin-top: 0.5rem;
     }
 
-    /* ── Input area ── */
-    #input-area {
-      flex-shrink: 0;
-      background: #fff;
-      border-top: 1px solid #E8DCC8;
-      padding: 10px 12px;
-    }
-
-    /* ── Modal overlay ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 16px;
-    }
-    .modal-card {
-      background: #FDF8EF;
-      border-radius: 20px;
-      padding: 32px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
-      border: 1px solid #E8DCC8;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    /* ── Admin textarea ── */
-    .admin-textarea {
-      width: 100%;
-      border: 1px solid #D4C5A9;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 0.8rem;
-      background: #fff;
-      resize: vertical;
-      direction: rtl;
-      line-height: 1.5;
-    }
-
-    /* ── Loading spinner ── */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { animation: spin 0.8s linear infinite; }
-
-    /* ── Welcome ── */
-    #welcome {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
+    /* ── Footer ── */
+    footer {
+      background: #0F2240;
+      color: #8a9dbf;
       text-align: center;
-      gap: 14px;
+      padding: 1rem;
+      font-size: 0.85rem;
     }
-    .rabbi-avatar-lg {
-      width: 160px; height: 160px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 4px solid #B8860B;
-      box-shadow: 0 8px 36px rgba(27,58,107,0.22);
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.9rem; }
+      .intro { padding: 1.2rem 1.2rem; }
     }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .anim-line { opacity: 0; animation: fadeUp 0.65s ease forwards; }
-    .anim-1 { animation-delay: 0.15s; }
-    .anim-2 { animation-delay: 0.85s; }
-    .anim-3 { animation-delay: 1.6s;  }
-    .anim-sub { animation-delay: 2.4s; }
-    #chat [id$="-msg"] { transition: opacity 0.2s ease; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     REGISTRATION MODAL
-═══════════════════════════════════════════════ -->
-<div id="modal-register" class="modal-overlay">
-  <div class="modal-card">
-    <div class="text-center mb-6">
-      <img src="rabbi.png" alt="רבי בניהו" style="width:110px;border-radius:16px;margin:0 auto 12px;box-shadow:0 8px 24px rgba(27,58,107,0.18);">
-      <h1 class="text-2xl font-bold text-navy mb-1">ברוכים הבאים לחברותא</h1>
-      <p class="text-sm font-semibold" style="color:#B8860B;">הצטרפו ותלמדו עם רבי בניהו 📖</p>
-      <p class="text-gray-400 text-xs mt-1">תנ"ך • משנה • גמרא • רמב"ם • שולחן ערוך</p>
-    </div>
-
-    <div class="mb-4">
-      <label class="block text-sm font-semibold text-gray-600 mb-1">שם מלא <span class="text-red-500">*</span></label>
-      <input type="text" id="reg-name" placeholder="ישראל ישראלי" maxlength="50"
-             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white text-right"
-             onkeydown="regHandleKey(event)">
-    </div>
-
-    <div class="mb-6">
-      <label class="block text-sm font-semibold text-gray-600 mb-1">כתובת מייל <span class="text-red-500">*</span></label>
-      <input type="email" id="reg-email" placeholder="israel@example.com" maxlength="100"
-             class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white"
-             dir="ltr" onkeydown="regHandleKey(event)">
-    </div>
-
-    <div id="reg-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center"></div>
-
-    <button onclick="register()" id="reg-btn"
-            class="start-btn w-full py-4 bg-navy text-white text-xl font-bold rounded-xl">
-      כניסה ✦
-    </button>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════
-     PENDING SCREEN
-═══════════════════════════════════════════════ -->
-<div id="pending-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-8" style="background:#f5f0e8;">
-  <div class="text-center max-w-md">
-    <img src="rabbi.png" alt="רבי בניהו" style="width:100px;border-radius:14px;margin:0 auto 16px;opacity:0.75;">
-    <h2 class="text-2xl font-bold text-navy mb-3">בקשתך התקבלה!</h2>
-    <p class="text-gray-600 mb-2">רבי בניהו מחכה לך — חשבונך ממתין לאישור המנהל.</p>
-    <p class="text-gray-500 text-sm">לאחר שהמנהל יאשר את הצטרפותך, תוכל להתחיל ללמוד.</p>
-    <button onclick="logout()" class="mt-6 text-sm text-gray-500 hover:text-navy border border-gray-300 rounded-full px-4 py-2 transition-colors">התנתק</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
-     ADMIN MODAL
-═══════════════════════════════════════════════ -->
-<div id="modal-admin" class="modal-overlay hidden">
-  <div class="modal-card" style="max-width:580px;max-height:88vh;overflow-y:auto;">
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="text-xl font-bold text-navy">⚙️ פאנל ניהול – חברותא</h2>
-      <button onclick="closeAdmin()" class="text-gray-400 hover:text-red-500 text-2xl leading-none">&times;</button>
-    </div>
-
-    <!-- Password gate -->
-    <div id="admin-pw-gate">
-      <p class="text-sm text-gray-500 mb-3">הזן סיסמת מנהל:</p>
-      <div class="flex gap-2">
-        <input type="password" id="admin-pw-input" placeholder="סיסמה"
-               class="flex-1 p-3 border border-gray-300 rounded-xl text-base"
-               dir="ltr" onkeydown="adminPwKey(event)">
-        <button onclick="checkAdminPw()"
-                class="px-5 py-2 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
-          כניסה
-        </button>
-      </div>
-      <div id="admin-pw-error" class="hidden mt-2 text-red-600 text-sm text-center">סיסמה שגויה</div>
-    </div>
-
-    <!-- Editor panel (shown after auth) -->
-    <div id="admin-editor" class="hidden">
-
-      <!-- Users management -->
-      <div class="mb-5 border border-gray-200 rounded-xl overflow-hidden">
-        <div class="bg-gray-50 px-3 py-2 flex items-center justify-between border-b border-gray-200">
-          <span class="text-sm font-semibold text-navy">👥 ניהול משתמשים</span>
-          <button onclick="loadAdminUsers()" class="text-xs text-blue-500 hover:underline">רענן</button>
-        </div>
-        <div id="admin-users-list" class="p-3 space-y-2 max-h-52 overflow-y-auto text-right">
-          <p class="text-sm text-gray-400 text-center">טוען...</p>
-        </div>
-      </div>
-      <hr class="border-gray-200 mb-4">
-
-      <!-- Model selector -->
-      <div class="mb-5">
-        <label class="block text-sm font-semibold text-navy mb-1">מודל AI</label>
-        <select id="admin-model-select" class="w-full p-2 border border-gray-300 rounded-xl text-sm bg-white" onchange="GLOBAL_MODEL=this.value">
-          <optgroup label="Anthropic (Claude)">
-            <option value="anthropic/claude-opus-4">Claude Opus 4</option>
-            <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
-            <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5</option>
-          </optgroup>
-          <optgroup label="Google (Gemini)">
-            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
-            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
-            <option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-          </optgroup>
-          <optgroup label="DeepSeek">
-            <option value="deepseek/deepseek-r1">DeepSeek R1</option>
-            <option value="deepseek/deepseek-chat-v3-0324">DeepSeek V3</option>
-            <option value="deepseek/deepseek-r1-distill-llama-70b">DeepSeek R1 Distill 70B</option>
-          </optgroup>
-          <optgroup label="Qwen (Alibaba)">
-            <option value="qwen/qwen3-235b-a22b">Qwen3 235B</option>
-            <option value="qwen/qwen3-30b-a3b">Qwen3 30B</option>
-            <option value="qwen/qwq-32b">QwQ 32B</option>
-            <option value="qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B</option>
-          </optgroup>
-          <optgroup label="Mistral">
-            <option value="mistralai/mistral-large-2411">Mistral Large 2411</option>
-            <option value="mistralai/mistral-medium-3">Mistral Medium 3</option>
-            <option value="mistralai/mistral-small-3.2-24b-instruct">Mistral Small 3.2 24B</option>
-            <option value="mistralai/codestral-2501">Codestral 2501</option>
-          </optgroup>
-        </select>
-      </div>
-      <hr class="border-gray-200 mb-4">
-
-      <p class="text-sm text-gray-500 mb-4">עריכת הנחיות מערכת לכל אוסף. הטקסט הנוכחי מוצג כברירת מחדל — ערוך ושמור לשינוי:</p>
-
-      <div class="space-y-4">
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-sm font-semibold text-navy">תנ"ך</label>
-            <button onclick="resetPrompt('tanach')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
-          </div>
-          <textarea id="admin-prompt-tanach" class="admin-textarea" rows="4"></textarea>
-        </div>
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-sm font-semibold text-navy">משנה</label>
-            <button onclick="resetPrompt('mishnah')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
-          </div>
-          <textarea id="admin-prompt-mishnah" class="admin-textarea" rows="4"></textarea>
-        </div>
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-sm font-semibold text-navy">ש"ס בבלי</label>
-            <button onclick="resetPrompt('shas')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
-          </div>
-          <textarea id="admin-prompt-shas" class="admin-textarea" rows="4"></textarea>
-        </div>
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-sm font-semibold text-navy">רמב"ם</label>
-            <button onclick="resetPrompt('rambam')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
-          </div>
-          <textarea id="admin-prompt-rambam" class="admin-textarea" rows="4"></textarea>
-        </div>
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-sm font-semibold text-navy">שולחן ערוך</label>
-            <button onclick="resetPrompt('shulchan')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
-          </div>
-          <textarea id="admin-prompt-shulchan" class="admin-textarea" rows="4"></textarea>
-        </div>
-      </div>
-
-      <div class="flex gap-3 mt-6">
-        <button onclick="saveAdminPrompts()"
-                class="flex-1 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
-          שמור הנחיות
-        </button>
-        <button onclick="closeAdmin()"
-                class="py-3 px-6 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
-          סגור
-        </button>
-      </div>
-      <div id="admin-save-msg" class="hidden mt-3 text-green-700 text-sm text-center font-semibold">✓ נשמר בהצלחה</div>
-
-      <!-- Email Templates -->
-      <hr class="border-gray-200 my-5">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-semibold text-navy">✉️ תבניות מיילים</span>
-        <span class="text-xs text-gray-400">משתנים: <code>&#123;&#123;name&#125;&#125;</code> <code>&#123;&#123;email&#125;&#125;</code></span>
-      </div>
-
-      <!-- Welcome -->
-      <div class="mb-3 border border-gray-200 rounded-xl overflow-hidden">
-        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">📧 מייל ברוכים הבאים (בעת הרשמה)</div>
-        <div class="p-3 space-y-2">
-          <input id="email-subj-welcome" type="text" placeholder="נושא המייל" dir="rtl"
-                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-          <textarea id="email-body-welcome" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
-          <div class="flex items-center gap-2">
-            <button onclick="saveEmailTemplate('welcome')"
-                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
-            <span id="email-save-msg-welcome" class="hidden text-green-600 text-xs">✓ נשמר</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Approval -->
-      <div class="mb-3 border border-gray-200 rounded-xl overflow-hidden">
-        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">✅ מייל אישור משתמש</div>
-        <div class="p-3 space-y-2">
-          <input id="email-subj-approval" type="text" placeholder="נושא המייל" dir="rtl"
-                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-          <textarea id="email-body-approval" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
-          <div class="flex items-center gap-2">
-            <button onclick="saveEmailTemplate('approval')"
-                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
-            <span id="email-save-msg-approval" class="hidden text-green-600 text-xs">✓ נשמר</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Admin Notify -->
-      <div class="mb-1 border border-gray-200 rounded-xl overflow-hidden">
-        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 text-xs font-semibold text-navy">🔔 התראה למנהל (משתמש חדש)</div>
-        <div class="p-3 space-y-2">
-          <input id="email-subj-admin_notify" type="text" placeholder="נושא המייל" dir="rtl"
-                 class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-          <textarea id="email-body-admin_notify" rows="4" placeholder="תוכן (HTML מותר)" class="admin-textarea text-sm"></textarea>
-          <div class="flex items-center gap-2">
-            <button onclick="saveEmailTemplate('admin_notify')"
-                    class="text-xs px-3 py-1.5 bg-navy text-white rounded-lg hover:bg-navyDark">שמור</button>
-            <span id="email-save-msg-admin_notify" class="hidden text-green-600 text-xs">✓ נשמר</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════
-     FINISHED MODAL
-═══════════════════════════════════════════════ -->
-<div id="modal-finished" class="modal-overlay hidden">
-  <div class="modal-card" style="max-width:360px; text-align:center;">
-    <img src="rabbi.png" alt="רבי בניהו" style="width:90px;border-radius:12px;margin:0 auto 10px;box-shadow:0 4px 16px rgba(27,58,107,0.2);">
-    <h3 class="text-2xl font-bold text-navy mb-2">כל הכבוד! 🎉</h3>
-    <p class="text-gray-600 mb-1" id="fin-msg">סיימת את היחידה!</p>
-    <p class="text-xl font-bold mb-6" style="color:#B8860B" id="fin-score">+0 נקודות</p>
-    <button onclick="shareSession()"
-            class="w-full py-3 mb-3 font-bold rounded-xl transition-colors"
-            style="background:#25D366;color:#fff;">
-      📱 שתף בוואטסאפ
-    </button>
-    <button onclick="resetSession()"
-            class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
-      בחר יחידה חדשה
-    </button>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════
-     SCORE POPUP
-═══════════════════════════════════════════════ -->
-<div id="score-popup" class="fixed top-24 left-1/2 -translate-x-1/2 pointer-events-none z-50 hidden">
-  <div id="score-popup-inner"
-       class="text-white text-2xl font-bold px-6 py-2 rounded-full shadow-2xl"
-       style="background: radial-gradient(circle, #F0C040, #B8860B)">+5</div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════
-     MAIN APP
-═══════════════════════════════════════════════ -->
-<div id="app">
-
-  <!-- ── Header ── -->
-  <header id="app-header">
-    <!-- Right side: logo + selects + start -->
-    <div class="header-right">
-      <button id="logo-btn" onclick="resetSession()" title="שיחה חדשה" style="display:flex;align-items:center;gap:7px;">
-        <img src="rabbi.png" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #F0C040;flex-shrink:0;">
-        חברותא
-      </button>
-
-      <button id="admin-btn" onclick="openAdmin()" class="hidden"
-              style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;">
-        ⚙️ ניהול
-      </button>
-
-      <button id="header-new-btn" onclick="resetSession()" class="hidden"
-              style="background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem;cursor:pointer;">
-        שיחה חדשה ↺
-      </button>
-
-      <!-- Loading spinner (inline) -->
-      <svg id="header-spinner" class="hidden spinner w-5 h-5 text-goldLight" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-      </svg>
-    </div>
-
-    <!-- Left side: score + greeting + logout -->
-    <div class="header-left">
-      <div id="score-badge-header">
-        <span class="text-white text-xs font-medium" style="line-height:1">ניקוד</span>
-        <span class="text-white text-lg font-bold" id="score-display">0</span>
-      </div>
-      <div id="streak-badge" class="hidden">
-        <span class="streak-num" id="streak-num">0</span>
-        <span>🔥 ימים</span>
-      </div>
-      <span id="user-greeting" class="text-sm text-blue-200 hidden"></span>
-      <button onclick="openHistory()" id="history-btn"
-              class="hidden text-xs border border-yellow-400 text-yellow-300 hover:bg-yellow-400 hover:text-navy rounded-full px-3 py-1 transition-colors">
-        📚 הלמידה שלי
-      </button>
-      <button onclick="logout()" id="logout-btn"
-              class="hidden text-xs text-blue-300 hover:text-white transition-colors border border-blue-400 rounded-full px-3 py-1">
-        יציאה
-      </button>
-    </div>
+  <header>
+    <div class="ornament">✦ ✦ ✦</div>
+    <h1>מכון בינת אמת</h1>
+    <h2>מפתחות לספרי קודש</h2>
   </header>
 
-  <!-- ── Chat area ── -->
-  <div id="chat">
-    <!-- Welcome state -->
-    <div id="welcome">
-      <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
-      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
-      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+  <main>
+
+    <div class="intro">
+      <p>
+        מכון <strong>בינת אמת</strong> עוסק בהנגשת ספרי הקודש לכלל לומדי התורה.
+        המכון מפיק ומפיץ <strong>מפתחות ואינדקסים</strong> מקיפים לספרי קודש יסודיים,
+        המאפשרים חיפוש מהיר ומדויק של נושאים, ענינים ומקורות.
+      </p>
+      <p>
+        פרי עמל רב שנים של תלמידי חכמים, המפתחות מיועדים לרבנים, דיינים, מגידי שיעור,
+        ולכל מי שתורתו אומנותו – כדי שהזמן היקר יוקדש ללימוד, לא לחיפוש.
+      </p>
     </div>
-  </div>
 
-  <!-- ── Input area (hidden until session starts) ── -->
-  <div id="input-area" class="hidden">
-
-    <!-- Greeting-mode selector (shown instead of free text) -->
-    <div id="greeting-picker" class="hidden"
-         style="background:#faf8f3;border:1.5px solid #d4c5a0;border-radius:16px;padding:14px 16px;text-align:right;">
-      <div style="color:#B8860B;font-weight:700;font-size:0.88rem;margin-bottom:10px;">📖 בחר מה ללמוד:</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
-        <select id="gp-collection" onchange="gpCollectionChange()"
-                class="header-select" style="background:#fff;color:#1a2744;border:1px solid #c9b99a;">
-          <option value="tanach">תנ"ך</option>
-          <option value="mishnah">משנה</option>
-          <option value="shas">ש"ס בבלי</option>
-          <option value="rambam">רמב"ם</option>
-          <option value="shulchan">שולחן ערוך</option>
-        </select>
-        <select id="gp-book" onchange="gpBookChange()"
-                class="header-select" style="background:#fff;color:#1a2744;border:1px solid #c9b99a;">
-          <option value="">— ספר —</option>
-        </select>
-        <select id="gp-unit" disabled onchange="gpUnitChange()"
-                class="header-select" style="background:#fff;color:#1a2744;border:1px solid #c9b99a;">
-          <option value="">— יחידה —</option>
-        </select>
-        <button id="gp-start" onclick="gpStart()" disabled
-                style="background:#1a2744;color:#F0C040;border:none;border-radius:10px;padding:8px 18px;font-weight:700;font-size:0.9rem;cursor:pointer;opacity:0.5;transition:opacity 0.2s;">
-          התחל ✦
-        </button>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">📚</div>
+        <h3>מפתחות לש"ס</h3>
+        <p>אינדקס שיטתי לכל מסכתות הש"ס בבלי וירושלמי לפי נושאים והלכות</p>
+      </div>
+      <div class="card">
+        <div class="icon">📖</div>
+        <h3>מפתחות לפוסקים</h3>
+        <p>מפתחות לשולחן ערוך, משנה ברורה, ופוסקי זמננו עם הפניות מדויקות</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔍</div>
+        <h3>חיפוש נושאים</h3>
+        <p>מערכת חיפוש לפי נושא, שאלה, או מונח – ותקבל את כל המקורות הרלוונטיים</p>
+      </div>
+      <div class="card">
+        <div class="icon">📬</div>
+        <h3>הזמנות ורכישה</h3>
+        <p>ניתן להזמין את חוברות המפתחות ישירות מהמכון – במשלוח לכל הארץ</p>
       </div>
     </div>
 
-    <!-- Normal chat input -->
-    <div id="chat-input-row" class="flex gap-2 items-end">
-      <button onclick="sendMessage()"
-              class="flex-shrink-0 px-5 py-2.5 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
-        שלח
-      </button>
-      <textarea id="user-input" rows="2" placeholder="כתוב את תשובתך כאן..."
-                class="flex-1 p-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-navy focus:border-transparent text-right leading-relaxed"
-                onkeydown="handleKey(event)"></textarea>
-    </div>
-  </div>
-
-</div><!-- /#app -->
-
-<!-- ═══════════════════════════════════════════════
-     HISTORY MODAL
-═══════════════════════════════════════════════ -->
-<div id="modal-history" class="modal-overlay hidden">
-  <div class="modal-card" style="max-width:640px;max-height:82vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1a2744 0%,#2d4373 100%);padding:24px 28px 20px;border-radius:20px 20px 0 0;flex-shrink:0;">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-white text-xl font-bold">📚 מסע הלמידה שלי</h2>
-        <button onclick="closeHistory()" class="text-white opacity-60 hover:opacity-100 text-2xl leading-none">&times;</button>
-      </div>
-      <!-- Stats -->
-      <div class="grid grid-cols-3 gap-3" id="history-stats">
-        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
-          <div class="text-2xl font-bold text-white" id="stat-units">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">יחידות שנלמדו</div>
+    <div class="contact-section">
+      <h3>צור קשר</h3>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="label">טלפון</div>
+          <div class="value"><a href="tel:0583298194">058-329-8194</a></div>
         </div>
-        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
-          <div class="text-2xl font-bold" style="color:#F0C040;" id="stat-score">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">נקודות כוללות</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
-          <div class="text-2xl font-bold text-white" id="stat-books">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">ספרים שנלמדו</div>
+        <div class="contact-item">
+          <div class="label">דוא"ל</div>
+          <div class="value"><a href="mailto:A0583298194@gmail.com">A0583298194@gmail.com</a></div>
         </div>
       </div>
+      <div class="hours">שעות פעילות: א'–ה' | 09:00–17:00</div>
     </div>
 
-    <!-- List -->
-    <div id="history-list" style="overflow-y:auto;flex:1;padding:20px 24px;background:#faf8f3;">
-      <div class="text-center text-gray-400 py-8">טוען...</div>
-    </div>
-  </div>
-</div>
+  </main>
 
-<script src="app.js"></script>
+  <footer>
+    &copy; מכון בינת אמת &nbsp;|&nbsp; כל הזכויות שמורות
+  </footer>
+
 </body>
 </html>
