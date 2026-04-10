@@ -822,6 +822,7 @@ async function startLearning() {
     chatEl.appendChild(sessionHeader);
 
     S.sessionStarted = true;
+    S.waitingForFirstQuestion = true; // Flag: skip wrong-answer on initial AI response
 
     // First AI call
     S.messages.push({
@@ -919,7 +920,9 @@ async function callAI() {
 // ── Process AI JSON ──────────────────────────────────────────────
 function processResponse(data) {
   if (data.score > 0) addScore(data.score);
-  if (data.score === 0 && data.feedback && data.feedback.trim()) wrongAnswer();
+  const isInitial = S.waitingForFirstQuestion;
+  S.waitingForFirstQuestion = false;
+  if (!isInitial && data.score === 0 && data.feedback && data.feedback.trim()) wrongAnswer();
 
   // Override verse from authoritative local source
   if (data.next_verse_num && S.verses[data.next_verse_num - 1]) {
