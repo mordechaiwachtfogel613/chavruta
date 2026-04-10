@@ -692,7 +692,7 @@ async function loadAdminUsers() {
   const container = document.getElementById('admin-users-list');
   container.innerHTML = `<p class="text-sm text-gray-400 text-center">${t('adminUsersLoading')}</p>`;
   try {
-    const res = await fetch('/api/users', { headers: { 'x-admin-secret': getAdminSecret() } });
+    const res = await fetch('/api/users', { headers: adminHeaders() });
     const users = await res.json();
     if (!Array.isArray(users) || !users.length) {
       container.innerHTML = `<p class="text-sm text-gray-400 text-center">${t('adminUsersEmpty')}</p>`;
@@ -1825,7 +1825,7 @@ const DEFAULT_EMAIL_BODIES = {
 
 async function loadEmailTemplates() {
   try {
-    const res  = await fetch('/api/email-templates', { headers: { 'x-admin-secret': getAdminSecret() } });
+    const res  = await fetch('/api/email-templates', { headers: adminHeaders() });
     const data = await res.json();
     for (const type of ['welcome', 'approval', 'admin_notify']) {
       const tmpl = data[type];
