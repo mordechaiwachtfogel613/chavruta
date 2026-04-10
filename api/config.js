@@ -1,14 +1,33 @@
 import { kv } from '@vercel/kv';
 
 const ALLOWED_MODELS = new Set([
+  // Anthropic
   'anthropic/claude-opus-4',
   'anthropic/claude-sonnet-4-5',
   'anthropic/claude-haiku-4-5',
   'anthropic/claude-3.7-sonnet',
+  // Google
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'google/gemini-2.0-flash-001',
+  // DeepSeek
+  'deepseek/deepseek-r1',
+  'deepseek/deepseek-chat-v3-0324',
+  'deepseek/deepseek-r1-distill-llama-70b',
+  // Qwen
+  'qwen/qwen3-235b-a22b',
+  'qwen/qwen3-30b-a3b',
+  'qwen/qwq-32b',
+  'qwen/qwen-2.5-72b-instruct',
+  // Mistral
+  'mistralai/mistral-large-2411',
+  'mistralai/mistral-medium-3',
+  'mistralai/mistral-small-3.2-24b-instruct',
+  'mistralai/codestral-2501',
+  // OpenAI / Meta (legacy)
   'openai/gpt-4o',
   'openai/gpt-4o-mini',
-  'google/gemini-2.5-pro',
-  'google/gemini-2.0-flash-001',
   'meta-llama/llama-3.3-70b-instruct',
 ]);
 
