@@ -775,7 +775,12 @@ async function fetchContent(collectionKey, item, unit) {
   if (!Array.isArray(he)) throw new Error('SEFARIA_NOT_FOUND');
   if (Array.isArray(he[0])) he = he.flat();
   if (Array.isArray(he[0])) he = he.flat(); // handle 3-level nesting
-  const verses = he.map(v => typeof v === 'string' ? v.replace(/<[^>]+>/g, '').trim() : '').filter(Boolean);
+  const _decodeEl = document.createElement('textarea');
+  const verses = he.map(v => {
+    if (typeof v !== 'string') return '';
+    _decodeEl.innerHTML = v.replace(/<[^>]+>/g, ''); // strip tags, then decode HTML entities
+    return _decodeEl.value.trim();
+  }).filter(Boolean);
   if (!verses.length) throw new Error('SEFARIA_NOT_FOUND');
   return verses;
 }
