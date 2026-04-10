@@ -762,7 +762,8 @@ async function saveAdminPrompts() {
 async function fetchContent(collectionKey, item, unit) {
   const col = COLLECTIONS[collectionKey];
   const ref = col.fetchRef(item, unit);
-  const url = `https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?lang=he&commentary=0&context=0`;
+  // Use our server-side proxy to avoid client firewall/content-filter blocks
+  const url = `/api/sefaria?ref=${encodeURIComponent(ref)}`;
   let res;
   try {
     res = await fetch(url);
