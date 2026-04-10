@@ -6,6 +6,8 @@ const ALLOWED_MODELS = new Set([
   'anthropic/claude-sonnet-4-5',
   'anthropic/claude-haiku-4-5',
   'anthropic/claude-3.7-sonnet',
+  'anthropic/claude-3.5-sonnet',
+  'anthropic/claude-3.5-haiku',
   // Google
   'google/gemini-2.5-pro',
   'google/gemini-2.5-flash',
@@ -81,7 +83,7 @@ export default async function handler(req, res) {
     const { model, greeting, prompts, shareCard } = req.body || {};
     const ops = [];
 
-    if (model !== undefined) {
+    if (model !== undefined && model !== '') {
       if (!ALLOWED_MODELS.has(model)) return res.status(400).json({ error: 'Invalid model' });
       ops.push(kv.set('config:model', model));
     }
