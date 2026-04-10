@@ -5,8 +5,12 @@ const FROM  = process.env.RESEND_FROM || 'onboarding@resend.dev';
 const BASE  = 'font-family:Arial,sans-serif;direction:rtl;text-align:right;background:#faf8f3;padding:32px;border-radius:16px;max-width:480px;margin:auto;';
 
 function isAdminAuthed(req) {
+  const email  = (req.headers['x-admin-email'] || '').trim().toLowerCase();
   const secret = req.headers['x-admin-secret'];
-  return !!(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
+  return !!(
+    (email  && ADMIN && email  === ADMIN) ||
+    (secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET)
+  );
 }
 
 function escHtml(str) {

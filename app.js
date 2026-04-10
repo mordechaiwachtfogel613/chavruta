@@ -609,7 +609,10 @@ function logout() {
 
 function getAdminSecret() { return sessionStorage.getItem('chavruta_admin_secret') || ''; }
 function setAdminSecret(s) { sessionStorage.setItem('chavruta_admin_secret', s); }
-function adminHeaders() { return { 'Content-Type': 'application/json', 'x-admin-secret': getAdminSecret() }; }
+function adminHeaders() {
+  const user = getUser();
+  return { 'Content-Type': 'application/json', 'x-admin-email': user?.email || '' };
+}
 
 function isAdmin() {
   const user = getUser();
@@ -636,15 +639,7 @@ function openAdmin() {
   if (!isAdmin()) return;
   const modal = document.getElementById('modal-admin');
   modal.classList.remove('hidden');
-  // Reset gate state
-  const pwErr = document.getElementById('admin-pw-error');
-  const pwIn  = document.getElementById('admin-pw-input');
-  if (pwErr) { pwErr.classList.add('hidden'); pwErr.textContent = ''; }
-  if (pwIn)  { pwIn.value = ''; }
-  // If secret already verified this session, go straight to editor
-  if (getAdminSecret()) {
-    showAdminEditor();
-  }
+  showAdminEditor();
 }
 
 function closeAdmin() {

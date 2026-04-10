@@ -434,21 +434,13 @@
       <button onclick="closeAdmin()" class="text-gray-400 hover:text-red-500 text-2xl leading-none">&times;</button>
     </div>
 
-    <!-- Password gate -->
-    <div id="admin-pw-gate">
-      <p class="text-sm text-gray-500 mb-3">פאנל זה מוגבל למנהל המערכת. הזן מפתח מנהל להמשך.</p>
-      <input id="admin-pw-input" type="password" placeholder="מפתח מנהל"
-             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-navy"
-             onkeydown="if(event.key==='Enter')checkAdminPw()" />
-      <button onclick="checkAdminPw()"
-              class="w-full bg-navy text-white text-sm font-semibold py-2 rounded-lg hover:opacity-90 transition-opacity">
-        כניסה לפאנל
-      </button>
-      <div id="admin-pw-error" class="hidden mt-2 text-red-600 text-sm text-center"></div>
+    <!-- Password gate (disabled – admin identified by email) -->
+    <div id="admin-pw-gate" class="hidden">
+      <div id="admin-pw-error" class="hidden"></div>
     </div>
 
-    <!-- Editor panel (shown after auth) -->
-    <div id="admin-editor" class="hidden">
+    <!-- Editor panel -->
+    <div id="admin-editor">
 
       <!-- Users management -->
       <div class="mb-5 border border-gray-200 rounded-xl overflow-hidden">

@@ -2,9 +2,15 @@ import { kv } from '@vercel/kv';
 
 const ALLOWED_TYPES = new Set(['welcome', 'approval', 'admin_notify']);
 
+const ADMIN = (process.env.ADMIN_EMAIL || 'a0583298194@gmail.com').trim().toLowerCase();
+
 function isAdminAuthed(req) {
+  const email  = (req.headers['x-admin-email'] || '').trim().toLowerCase();
   const secret = req.headers['x-admin-secret'];
-  return !!(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
+  return !!(
+    (email  && ADMIN && email  === ADMIN) ||
+    (secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET)
+  );
 }
 
 export default async function handler(req, res) {
