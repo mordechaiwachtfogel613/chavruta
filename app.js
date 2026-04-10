@@ -31,6 +31,227 @@ async function loadGlobalConfig() {
 }
 loadGlobalConfig();
 
+// ── i18n ─────────────────────────────────────────────────────────
+let currentLang = localStorage.getItem('chavruta_lang') || 'he';
+
+const TRANSLATIONS = {
+  he: {
+    appName: 'חברותא',
+    adminBtn: '⚙️ ניהול',
+    newChatBtn: 'שיחה חדשה ↺',
+    scoreLabel: 'ניקוד',
+    historyBtn: '📚 הלמידה שלי',
+    logoutBtn: 'יציאה',
+    langToggle: '🌐 EN',
+    landingTitle: 'שלום, כאן רבי בניהו',
+    landingSub: 'חברותא – בינה מלאכותית ללימוד תורה',
+    landingAccurate: 'שתמיד נשאר מדויק',
+    landingHook: 'מתקשה להתרכז לאורך זמן?',
+    landingHookSub: 'החברותא החדש שלך יגרום לך להתמכר ללימוד תורה',
+    landingBtn: 'אני מעוניין ללמוד עם רבי בניהו ✦',
+    registerTitle: 'ברוכים הבאים לחברותא',
+    registerSub: 'הצטרפו ותלמדו עם רבי בניהו 📖',
+    registerCollections: 'תנ"ך • משנה • גמרא • רמב"ם • שולחן ערוך',
+    fullNameLabel: 'שם מלא',
+    emailLabel: 'כתובת מייל',
+    fullNamePlaceholder: 'ישראל ישראלי',
+    emailPlaceholder: 'israel@example.com',
+    signInBtn: 'כניסה ✦',
+    errInvalidName: 'נא להזין שם מלא (לפחות 2 תווים)',
+    errInvalidEmail: 'נא להזין כתובת מייל תקינה',
+    errNetwork: 'שגיאת רשת, נסה שוב',
+    sendingBtn: 'שולח...',
+    pendingTitle: 'בקשתך התקבלה!',
+    pendingMsg: 'רבי בניהו מחכה לך — חשבונך ממתין לאישור המנהל.',
+    pendingSubmsg: 'לאחר שהמנהל יאשר את הצטרפותך, תוכל להתחיל ללמוד.',
+    logoutConfirmBtn: 'התנתק',
+    greetingHello: 'שלום',
+    greetingName: 'אני רבי בניהו',
+    greetingSubtitle: 'יחד נעמיק בתורה הקדושה',
+    greetingStartBtn: 'אני רוצה ללמוד עם רבי בניהו',
+    chooseStudy: '📖 בחר מה ללמוד:',
+    startBtn: 'התחל ✦',
+    chatPlaceholder: 'כתוב את תשובתך כאן...',
+    sendBtn: 'שלח',
+    congratsTitle: 'כל הכבוד! 🎉',
+    finishedUnit: 'סיימת את היחידה!',
+    shareWhatsapp: '📱 שתף בוואטסאפ',
+    chooseNewUnit: 'בחר יחידה חדשה',
+    historyTitle: '📚 מסע הלמידה שלי',
+    statUnits: 'יחידות שנלמדו',
+    statScore: 'נקודות כוללות',
+    statBooks: 'ספרים שנלמדו',
+    recentChats: '📅 שיחות אחרונות',
+    progressByBook: '📊 התקדמות לפי ספר',
+    exchanges: 'תגובות',
+    historyEmpty: 'עדיין לא למדת יחידות',
+    historyEmptySub: 'התחל ללמוד ותתחיל לבנות את מסע הלמידה שלך!',
+    historyLoading: 'טוען...',
+    historyError: 'שגיאה בטעינת ההיסטוריה.',
+    errUnitNotFound: 'היחידה לא נמצאה בספריא',
+    errUnitNotFoundDetail: 'ייתכן שהפרק שביקשת עדיין לא קיים בספריא, נסה יחידה אחרת.',
+    errSefariaDown: 'ספריא אינה זמינה כרגע',
+    errSefariaDownDetail: 'שרת ספריא.org אינו מגיב. זה לרוב זמני — נסה שוב בעוד כמה דקות.',
+    errOccurred: 'אירעה שגיאה',
+    errTryOther: 'בחר יחידה אחרת מהתפריט או נסה שוב.',
+    parseErrMsg: 'לא הצלחתי להבין מה תרצה ללמוד. נסה כך:',
+    parseErrOr: 'או בחר מהתפריט ולחץ התחל.',
+    adminUsersLoading: 'טוען...',
+    adminUsersEmpty: 'אין משתמשים רשומים.',
+    adminUsersError: 'שגיאה בטעינה.',
+    pickerBook: 'ספר',
+    pickerUnit: 'יחידה',
+    pickerMasechet: 'מסכת',
+    pickerPerek: 'פרק',
+    pickerDaf: 'דף',
+    pickerChelek: 'חלק',
+    pickerSiman: 'סימן',
+    logoutConfirmMsg: 'להתנתק? הניקוד שלך יישמר.',
+    aiFirstMessage: 'התחל ללמוד. הצג לי את הפסוק הראשון ושאל אותי שאלה עליו.',
+    explainRequest: 'לא הבנתי, אנא הסבר לי את הפסוק',
+    explanationLabel: '📖 הסבר:',
+    wrongText: '✗ לא נכון',
+    userGreeting: (name) => `שלום, ${name} 👋`,
+    finMsg: (book, unit) => `סיימת את ${book} ${unit}!`,
+    finScore: (session, total) => `צברת ${session} נקודות (סה"כ: ${total})`,
+    thinkingMsgs: [
+      'רבי בניהו הולך לאוצר הספרים',
+      'רבי בניהו מצא את הספר במדף גבוה',
+      'רבי בניהו מעלעל בדפי הספר',
+      'רבי בניהו חוכך בדעתו',
+      'רבי בניהו לוגם מהקפה שלו (אחרי שהתקרר)',
+      'רבי בניהו נזכר בסברא מיוחדת',
+      'רבי בניהו מתעמק בסוגיא',
+    ],
+    defaultGreeting: `שלום! כאן רבי בניהו 👋\nיחד נעמיק בתורה הקדושה.\nבחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.\nמה תרצה ללמוד היום? 📖`,
+  },
+  en: {
+    appName: 'Chavruta',
+    adminBtn: '⚙️ Admin',
+    newChatBtn: 'New Chat ↺',
+    scoreLabel: 'Score',
+    historyBtn: '📚 My Learning',
+    logoutBtn: 'Sign Out',
+    langToggle: '🌐 עב',
+    landingTitle: 'Shalom, I am Rabbi Binyahu',
+    landingSub: 'Chavruta – AI-powered Torah learning',
+    landingAccurate: 'Always accurate to the sources',
+    landingHook: 'Having trouble focusing for long?',
+    landingHookSub: 'Your new Chavruta will get you addicted to Torah learning',
+    landingBtn: 'I want to learn with Rabbi Binyahu ✦',
+    registerTitle: 'Welcome to Chavruta',
+    registerSub: 'Join and learn with Rabbi Binyahu 📖',
+    registerCollections: 'Tanach • Mishnah • Gemara • Rambam • Shulchan Aruch',
+    fullNameLabel: 'Full Name',
+    emailLabel: 'Email Address',
+    fullNamePlaceholder: 'John Smith',
+    emailPlaceholder: 'john@example.com',
+    signInBtn: 'Sign In ✦',
+    errInvalidName: 'Please enter your full name (at least 2 characters)',
+    errInvalidEmail: 'Please enter a valid email address',
+    errNetwork: 'Network error, please try again',
+    sendingBtn: 'Sending...',
+    pendingTitle: 'Your request has been received!',
+    pendingMsg: 'Rabbi Binyahu is waiting for you — your account is pending admin approval.',
+    pendingSubmsg: 'Once the admin approves your request, you can start learning.',
+    logoutConfirmBtn: 'Sign Out',
+    greetingHello: 'Shalom',
+    greetingName: 'I am Rabbi Binyahu',
+    greetingSubtitle: 'Together we will deepen in the Holy Torah',
+    greetingStartBtn: 'I want to learn with Rabbi Binyahu',
+    chooseStudy: '📖 Choose what to study:',
+    startBtn: 'Start ✦',
+    chatPlaceholder: 'Write your answer here...',
+    sendBtn: 'Send',
+    congratsTitle: 'Well done! 🎉',
+    finishedUnit: 'You finished the unit!',
+    shareWhatsapp: '📱 Share on WhatsApp',
+    chooseNewUnit: 'Choose New Unit',
+    historyTitle: '📚 My Learning Journey',
+    statUnits: 'Units Studied',
+    statScore: 'Total Points',
+    statBooks: 'Books Studied',
+    recentChats: '📅 Recent Conversations',
+    progressByBook: '📊 Progress by Book',
+    exchanges: 'exchanges',
+    historyEmpty: 'You have not studied any units yet',
+    historyEmptySub: 'Start learning and build your learning journey!',
+    historyLoading: 'Loading...',
+    historyError: 'Error loading history.',
+    errUnitNotFound: 'The unit was not found in Sefaria',
+    errUnitNotFoundDetail: 'The chapter you requested may not yet exist in Sefaria. Try another unit.',
+    errSefariaDown: 'Sefaria is currently unavailable',
+    errSefariaDownDetail: 'The Sefaria.org server is not responding. This is usually temporary — try again in a few minutes.',
+    errOccurred: 'An error occurred',
+    errTryOther: 'Choose another unit from the menu or try again.',
+    parseErrMsg: "I could not understand what you'd like to study. Try like this:",
+    parseErrOr: 'Or select from the menu and click Start.',
+    adminUsersLoading: 'Loading...',
+    adminUsersEmpty: 'No registered users.',
+    adminUsersError: 'Loading error.',
+    pickerBook: 'Book',
+    pickerUnit: 'Unit',
+    pickerMasechet: 'Tractate',
+    pickerPerek: 'Chapter',
+    pickerDaf: 'Folio',
+    pickerChelek: 'Section',
+    pickerSiman: 'Siman',
+    logoutConfirmMsg: 'Sign out? Your score will be saved.',
+    aiFirstMessage: 'Begin the lesson. Show me the first passage and ask me a question about it.',
+    explainRequest: 'I did not understand, please explain this passage to me',
+    explanationLabel: '📖 Explanation:',
+    wrongText: '✗ Wrong',
+    userGreeting: (name) => `Shalom, ${name} 👋`,
+    finMsg: (book, unit) => `You finished ${book} ${unit}!`,
+    finScore: (session, total) => `You earned ${session} points (total: ${total})`,
+    thinkingMsgs: [
+      'Rabbi Binyahu is going to the library',
+      'Rabbi Binyahu found the book on a high shelf',
+      'Rabbi Binyahu is leafing through the pages',
+      'Rabbi Binyahu is deep in thought',
+      'Rabbi Binyahu is sipping his coffee (after it cooled down)',
+      'Rabbi Binyahu recalled a special insight',
+      'Rabbi Binyahu is delving into the sugya',
+    ],
+    defaultGreeting: `Shalom! This is Rabbi Binyahu 👋\nTogether we will deepen in the Holy Torah.\nChoose a collection, book and unit — and I will start learning with you.\nWhat would you like to study today? 📖`,
+  }
+};
+
+function t(key) {
+  const val = TRANSLATIONS[currentLang]?.[key];
+  return val !== undefined ? val : (TRANSLATIONS.he[key] ?? key);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'he' ? 'en' : 'he';
+  localStorage.setItem('chavruta_lang', currentLang);
+  applyLang();
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  const btn = document.getElementById('lang-toggle-btn');
+  if (btn) btn.textContent = t('langToggle');
+  // Update wrong popup text
+  const wrongInner = document.getElementById('wrong-popup-inner');
+  if (wrongInner) wrongInner.textContent = t('wrongText');
+}
+
+function getPickerLabels(key) {
+  return {
+    tanach:   { book: t('pickerBook'),     unit: t('pickerPerek')   },
+    mishnah:  { book: t('pickerMasechet'), unit: t('pickerPerek')   },
+    shas:     { book: t('pickerMasechet'), unit: t('pickerDaf')     },
+    rambam:   { book: t('pickerBook'),     unit: t('pickerPerek')   },
+    shulchan: { book: t('pickerChelek'),   unit: t('pickerSiman')   },
+  }[key] || { book: t('pickerBook'), unit: t('pickerUnit') };
+}
+
 // ── Audio ────────────────────────────────────────────────────────
 let _audioCtx = null;
 function getAudioCtx() {
@@ -328,13 +549,13 @@ async function register() {
   errEl.classList.add('hidden');
 
   if (!name || name.length < 2) {
-    errEl.textContent = 'נא להזין שם מלא (לפחות 2 תווים)';
+    errEl.textContent = t('errInvalidName');
     errEl.classList.remove('hidden');
     document.getElementById('reg-name').focus();
     return;
   }
   if (!email || !isValidEmail(email)) {
-    errEl.textContent = 'נא להזין כתובת מייל תקינה';
+    errEl.textContent = t('errInvalidEmail');
     errEl.classList.remove('hidden');
     document.getElementById('reg-email').focus();
     return;
@@ -342,7 +563,7 @@ async function register() {
 
   const btn = document.getElementById('reg-btn');
   btn.disabled = true;
-  btn.textContent = 'שולח...';
+  btn.textContent = t('sendingBtn');
 
   try {
     const res = await fetch('/api/users', {
@@ -359,10 +580,10 @@ async function register() {
       showPendingScreen();
     }
   } catch {
-    errEl.textContent = 'שגיאת רשת, נסה שוב';
+    errEl.textContent = t('errNetwork');
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'כניסה ✦';
+    btn.textContent = t('signInBtn');
   }
 }
 
@@ -375,7 +596,7 @@ function regHandleKey(e) {
 }
 
 function logout() {
-  if (!confirm('להתנתק? הניקוד שלך יישמר.')) return;
+  if (!confirm(t('logoutConfirmMsg'))) return;
   localStorage.removeItem('chavruta_user');
   document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('modal-register').classList.add('hidden');
@@ -399,7 +620,7 @@ function updateUserUI() {
   const user = getUser();
   if (user) {
     const greet = document.getElementById('user-greeting');
-    greet.textContent = `שלום, ${user.name} 👋`;
+    greet.textContent = t('userGreeting')(user.name);
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
     document.getElementById('history-btn').classList.remove('hidden');
@@ -474,12 +695,12 @@ function showAdminEditor() {
 
 async function loadAdminUsers() {
   const container = document.getElementById('admin-users-list');
-  container.innerHTML = '<p class="text-sm text-gray-400 text-center">טוען...</p>';
+  container.innerHTML = `<p class="text-sm text-gray-400 text-center">${t('adminUsersLoading')}</p>`;
   try {
     const res = await fetch('/api/users', { headers: { 'x-admin-secret': getAdminSecret() } });
     const users = await res.json();
     if (!Array.isArray(users) || !users.length) {
-      container.innerHTML = '<p class="text-sm text-gray-400 text-center">אין משתמשים רשומים.</p>';
+      container.innerHTML = `<p class="text-sm text-gray-400 text-center">${t('adminUsersEmpty')}</p>`;
       return;
     }
     container.innerHTML = users.map(u => `
@@ -496,7 +717,7 @@ async function loadAdminUsers() {
         </div>
       </div>`).join('');
   } catch {
-    container.innerHTML = '<p class="text-sm text-red-500 text-center">שגיאה בטעינה.</p>';
+    container.innerHTML = `<p class="text-sm text-red-500 text-center">${t('adminUsersError')}</p>`;
   }
 }
 
@@ -605,7 +826,7 @@ async function startLearning() {
     // First AI call
     S.messages.push({
       role: 'user',
-      content: 'התחל ללמוד. הצג לי את הפסוק הראשון ושאל אותי שאלה עליו.',
+      content: t('aiFirstMessage'),
     });
     await callAI();
 
@@ -613,17 +834,17 @@ async function startLearning() {
     console.error(e);
     const isNotFound = e.message === 'SEFARIA_NOT_FOUND';
     const isDown     = e.message === 'SEFARIA_DOWN';
-    const title   = isNotFound ? 'היחידה לא נמצאה בספריא' : isDown ? 'ספריא אינה זמינה כרגע' : 'אירעה שגיאה';
+    const title   = isNotFound ? t('errUnitNotFound') : isDown ? t('errSefariaDown') : t('errOccurred');
     const detail  = isNotFound
-      ? 'ייתכן שהפרק שביקשת עדיין לא קיים בספריא, נסה יחידה אחרת.'
+      ? t('errUnitNotFoundDetail')
       : isDown
-        ? 'שרת ספריא.org אינו מגיב. זה לרוב זמני — נסה שוב בעוד כמה דקות.'
+        ? t('errSefariaDownDetail')
         : e.message;
     chatEl.innerHTML = '';
     rabbiSayBubble(`
       <div style="font-weight:700;color:#B91C1C;margin-bottom:6px;">😔 ${title}</div>
       <div style="color:#6B7280;">${detail}</div>
-      <div style="margin-top:10px;font-size:0.85rem;color:#9CA3AF;">בחר יחידה אחרת מהתפריט או נסה שוב.</div>
+      <div style="margin-top:10px;font-size:0.85rem;color:#9CA3AF;">${t('errTryOther')}</div>
     `);
     document.getElementById('greeting-picker').classList.remove('hidden');
     document.getElementById('chat-input-row').classList.add('hidden');
@@ -664,6 +885,7 @@ async function callAI() {
       chapter_num:     unitLabel,
       total_verses:    S.verses.length,
       collection_type: S.collectionKey,
+      lang:            currentLang,
     };
     if (GLOBAL_MODEL) body.model = GLOBAL_MODEL;
 
@@ -687,7 +909,7 @@ async function callAI() {
   } catch (e) {
     removeTyping(tid);
     console.error(e);
-    appendError(`שגיאה: ${e.message}`);
+    appendError(`${t('errOccurred')}: ${e.message}`);
     setInput(true);
   } finally {
     S.loading = false;
@@ -728,7 +950,7 @@ async function sendMessage() {
 
 async function sendExplain() {
   if (S.loading) return;
-  const text = 'לא הבנתי, אנא הסבר לי את הפסוק';
+  const text = t('explainRequest');
   renderUser(text);
   S.messages.push({ role: 'user', content: text });
   await callAI();
@@ -763,7 +985,7 @@ function renderAI(data) {
 
   if (data.explanation) {
     html += `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-sm text-blue-800 leading-relaxed">
-               <strong>📖 הסבר:</strong> ${esc(data.explanation)}
+               <strong>${t('explanationLabel')}</strong> ${esc(data.explanation)}
              </div>`;
   }
 
@@ -804,16 +1026,6 @@ function appendError(msg) {
   box.scrollTop = box.scrollHeight;
 }
 
-const THINKING_MSGS = [
-  'רבי בניהו הולך לאוצר הספרים',
-  'רבי בניהו מצא את הספר במדף גבוה',
-  'רבי בניהו מעלעל בדפי הספר',
-  'רבי בניהו חוכך בדעתו',
-  'רבי בניהו לוגם מהקפה שלו (אחרי שהתקרר)',
-  'רבי בניהו נזכר בסברא מיוחדת',
-  'רבי בניהו מתעמק בסוגיא',
-];
-
 function showTyping() {
   const box = document.getElementById('chat');
   const id  = 'typing-' + Date.now();
@@ -822,7 +1034,7 @@ function showTyping() {
   d.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;';
 
   // Pick random subset of messages (shuffle, take up to all)
-  const msgs = [...THINKING_MSGS].sort(() => Math.random() - 0.5);
+  const msgs = [...t('thinkingMsgs')].sort(() => Math.random() - 0.5);
   let idx = 0;
 
   d.innerHTML = `
@@ -922,10 +1134,8 @@ function showFinished() {
   setInput(false);
   document.getElementById('input-area').classList.add('hidden');
   const unitLabel = buildUnitLabel();
-  document.getElementById('fin-msg').textContent =
-    `סיימת את ${S.book.he} ${unitLabel}!`;
-  document.getElementById('fin-score').textContent =
-    `צברת ${S.sessionScore} נקודות (סה"כ: ${S.totalScore})`;
+  document.getElementById('fin-msg').textContent = t('finMsg')(S.book.he, unitLabel);
+  document.getElementById('fin-score').textContent = t('finScore')(S.sessionScore, S.totalScore);
   document.getElementById('modal-finished').classList.remove('hidden');
 }
 
@@ -980,7 +1190,7 @@ const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
 מה תרצה ללמוד היום? 📖`;
 
 function buildGreetingHtml(text) {
-  const lines = (text || DEFAULT_GREETING).split('\n').filter(l => l.trim());
+  const lines = (text || t('defaultGreeting')).split('\n').filter(l => l.trim());
   return lines.map((line, i) => {
     const e = esc(line);
     if (i === 0)               return `<div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">${e}</div>`;
@@ -1263,7 +1473,7 @@ async function loadHistory() {
   const user = getUser();
   if (!user) return;
   const list = document.getElementById('history-list');
-  list.innerHTML = '<div class="text-center text-gray-400 py-8">טוען...</div>';
+  list.innerHTML = `<div class="text-center text-gray-400 py-8">${t('historyLoading')}</div>`;
 
   try {
     const res = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`);
@@ -1273,8 +1483,8 @@ async function loadHistory() {
       list.innerHTML = `
         <div class="text-center py-12">
           <div style="font-size:3rem;margin-bottom:12px;">🌱</div>
-          <p class="text-gray-500 font-medium">עדיין לא למדת יחידות</p>
-          <p class="text-gray-400 text-sm mt-1">התחל ללמוד ותתחיל לבנות את מסע הלמידה שלך!</p>
+          <p class="text-gray-500 font-medium">${t('historyEmpty')}</p>
+          <p class="text-gray-400 text-sm mt-1">${t('historyEmptySub')}</p>
         </div>`;
       document.getElementById('stat-units').textContent = '0';
       document.getElementById('stat-score').textContent = '0';
@@ -1328,7 +1538,7 @@ async function loadHistory() {
     }).join('');
 
     list.innerHTML = `
-      <div class="mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">📅 שיחות אחרונות</div>
+      <div class="mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">${t('recentChats')}</div>
       ${Object.entries(groups).map(([date, records]) => `
         <div class="mb-5">
           <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
@@ -1343,7 +1553,7 @@ async function loadHistory() {
                 <div style="flex:1;min-width:0;">
                   <div style="font-weight:700;color:#1a2744;font-size:0.9rem;">${esc(r.book)}</div>
                   <div style="color:#6B7280;font-size:0.78rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
-                  ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:1px;">${r.exchanges} תגובות</div>` : ''}
+                  ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:1px;">${r.exchanges} ${t('exchanges')}</div>` : ''}
                 </div>
                 <div style="text-align:center;flex-shrink:0;">
                   <div style="color:#B8860B;font-weight:800;font-size:1rem;">★ ${r.score}</div>
@@ -1354,30 +1564,22 @@ async function loadHistory() {
           </div>
         </div>
       `).join('')}
-      <div class="mt-4 mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">📊 התקדמות לפי ספר</div>
+      <div class="mt-4 mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">${t('progressByBook')}</div>
       ${progressHTML}
     `;
 
   } catch {
-    list.innerHTML = '<div class="text-center text-red-500 py-8">שגיאה בטעינת ההיסטוריה.</div>';
+    list.innerHTML = `<div class="text-center text-red-500 py-8">${t('historyError')}</div>`;
   }
 }
 
 // ── Greeting picker ──────────────────────────────────────────────
-const PICKER_LABELS = {
-  tanach:   { book: 'ספר',  unit: 'פרק'  },
-  mishnah:  { book: 'מסכת', unit: 'פרק'  },
-  shas:     { book: 'מסכת', unit: 'דף'   },
-  rambam:   { book: 'ספר',  unit: 'פרק'  },
-  shulchan: { book: 'חלק',  unit: 'סימן' },
-};
-
 function gpCollectionChange() {
   const key = document.getElementById('gp-collection').value;
   S.collectionKey = key;
   S.book = null; S.unit = null;
   const col = COLLECTIONS[key];
-  const lbl = PICKER_LABELS[key] || { book: 'ספר', unit: 'יחידה' };
+  const lbl = getPickerLabels(key);
   const bookSel = document.getElementById('gp-book');
   bookSel.innerHTML = `<option value="">— ${lbl.book} —</option>`;
   // Group by g field if available
@@ -1419,7 +1621,7 @@ function gpBookChange() {
   const col = COLLECTIONS[S.collectionKey];
   S.book = col.items.find(b => b.sf === sf) || null;
   S.unit = null;
-  const lbl = PICKER_LABELS[S.collectionKey] || { unit: 'יחידה' };
+  const lbl = getPickerLabels(S.collectionKey);
   const unitSel = document.getElementById('gp-unit');
   unitSel.innerHTML = `<option value="">— ${lbl.unit} —</option>`;
   const btn = document.getElementById('gp-start');
@@ -1476,9 +1678,9 @@ function showGreeting() {
     welcomeDiv.id = 'welcome';
     welcomeDiv.innerHTML = `
       <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
-      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
-      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;" data-i18n="greetingHello">${t('greetingHello')}</p>
+      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;" data-i18n="greetingName">${t('greetingName')}</p>
+      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;" data-i18n="greetingSubtitle">${t('greetingSubtitle')}</p>
     `;
     chatEl.appendChild(welcomeDiv);
   }
@@ -1494,7 +1696,7 @@ function showGreeting() {
     if (old) old.remove();
     const startBtn = document.createElement('button');
     startBtn.className = 'start-learning-btn';
-    startBtn.textContent = 'אני רוצה ללמוד עם רבי בניהו';
+    startBtn.textContent = t('greetingStartBtn');
     startBtn.style.cssText = 'display:block;margin:28px auto 0;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 32px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
     startBtn.onmouseenter = () => { startBtn.style.transform='translateY(-2px)'; startBtn.style.boxShadow='0 8px 24px rgba(27,58,107,0.35)'; };
     startBtn.onmouseleave = () => { startBtn.style.transform=''; startBtn.style.boxShadow=''; };
@@ -1602,11 +1804,11 @@ async function handleGreetingResponse(text) {
     await startLearning();
   } else {
     rabbiSayBubble(`
-      לא הצלחתי להבין מה תרצה ללמוד. נסה כך:<br>
+      ${t('parseErrMsg')}<br>
       <span style="display:block;margin-top:8px;">📖 <strong>בראשית פרק א</strong></span>
       <span style="display:block;">📜 <strong>ברכות פרק א</strong> (משנה)</span>
       <span style="display:block;">🕍 <strong>בבא קמא דף ב</strong></span>
-      <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">או בחר מהתפריט ולחץ <strong>התחל</strong>.</span>
+      <span style="display:block;margin-top:8px;color:#9CA3AF;font-size:0.85rem;">${t('parseErrOr')}</span>
     `);
   }
 }
@@ -1697,3 +1899,4 @@ function showRegisterFromLanding() {
 }
 
 init();
+applyLang();

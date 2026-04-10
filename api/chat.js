@@ -3,6 +3,8 @@
 // Proxies requests to OpenRouter API (keeps API key server-side)
 // ================================================================
 
+import { kv } from '@vercel/kv';
+
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
@@ -11,15 +13,22 @@ const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
 
 const DEFAULT_PROMPTS = {
-  tanach: RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
-
-  mishnah: RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
-
-  shas: RABBI_PERSONA + `תלמד גמרא עמוד אחר עמוד, ותשאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
-
-  rambam: RABBI_PERSONA + `תלמד רמב"ם הלכה אחת בכל פעם, ותשאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
-
+  tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
+  mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
+  shas:     RABBI_PERSONA + `תלמד גמרא עמוד אחר עמוד, ותשאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
+  rambam:   RABBI_PERSONA + `תלמד רמב"ם הלכה אחת בכל פעם, ותשאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
   shulchan: RABBI_PERSONA + `תלמד שולחן ערוך סעיף אחד בכל פעם, ותשאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
+};
+
+// ── English prompts ───────────────────────────────────────────────
+const RABBI_PERSONA_EN = `You are Rabbi Binyahu — a wise, patient, and Torah-loving rabbi who studies together with the student joyfully. Speak with warmth and encouragement, as if sitting in a study session with a dear student. `;
+
+const DEFAULT_PROMPTS_EN = {
+  tanach:   RABBI_PERSONA_EN + `Study Tanach verse by verse, asking questions about the plain meaning (peshat), literary context, and spiritual significance.`,
+  mishnah:  RABBI_PERSONA_EN + `Study one Mishnah at a time, asking questions about the law, disputes among the Tannaim, the reason behind the ruling, and its practical application.`,
+  shas:     RABBI_PERSONA_EN + `Study Talmud folio by folio, asking questions about the dialectic (shakla ve-tarya), interpretation of concepts, and the conclusion of the passage.`,
+  rambam:   RABBI_PERSONA_EN + `Study one Rambam law at a time, asking questions about the ruling, its source, and practical application.`,
+  shulchan: RABBI_PERSONA_EN + `Study one paragraph of Shulchan Aruch at a time, asking questions about the law, disputes among the decisors (poskim), and custom.`,
 };
 
 const UNIVERSAL_RULES = `
@@ -44,12 +53,37 @@ const UNIVERSAL_RULES = `
   "is_finished":    false
 }`;
 
+const UNIVERSAL_RULES_EN = `
+Operating rules:
+1. Brief feedback on the previous answer (empty in the first message).
+2. Score: 5=fully correct | 2=partial/right direction | 0=wrong.
+3. Present the next unit in order — do not skip.
+4. Ask only one question — deep and thought-provoking.
+5. If an explanation is requested — fill the explanation field with a brief, precise explanation. After explaining — move to the next unit.
+6. When all units are finished — write a warm blessing in feedback and set is_finished=true.
+
+Iron rule: Return ONLY valid JSON — no text before it, no \`\`\`json, no additions whatsoever.
+
+Required format (these exact field names):
+{
+  "feedback":       "feedback on the previous answer",
+  "score":          0,
+  "next_verse_num": 1,
+  "next_verse":     "the full text of the next unit",
+  "next_question":  "one question about the unit",
+  "explanation":    "",
+  "is_finished":    false
+}`;
+
 export default async function handler(req, res) {
   // ── CORS ──────────────────────────────────────────────────────
-  const origin = process.env.ALLOWED_ORIGIN || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const reqOrigin    = req.headers.origin || '';
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
+  if (allowedOrigin && reqOrigin === allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
 
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST')   { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -63,7 +97,7 @@ export default async function handler(req, res) {
     total_verses,
     collection_type,
     custom_prompt,
-    model,
+    lang,
   } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
@@ -77,15 +111,27 @@ export default async function handler(req, res) {
   }
 
   // ── Build system prompt ────────────────────────────────────────
-  const collectionKey  = collection_type || 'tanach';
-  const introPrompt    = (custom_prompt && custom_prompt.trim())
-    ? custom_prompt.trim()
-    : (DEFAULT_PROMPTS[collectionKey] || DEFAULT_PROMPTS.tanach);
+  const isEnglish = lang === 'en';
+  const collectionKey  = ['tanach','mishnah','shas','rambam','shulchan'].includes(collection_type)
+    ? collection_type : 'tanach';
+  const [kvPrompt, kvModel] = await Promise.all([
+    kv.get(`config:prompt:${collectionKey}`),
+    kv.get('config:model'),
+  ]);
+  const defaultPrompts = isEnglish ? DEFAULT_PROMPTS_EN : DEFAULT_PROMPTS;
+  const universalRules = isEnglish ? UNIVERSAL_RULES_EN : UNIVERSAL_RULES;
+  // KV admin prompts are Hebrew-only; skip them in English mode
+  const introPrompt = (kvPrompt && kvPrompt.trim() && !isEnglish)
+    ? kvPrompt.trim()
+    : (defaultPrompts[collectionKey] || defaultPrompts.tanach);
+  const chapterHeader = isEnglish
+    ? `Current section: ${book_name} | Unit: ${chapter_num} (${total_verses} units)`
+    : `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)`;
 
   const systemWithChapter =
     `${introPrompt}\n` +
-    `${UNIVERSAL_RULES}\n\n` +
-    `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)\n` +
+    `${universalRules}\n\n` +
+    `${chapterHeader}\n` +
     `──────────────────────────────\n` +
     `${chapter_text}\n` +
     `──────────────────────────────`;
@@ -101,7 +147,7 @@ export default async function handler(req, res) {
         'X-Title':       'Chavruta - Jewish Learning App',
       },
       body: JSON.stringify({
-        model:      model || DEFAULT_MODEL,
+        model:      kvModel || DEFAULT_MODEL,
         max_tokens: 1024,
         messages: [
           { role: 'system', content: systemWithChapter },

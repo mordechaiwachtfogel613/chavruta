@@ -1,12 +1,14 @@
 import { kv } from '@vercel/kv';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method === 'POST') {
     const { email, record } = req.body || {};
     if (!email || !record) return res.status(400).json({ error: 'missing' });
-    const key = `history:${email.toLowerCase().trim()}`;
+    const normalEmail = email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalEmail)) {
+      return res.status(400).json({ error: 'invalid email' });
+    }
+    const key = `history:${normalEmail}`;
     const history = (await kv.get(key)) || [];
     history.unshift({ ...record, ts: Date.now() });
     await kv.set(key, history.slice(0, 300));
@@ -16,7 +18,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { email } = req.query;
     if (!email) return res.status(400).json({ error: 'missing' });
-    const key = `history:${email.toLowerCase().trim()}`;
+    const normalEmail = email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalEmail)) {
+      return res.status(400).json({ error: 'invalid email' });
+    }
+    const key = `history:${normalEmail}`;
     const history = (await kv.get(key)) || [];
     return res.json(history);
   }

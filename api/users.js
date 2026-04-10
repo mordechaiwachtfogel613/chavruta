@@ -1,8 +1,17 @@
 import { kv } from '@vercel/kv';
 
-const ADMIN = 'a0583298194@gmail.com';
+const ADMIN = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 const FROM  = process.env.RESEND_FROM || 'onboarding@resend.dev';
 const BASE  = 'font-family:Arial,sans-serif;direction:rtl;text-align:right;background:#faf8f3;padding:32px;border-radius:16px;max-width:480px;margin:auto;';
+
+function isAdminAuthed(req) {
+  const secret = req.headers['x-admin-secret'];
+  return !!(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;'}[c]));
+}
 
 async function sendEmail(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -21,7 +30,7 @@ async function getTemplate(type) {
 }
 
 function vars(str, name, email) {
-  return str.replace(/\{\{name\}\}/g, name || '').replace(/\{\{email\}\}/g, email || '');
+  return str.replace(/\{\{name\}\}/g, escHtml(name || '')).replace(/\{\{email\}\}/g, escHtml(email || ''));
 }
 
 const wrap = c => `<div style="${BASE}">${c}</div>`;
@@ -30,14 +39,14 @@ const wrap = c => `<div style="${BASE}">${c}</div>`;
 const DEFAULTS = {
   welcome: {
     subject: 'קיבלנו את בקשתך – חברותא',
-    html: (name) => wrap(`<h2 style="color:#1a2744;">שלום ${name}! 👋</h2>
+    html: (name) => wrap(`<h2 style="color:#1a2744;">שלום ${escHtml(name)}! 👋</h2>
       <p style="color:#444;line-height:1.7;">קיבלנו את בקשת ההרשמה שלך לאפליקציית <strong>חברותא</strong>.</p>
       <p style="color:#444;line-height:1.7;">בקשתך בבדיקה ותקבל מייל נוסף ברגע שתאושר.</p>
       <p style="color:#B8860B;font-weight:bold;margin-top:24px;">יחד נעמיק בתורה הקדושה 📖</p>`),
   },
   approval: {
     subject: 'אושרת לחברותא! 🎉',
-    html: (name) => wrap(`<h2 style="color:#1a2744;">בשורות טובות, ${name}! 🎉</h2>
+    html: (name) => wrap(`<h2 style="color:#1a2744;">בשורות טובות, ${escHtml(name)}! 🎉</h2>
       <p style="color:#444;line-height:1.7;">הרשמתך לאפליקציית <strong>חברותא</strong> <strong style="color:green;">אושרה!</strong></p>
       <p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם רבי בניהו.</p>
       <a href="https://chavruta-iota.vercel.app" style="display:inline-block;background:#1a2744;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:bold;margin-top:20px;">התחל ללמוד ✦</a>
@@ -46,8 +55,8 @@ const DEFAULTS = {
   admin_notify: {
     subject: (name) => `משתמש חדש נרשם: ${name}`,
     html: (name, email) => wrap(`<h2 style="color:#1a2744;">משתמש חדש נרשם</h2>
-      <p style="color:#444;"><strong>שם:</strong> ${name}</p>
-      <p style="color:#444;"><strong>מייל:</strong> ${email}</p>
+      <p style="color:#444;"><strong>שם:</strong> ${escHtml(name)}</p>
+      <p style="color:#444;"><strong>מייל:</strong> ${escHtml(email)}</p>
       <p style="color:#888;font-size:0.9rem;">כנס לפאנל הניהול כדי לאשר או לדחות.</p>`),
   },
 };
@@ -70,34 +79,37 @@ async function dispatchEmail(type, toEmail, name, email) {
 
 // ── Handler ─────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method === 'POST') {
     const { name, email } = req.body || {};
     if (!name || !email) return res.status(400).json({ error: 'missing' });
-    const key = `user:${email.trim().toLowerCase()}`;
+    const normalEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalEmail)) {
+      return res.status(400).json({ error: 'invalid email' });
+    }
+    const key = `user:${normalEmail}`;
     const exists = await kv.get(key);
-    if (exists) return res.json({ status: exists.status });
-    const isAdm = email.trim().toLowerCase() === ADMIN;
-    const user  = { name, email: email.trim().toLowerCase(), status: isAdm ? 'approved' : 'pending', ts: Date.now() };
+    if (exists) return res.json({ status: exists.status, isAdmin: exists.isAdmin || false });
+    const isAdm = ADMIN && normalEmail === ADMIN;
+    const user  = { name: String(name).slice(0, 100), email: normalEmail, status: isAdm ? 'approved' : 'pending', isAdmin: isAdm, ts: Date.now() };
     await kv.set(key, user);
-    await kv.sadd('users:all', email.trim().toLowerCase());
+    await kv.sadd('users:all', normalEmail);
     if (!isAdm) {
       await Promise.all([
         dispatchEmail('welcome',      user.email, name, user.email),
         dispatchEmail('admin_notify', ADMIN,      name, user.email),
       ]).catch(() => {});
     }
-    return res.json({ status: user.status });
+    return res.json({ status: user.status, isAdmin: isAdm });
   }
 
   if (req.method === 'GET') {
-    const { email, adminEmail } = req.query;
+    const { email } = req.query;
     if (email) {
       const user = await kv.get(`user:${email.trim().toLowerCase()}`);
-      return res.json({ status: user ? user.status : 'not_found' });
+      if (!user) return res.json({ status: 'not_found', isAdmin: false });
+      return res.json({ status: user.status, isAdmin: user.isAdmin || false });
     }
-    if (adminEmail && adminEmail.trim().toLowerCase() === ADMIN) {
+    if (isAdminAuthed(req)) {
       const emails = (await kv.smembers('users:all')) || [];
       const users  = await Promise.all(emails.map(e => kv.get(`user:${e}`)));
       return res.json(users.filter(Boolean).sort((a, b) => b.ts - a.ts));
@@ -106,8 +118,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PATCH') {
-    const { email, status, adminEmail } = req.body || {};
-    if (!adminEmail || adminEmail.trim().toLowerCase() !== ADMIN) return res.status(403).end();
+    if (!isAdminAuthed(req)) return res.status(403).end();
+    const { email, status } = req.body || {};
+    if (!email || !status) return res.status(400).end();
     const key  = `user:${email.trim().toLowerCase()}`;
     const user = await kv.get(key);
     if (!user) return res.status(404).end();

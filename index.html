@@ -361,13 +361,13 @@
 <div id="landing-page" class="hidden">
   <div class="landing-card">
     <img src="rabbi.png" alt="רבי בניהו" class="rabbi-img">
-    <div class="landing-title">שלום, כאן רבי בניהו</div>
-    <div class="landing-sub">חברותא – בינה מלאכותית ללימוד תורה</div>
-    <div class="landing-accurate">שתמיד נשאר מדויק</div>
+    <div class="landing-title" data-i18n="landingTitle">שלום, כאן רבי בניהו</div>
+    <div class="landing-sub" data-i18n="landingSub">חברותא – בינה מלאכותית ללימוד תורה</div>
+    <div class="landing-accurate" data-i18n="landingAccurate">שתמיד נשאר מדויק</div>
     <div class="landing-divider"></div>
-    <div class="landing-hook">מתקשה להתרכז לאורך זמן?</div>
-    <div class="landing-hook-sub">החברותא החדש שלך יגרום לך להתמכר ללימוד תורה</div>
-    <button class="landing-btn" onclick="showRegisterFromLanding()">
+    <div class="landing-hook" data-i18n="landingHook">מתקשה להתרכז לאורך זמן?</div>
+    <div class="landing-hook-sub" data-i18n="landingHookSub">החברותא החדש שלך יגרום לך להתמכר ללימוד תורה</div>
+    <button class="landing-btn" onclick="showRegisterFromLanding()" data-i18n="landingBtn">
       אני מעוניין ללמוד עם רבי בניהו ✦
     </button>
   </div>
@@ -381,21 +381,21 @@
   <div class="modal-card">
     <div class="text-center mb-6">
       <img src="rabbi.png" alt="רבי בניהו" style="width:110px;border-radius:16px;margin:0 auto 12px;box-shadow:0 8px 24px rgba(27,58,107,0.18);">
-      <h1 class="text-2xl font-bold text-navy mb-1">ברוכים הבאים לחברותא</h1>
-      <p class="text-sm font-semibold" style="color:#B8860B;">הצטרפו ותלמדו עם רבי בניהו 📖</p>
-      <p class="text-gray-400 text-xs mt-1">תנ"ך • משנה • גמרא • רמב"ם • שולחן ערוך</p>
+      <h1 class="text-2xl font-bold text-navy mb-1" data-i18n="registerTitle">ברוכים הבאים לחברותא</h1>
+      <p class="text-sm font-semibold" style="color:#B8860B;" data-i18n="registerSub">הצטרפו ותלמדו עם רבי בניהו 📖</p>
+      <p class="text-gray-400 text-xs mt-1" data-i18n="registerCollections">תנ"ך • משנה • גמרא • רמב"ם • שולחן ערוך</p>
     </div>
 
     <div class="mb-4">
-      <label class="block text-sm font-semibold text-gray-600 mb-1">שם מלא <span class="text-red-500">*</span></label>
-      <input type="text" id="reg-name" placeholder="ישראל ישראלי" maxlength="50"
+      <label class="block text-sm font-semibold text-gray-600 mb-1"><span data-i18n="fullNameLabel">שם מלא</span> <span class="text-red-500">*</span></label>
+      <input type="text" id="reg-name" placeholder="ישראל ישראלי" maxlength="50" data-i18n-placeholder="fullNamePlaceholder"
              class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white text-right"
              onkeydown="regHandleKey(event)">
     </div>
 
     <div class="mb-6">
-      <label class="block text-sm font-semibold text-gray-600 mb-1">כתובת מייל <span class="text-red-500">*</span></label>
-      <input type="email" id="reg-email" placeholder="israel@example.com" maxlength="100"
+      <label class="block text-sm font-semibold text-gray-600 mb-1"><span data-i18n="emailLabel">כתובת מייל</span> <span class="text-red-500">*</span></label>
+      <input type="email" id="reg-email" placeholder="israel@example.com" maxlength="100" data-i18n-placeholder="emailPlaceholder"
              class="w-full p-3 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-navy focus:border-transparent bg-white"
              dir="ltr" onkeydown="regHandleKey(event)">
     </div>
@@ -403,7 +403,8 @@
     <div id="reg-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center"></div>
 
     <button onclick="register()" id="reg-btn"
-            class="start-btn w-full py-4 bg-navy text-white text-xl font-bold rounded-xl">
+            class="start-btn w-full py-4 bg-navy text-white text-xl font-bold rounded-xl"
+            data-i18n="signInBtn">
       כניסה ✦
     </button>
   </div>
@@ -416,10 +417,10 @@
 <div id="pending-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-8" style="background:#f5f0e8;">
   <div class="text-center max-w-md">
     <img src="rabbi.png" alt="רבי בניהו" style="width:100px;border-radius:14px;margin:0 auto 16px;opacity:0.75;">
-    <h2 class="text-2xl font-bold text-navy mb-3">בקשתך התקבלה!</h2>
-    <p class="text-gray-600 mb-2">רבי בניהו מחכה לך — חשבונך ממתין לאישור המנהל.</p>
-    <p class="text-gray-500 text-sm">לאחר שהמנהל יאשר את הצטרפותך, תוכל להתחיל ללמוד.</p>
-    <button onclick="logout()" class="mt-6 text-sm text-gray-500 hover:text-navy border border-gray-300 rounded-full px-4 py-2 transition-colors">התנתק</button>
+    <h2 class="text-2xl font-bold text-navy mb-3" data-i18n="pendingTitle">בקשתך התקבלה!</h2>
+    <p class="text-gray-600 mb-2" data-i18n="pendingMsg">רבי בניהו מחכה לך — חשבונך ממתין לאישור המנהל.</p>
+    <p class="text-gray-500 text-sm" data-i18n="pendingSubmsg">לאחר שהמנהל יאשר את הצטרפותך, תוכל להתחיל ללמוד.</p>
+    <button onclick="logout()" class="mt-6 text-sm text-gray-500 hover:text-navy border border-gray-300 rounded-full px-4 py-2 transition-colors" data-i18n="logoutConfirmBtn">התנתק</button>
   </div>
 </div>
 
@@ -678,7 +679,7 @@
 <div id="modal-finished" class="modal-overlay hidden">
   <div class="modal-card" style="max-width:360px; text-align:center;">
     <img src="rabbi.png" alt="רבי בניהו" style="width:90px;border-radius:12px;margin:0 auto 10px;box-shadow:0 4px 16px rgba(27,58,107,0.2);">
-    <h3 class="text-2xl font-bold text-navy mb-2">כל הכבוד! 🎉</h3>
+    <h3 class="text-2xl font-bold text-navy mb-2" data-i18n="congratsTitle">כל הכבוד! 🎉</h3>
     <p class="text-gray-600 mb-1" id="fin-msg">סיימת את היחידה!</p>
     <p class="text-xl font-bold mb-6" style="color:#B8860B" id="fin-score">+0 נקודות</p>
     <button onclick="openShareModal()"
@@ -687,7 +688,8 @@
       ✨ צור כרטיס שיתוף
     </button>
     <button onclick="resetSession()"
-            class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
+            class="w-full py-3 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors"
+            data-i18n="chooseNewUnit">
       בחר יחידה חדשה
     </button>
   </div>
@@ -743,7 +745,7 @@
 <div id="wrong-popup" class="fixed top-24 left-1/2 -translate-x-1/2 pointer-events-none z-50 hidden">
   <div id="wrong-popup-inner"
        class="text-white text-2xl font-bold px-6 py-2 rounded-full shadow-2xl"
-       style="background: radial-gradient(circle, #DC3030, #8B1010)">✗ לא נכון</div>
+       style="background: radial-gradient(circle, #DC3030, #8B1010)" data-i18n="wrongText">✗ לא נכון</div>
 </div>
 
 
@@ -758,16 +760,18 @@
     <div class="header-right">
       <button id="logo-btn" onclick="resetSession()" title="שיחה חדשה" style="display:flex;align-items:center;gap:7px;">
         <img src="rabbi.png" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #F0C040;flex-shrink:0;">
-        חברותא
+        <span data-i18n="appName">חברותא</span>
       </button>
 
       <button id="admin-btn" onclick="openAdmin()" class="hidden"
-              style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;">
+              style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;"
+              data-i18n="adminBtn">
         ⚙️ ניהול
       </button>
 
       <button id="header-new-btn" onclick="resetSession()" class="hidden"
-              style="background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem;cursor:pointer;">
+              style="background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem;cursor:pointer;"
+              data-i18n="newChatBtn">
         שיחה חדשה ↺
       </button>
 
@@ -781,17 +785,23 @@
     <!-- Left side: score + greeting + logout -->
     <div class="header-left">
       <div id="score-badge-header">
-        <span class="text-white text-xs font-medium" style="line-height:1">ניקוד</span>
+        <span class="text-white text-xs font-medium" style="line-height:1" data-i18n="scoreLabel">ניקוד</span>
         <span class="text-white text-lg font-bold" id="score-display">0</span>
       </div>
       <span id="user-greeting" class="text-sm text-blue-200 hidden"></span>
       <button onclick="openHistory()" id="history-btn"
-              class="hidden text-xs border border-yellow-400 text-yellow-300 hover:bg-yellow-400 hover:text-navy rounded-full px-3 py-1 transition-colors">
+              class="hidden text-xs border border-yellow-400 text-yellow-300 hover:bg-yellow-400 hover:text-navy rounded-full px-3 py-1 transition-colors"
+              data-i18n="historyBtn">
         📚 הלמידה שלי
       </button>
       <button onclick="logout()" id="logout-btn"
-              class="hidden text-xs text-blue-300 hover:text-white transition-colors border border-blue-400 rounded-full px-3 py-1">
+              class="hidden text-xs text-blue-300 hover:text-white transition-colors border border-blue-400 rounded-full px-3 py-1"
+              data-i18n="logoutBtn">
         יציאה
+      </button>
+      <button id="lang-toggle-btn" onclick="toggleLang()"
+              style="background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:4px 10px;font-size:0.78rem;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+        🌐 EN
       </button>
     </div>
   </header>
@@ -801,9 +811,9 @@
     <!-- Welcome state -->
     <div id="welcome">
       <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;">שלום</p>
-      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;">אני רבי בניהו</p>
-      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;">יחד נעמיק בתורה הקדושה</p>
+      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;" data-i18n="greetingHello">שלום</p>
+      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;" data-i18n="greetingName">אני רבי בניהו</p>
+      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;" data-i18n="greetingSubtitle">יחד נעמיק בתורה הקדושה</p>
     </div>
   </div>
 
@@ -813,7 +823,7 @@
     <!-- Greeting-mode selector (shown instead of free text) -->
     <div id="greeting-picker" class="hidden"
          style="background:#faf8f3;border:1.5px solid #d4c5a0;border-radius:16px;padding:14px 16px;text-align:right;">
-      <div style="color:#B8860B;font-weight:700;font-size:0.88rem;margin-bottom:10px;">📖 בחר מה ללמוד:</div>
+      <div style="color:#B8860B;font-weight:700;font-size:0.88rem;margin-bottom:10px;" data-i18n="chooseStudy">📖 בחר מה ללמוד:</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
         <select id="gp-collection" onchange="gpCollectionChange()"
                 class="header-select" style="background:#fff;color:#1a2744;border:1px solid #c9b99a;">
@@ -832,7 +842,8 @@
           <option value="">— יחידה —</option>
         </select>
         <button id="gp-start" onclick="gpStart()" disabled
-                style="background:#1a2744;color:#F0C040;border:none;border-radius:10px;padding:8px 18px;font-weight:700;font-size:0.9rem;cursor:pointer;opacity:0.5;transition:opacity 0.2s;">
+                style="background:#1a2744;color:#F0C040;border:none;border-radius:10px;padding:8px 18px;font-weight:700;font-size:0.9rem;cursor:pointer;opacity:0.5;transition:opacity 0.2s;"
+                data-i18n="startBtn">
           התחל ✦
         </button>
       </div>
@@ -841,10 +852,11 @@
     <!-- Normal chat input -->
     <div id="chat-input-row" class="flex gap-2 items-end">
       <button onclick="sendMessage()"
-              class="flex-shrink-0 px-5 py-2.5 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors">
+              class="flex-shrink-0 px-5 py-2.5 bg-navy text-white font-bold rounded-xl hover:bg-navyDark transition-colors"
+              data-i18n="sendBtn">
         שלח
       </button>
-<textarea id="user-input" rows="2" placeholder="כתוב את תשובתך כאן..."
+<textarea id="user-input" rows="2" placeholder="כתוב את תשובתך כאן..." data-i18n-placeholder="chatPlaceholder"
                 class="flex-1 p-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-navy focus:border-transparent text-right leading-relaxed"
                 onkeydown="handleKey(event)"></textarea>
     </div>
@@ -861,22 +873,22 @@
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#1a2744 0%,#2d4373 100%);padding:24px 28px 20px;border-radius:20px 20px 0 0;flex-shrink:0;">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-white text-xl font-bold">📚 מסע הלמידה שלי</h2>
+        <h2 class="text-white text-xl font-bold" data-i18n="historyTitle">📚 מסע הלמידה שלי</h2>
         <button onclick="closeHistory()" class="text-white opacity-60 hover:opacity-100 text-2xl leading-none">&times;</button>
       </div>
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-3" id="history-stats">
         <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
           <div class="text-2xl font-bold text-white" id="stat-units">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">יחידות שנלמדו</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);" data-i18n="statUnits">יחידות שנלמדו</div>
         </div>
         <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
           <div class="text-2xl font-bold" style="color:#F0C040;" id="stat-score">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">נקודות כוללות</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);" data-i18n="statScore">נקודות כוללות</div>
         </div>
         <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px;text-align:center;">
           <div class="text-2xl font-bold text-white" id="stat-books">—</div>
-          <div class="text-xs" style="color:rgba(255,255,255,0.65);">ספרים שנלמדו</div>
+          <div class="text-xs" style="color:rgba(255,255,255,0.65);" data-i18n="statBooks">ספרים שנלמדו</div>
         </div>
       </div>
     </div>
