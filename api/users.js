@@ -105,9 +105,15 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { email } = req.query;
     if (email) {
-      const user = await kv.get(`user:${email.trim().toLowerCase()}`);
+      const normalEmail = email.trim().toLowerCase();
+      const user = await kv.get(`user:${normalEmail}`);
       if (!user) return res.json({ status: 'not_found', isAdmin: false });
-      return res.json({ status: user.status, isAdmin: user.isAdmin || false });
+      const isAdm = !!(ADMIN && normalEmail === ADMIN);
+      // Backfill isAdmin into KV if the record predates the field
+      if (isAdm && !user.isAdmin) {
+        await kv.set(`user:${normalEmail}`, { ...user, isAdmin: true }).catch(() => {});
+      }
+      return res.json({ status: user.status, isAdmin: isAdm || user.isAdmin || false });
     }
     if (isAdminAuthed(req)) {
       const emails = (await kv.smembers('users:all')) || [];
