@@ -2,15 +2,71 @@
 // חברותא – אפליקציית לימוד | Frontend Logic
 // ================================================================
 
-let GLOBAL_MODEL = null; // loaded from server on init
-async function loadGlobalModel() {
+let GLOBAL_MODEL      = null; // loaded from server on init
+let GLOBAL_GREETING   = null; // loaded from server on init
+let GLOBAL_PROMPTS    = {};   // loaded from server on init
+let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
+let SOUND_WRONG       = null; // custom wrong-answer sound (data URL)
+let SHARE_CARD_CONFIG = {     // share card design, overridden from server
+  theme: 'dark',
+  headerText: 'חברותא | שירת התורה',
+  subtitle: 'לימוד תורה אינטראקטיבי',
+  learnedText: 'למדתי היום את',
+  scoreText: 'וצברתי {score} נקודות',
+  ctaText: 'בוא ללמוד תורה גם אתה!',
+  siteUrl: 'chavruta.vercel.app',
+};
+
+async function loadGlobalConfig() {
   try {
     const r = await fetch('/api/config');
     const d = await r.json();
-    GLOBAL_MODEL = d.model;
+    GLOBAL_MODEL    = d.model;
+    GLOBAL_GREETING = d.greeting || null;
+    GLOBAL_PROMPTS  = d.prompts  || {};
+    SOUND_CORRECT   = d.sound_correct || null;
+    SOUND_WRONG     = d.sound_wrong   || null;
+    if (d.shareCard) SHARE_CARD_CONFIG = { ...SHARE_CARD_CONFIG, ...d.shareCard };
   } catch { GLOBAL_MODEL = 'anthropic/claude-opus-4'; }
 }
-loadGlobalModel();
+loadGlobalConfig();
+
+// ── Audio ────────────────────────────────────────────────────────
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function playCorrectSound() {
+  try {
+    if (SOUND_CORRECT) { const a = new Audio(SOUND_CORRECT); a.volume = 0.7; a.play(); return; }
+    const ctx = getAudioCtx();
+    [[659.25, 0], [783.99, 0.1], [987.77, 0.22]].forEach(([freq, t]) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.22, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.45);
+      osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.45);
+    });
+  } catch { /* silent */ }
+}
+
+function playWrongSound() {
+  try {
+    if (SOUND_WRONG) { const a = new Audio(SOUND_WRONG); a.volume = 0.7; a.play(); return; }
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(230, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+  } catch { /* silent */ }
+}
 
 // ── תנ"ך ────────────────────────────────────────────────────────
 const TANACH = [
@@ -184,7 +240,7 @@ const RAMBAM = [
   {g:'ספר אהבה',   he:'תפילין',           sf:'Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll',                            ch:10},
   {g:'ספר אהבה',   he:'ברכות',            sf:'Mishneh Torah, Blessings',                                                         ch:11},
   {g:'ספר אהבה',   he:'מילה',             sf:'Mishneh Torah, Circumcision',                                                      ch:3},
-  {g:'ספר זמנים',  he:'שבת',              sf:'Mishneh Torah, Shabbat',                                                           ch:30},
+  {g:'ספר זמנים',  he:'שבת',              sf:'Mishneh Torah, Sabbath',                                                           ch:30},
   {g:'ספר זמנים',  he:'יום טוב',          sf:'Mishneh Torah, Yom Tov',                                                           ch:8},
   {g:'ספר זמנים',  he:'חמץ ומצה',         sf:'Mishneh Torah, Leavened and Unleavened Bread',                                     ch:8},
   {g:'ספר זמנים',  he:'שופר סוכה לולב',   sf:'Mishneh Torah, Shofar, Sukkah and Lulav',                                         ch:8},
@@ -295,7 +351,7 @@ async function register() {
       body: JSON.stringify({ name, email })
     });
     const data = await res.json();
-    localStorage.setItem('chavruta_user', JSON.stringify({ name, email }));
+    localStorage.setItem('chavruta_user', JSON.stringify({ name, email, isAdmin: data.isAdmin || false }));
     document.getElementById('modal-register').classList.add('hidden');
     if (data.status === 'approved') {
       updateUserUI();
@@ -322,18 +378,21 @@ function logout() {
   if (!confirm('להתנתק? הניקוד שלך יישמר.')) return;
   localStorage.removeItem('chavruta_user');
   document.getElementById('pending-screen').classList.add('hidden');
-  document.getElementById('modal-register').classList.remove('hidden');
+  document.getElementById('modal-register').classList.add('hidden');
+  document.getElementById('landing-page').classList.remove('hidden');
   document.getElementById('user-greeting').classList.add('hidden');
   document.getElementById('logout-btn').classList.add('hidden');
   document.getElementById('history-btn').classList.add('hidden');
   document.getElementById('admin-btn').classList.add('hidden');
 }
 
-const ADMIN_EMAIL = 'a0583298194@gmail.com';
+function getAdminSecret() { return sessionStorage.getItem('chavruta_admin_secret') || ''; }
+function setAdminSecret(s) { sessionStorage.setItem('chavruta_admin_secret', s); }
+function adminHeaders() { return { 'Content-Type': 'application/json', 'x-admin-secret': getAdminSecret() }; }
 
 function isAdmin() {
   const user = getUser();
-  return user && user.email && user.email.trim().toLowerCase() === ADMIN_EMAIL;
+  return user?.isAdmin === true;
 }
 
 function updateUserUI() {
@@ -344,7 +403,6 @@ function updateUserUI() {
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
     document.getElementById('history-btn').classList.remove('hidden');
-    renderStreak();
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
       S.adminAuthed = true;
@@ -354,8 +412,18 @@ function updateUserUI() {
 }
 
 function openAdmin() {
-  document.getElementById('modal-admin').classList.remove('hidden');
-  if (isAdmin()) showAdminEditor();
+  if (!isAdmin()) return;
+  const modal = document.getElementById('modal-admin');
+  modal.classList.remove('hidden');
+  // Reset gate state
+  const pwErr = document.getElementById('admin-pw-error');
+  const pwIn  = document.getElementById('admin-pw-input');
+  if (pwErr) { pwErr.classList.add('hidden'); pwErr.textContent = ''; }
+  if (pwIn)  { pwIn.value = ''; }
+  // If secret already verified this session, go straight to editor
+  if (getAdminSecret()) {
+    showAdminEditor();
+  }
 }
 
 function closeAdmin() {
@@ -366,15 +434,24 @@ function adminPwKey(e) {
   if (e.key === 'Enter') checkAdminPw();
 }
 
-function checkAdminPw() {
-  const input = document.getElementById('admin-pw-input').value;
-  const stored = localStorage.getItem('chavruta_admin_pw') || 'A089557176';
-  if (input === stored) {
-    S.adminAuthed = true;
-    document.getElementById('admin-pw-input').value = '';
-    showAdminEditor();
-  } else {
-    document.getElementById('admin-pw-error').classList.remove('hidden');
+async function checkAdminPw() {
+  const input  = document.getElementById('admin-pw-input');
+  const errEl  = document.getElementById('admin-pw-error');
+  const secret = input ? input.value.trim() : '';
+  if (!secret) return;
+  errEl.classList.add('hidden');
+  try {
+    const res = await fetch('/api/users', { headers: { 'x-admin-secret': secret } });
+    if (res.ok) {
+      setAdminSecret(secret);
+      showAdminEditor();
+    } else {
+      errEl.textContent = 'מפתח המנהל שגוי.';
+      errEl.classList.remove('hidden');
+    }
+  } catch {
+    errEl.textContent = 'שגיאת רשת, נסה שוב.';
+    errEl.classList.remove('hidden');
   }
 }
 
@@ -384,11 +461,11 @@ function showAdminEditor() {
   document.getElementById('admin-save-msg').classList.add('hidden');
 
   document.getElementById('admin-model-select').value = GLOBAL_MODEL || 'anthropic/claude-opus-4';
+  document.getElementById('admin-greeting').value = GLOBAL_GREETING || DEFAULT_GREETING;
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
-    const saved = localStorage.getItem(`chavruta_prompt_${k}`);
-    document.getElementById(`admin-prompt-${k}`).value = saved !== null ? saved : DEFAULT_ADMIN_PROMPTS[k];
+    document.getElementById(`admin-prompt-${k}`).value = GLOBAL_PROMPTS[k] || DEFAULT_ADMIN_PROMPTS[k];
   }
 
   loadAdminUsers();
@@ -396,11 +473,10 @@ function showAdminEditor() {
 }
 
 async function loadAdminUsers() {
-  const user = getUser();
   const container = document.getElementById('admin-users-list');
   container.innerHTML = '<p class="text-sm text-gray-400 text-center">טוען...</p>';
   try {
-    const res = await fetch(`/api/users?adminEmail=${encodeURIComponent(user.email)}`);
+    const res = await fetch('/api/users', { headers: { 'x-admin-secret': getAdminSecret() } });
     const users = await res.json();
     if (!Array.isArray(users) || !users.length) {
       container.innerHTML = '<p class="text-sm text-gray-400 text-center">אין משתמשים רשומים.</p>';
@@ -414,8 +490,8 @@ async function loadAdminUsers() {
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
           ${u.status === 'pending'
-            ? `<button onclick="setUserStatus('${u.email}','approved')" class="text-xs px-2 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700">אשר</button>`
-            : (u.email !== ADMIN_EMAIL ? `<button onclick="setUserStatus('${u.email}','pending')" class="text-xs px-2 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500">בטל</button>` : '')}
+            ? `<button onclick="setUserStatus(this.dataset.email,'approved')" data-email="${esc(u.email)}" class="text-xs px-2 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700">אשר</button>`
+            : (!u.isAdmin ? `<button onclick="setUserStatus(this.dataset.email,'pending')" data-email="${esc(u.email)}" class="text-xs px-2 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500">בטל</button>` : '')}
           <span class="text-xs px-2 py-1 rounded-lg ${u.status === 'pending' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}">${u.status === 'pending' ? 'ממתין' : 'מאושר'}</span>
         </div>
       </div>`).join('');
@@ -425,42 +501,43 @@ async function loadAdminUsers() {
 }
 
 async function setUserStatus(email, status) {
-  const user = getUser();
   await fetch('/api/users', {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, status, adminEmail: user.email })
+    headers: adminHeaders(),
+    body: JSON.stringify({ email, status })
   });
   loadAdminUsers();
 }
 
 function resetPrompt(k) {
   document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
-  localStorage.removeItem(`chavruta_prompt_${k}`);
 }
 
-function saveAdminPrompts() {
+async function saveAdminPrompts() {
   // Save model to server (affects all users)
   const model = document.getElementById('admin-model-select').value;
-  GLOBAL_MODEL = model;
-  const user = getUser();
-  fetch('/api/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ adminEmail: user.email, model })
-  });
-
+  const greeting = document.getElementById('admin-greeting').value.trim();
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
+  const prompts = {};
   for (const k of keys) {
     const val = document.getElementById(`admin-prompt-${k}`).value.trim();
-    // Save whatever is in the box (even if same as default — user explicitly chose it)
-    if (val && val !== DEFAULT_ADMIN_PROMPTS[k]) {
-      localStorage.setItem(`chavruta_prompt_${k}`, val);
-    } else {
-      localStorage.removeItem(`chavruta_prompt_${k}`); // use server default
-    }
+    prompts[k] = (val && val !== DEFAULT_ADMIN_PROMPTS[k]) ? val : '';
   }
   const msg = document.getElementById('admin-save-msg');
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ model, greeting: greeting || null, prompts })
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    GLOBAL_MODEL = model;
+    GLOBAL_GREETING = greeting || null;
+    for (const k of keys) GLOBAL_PROMPTS[k] = prompts[k] || null;
+    msg.textContent = '✓ נשמר בהצלחה';
+  } catch {
+    msg.textContent = '⚠ שגיאה בשמירה';
+  }
   msg.classList.remove('hidden');
   setTimeout(() => msg.classList.add('hidden'), 2500);
 }
@@ -479,7 +556,9 @@ async function fetchContent(collectionKey, item, unit) {
   if (!res.ok) throw new Error(res.status === 404 ? 'SEFARIA_NOT_FOUND' : 'SEFARIA_DOWN');
   const data = await res.json();
   let he = data.he;
-  if (Array.isArray(he) && Array.isArray(he[0])) he = he.flat();
+  if (!Array.isArray(he)) throw new Error('SEFARIA_NOT_FOUND');
+  if (Array.isArray(he[0])) he = he.flat();
+  if (Array.isArray(he[0])) he = he.flat(); // handle 3-level nesting
   const verses = he.map(v => typeof v === 'string' ? v.replace(/<[^>]+>/g, '').trim() : '').filter(Boolean);
   if (!verses.length) throw new Error('SEFARIA_NOT_FOUND');
   return verses;
@@ -563,9 +642,9 @@ function buildUnitLabel() {
   if (col.type === 'daf') {
     const dafNum  = parseInt(S.unit, 10);
     const amud    = S.unit.endsWith('b') ? 'ב' : 'א';
-    return `${col.unitLabel} ${toHebrew(dafNum)}' עמוד ${amud}'`;
+    return `${col.unitLabel} ${toHebrew(dafNum)} עמוד ${amud}'`;
   } else {
-    return `${col.unitLabel} ${toHebrew(parseInt(S.unit, 10))}'`;
+    return `${col.unitLabel} ${toHebrew(parseInt(S.unit, 10))}`;
   }
 }
 
@@ -578,8 +657,6 @@ async function callAI() {
   try {
     const col         = COLLECTIONS[S.collectionKey];
     const unitLabel   = buildUnitLabel();
-    const customPrompt = localStorage.getItem(`chavruta_prompt_${S.collectionKey}`) || '';
-
     const body = {
       messages:        S.messages,
       chapter_text:    S.verses.map((v, i) => `${i + 1}. ${v}`).join('\n'),
@@ -588,7 +665,6 @@ async function callAI() {
       total_verses:    S.verses.length,
       collection_type: S.collectionKey,
     };
-    if (customPrompt) body.custom_prompt = customPrompt;
     if (GLOBAL_MODEL) body.model = GLOBAL_MODEL;
 
     const res = await fetch('/api/chat', {
@@ -621,6 +697,7 @@ async function callAI() {
 // ── Process AI JSON ──────────────────────────────────────────────
 function processResponse(data) {
   if (data.score > 0) addScore(data.score);
+  if (data.score === 0 && data.feedback && data.feedback.trim()) wrongAnswer();
 
   // Override verse from authoritative local source
   if (data.next_verse_num && S.verses[data.next_verse_num - 1]) {
@@ -693,7 +770,7 @@ function renderAI(data) {
   if (!data.is_finished && data.next_verse) {
     html += `<div class="verse-box p-4 mb-3">
                <div class="flex items-start gap-3">
-                 <span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(data.next_verse_num)}</span>
+                 ${S.collectionKey !== 'shas' ? `<span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(data.next_verse_num)}</span>` : ''}
                  <p class="text-lg font-semibold leading-loose">${esc(data.next_verse)}</p>
                </div>
              </div>`;
@@ -794,6 +871,7 @@ function addScore(pts) {
   localStorage.setItem('chavruta_score', S.totalScore);
   refreshScores();
   popScore(pts);
+  playCorrectSound();
 }
 
 function refreshScores() {
@@ -812,6 +890,31 @@ function popScore(pts) {
     el.classList.add('hidden');
     inner.classList.remove('score-pop');
   }, 2500);
+}
+
+// ── Wrong answer ─────────────────────────────────────────────────
+function wrongAnswer() {
+  playWrongSound();
+  // Shake the last user bubble
+  const bubbles = document.querySelectorAll('.bubble-user');
+  const last    = bubbles[bubbles.length - 1];
+  if (last) {
+    last.classList.remove('wrong-shake');
+    void last.offsetWidth;
+    last.classList.add('wrong-shake');
+    setTimeout(() => last.classList.remove('wrong-shake'), 500);
+  }
+  // Show floating ✗ popup
+  const el    = document.getElementById('wrong-popup');
+  const inner = document.getElementById('wrong-popup-inner');
+  inner.classList.remove('wrong-pop');
+  el.classList.remove('hidden');
+  void inner.offsetWidth;
+  inner.classList.add('wrong-pop');
+  setTimeout(() => {
+    el.classList.add('hidden');
+    inner.classList.remove('wrong-pop');
+  }, 2100);
 }
 
 // ── Finished ─────────────────────────────────────────────────────
@@ -845,7 +948,6 @@ function resetSession() {
       exchanges: Math.floor((S.messages.length - 1) / 2),
       bookTotal,
     });
-    updateStreak();
   }
 
   S.messages       = [];
@@ -871,6 +973,26 @@ function esc(str) {
   return d.innerHTML;
 }
 
+// ── Greeting ──────────────────────────────────────────────────────
+const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
+יחד נעמיק בתורה הקדושה.
+בחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.
+מה תרצה ללמוד היום? 📖`;
+
+function buildGreetingHtml(text) {
+  const lines = (text || DEFAULT_GREETING).split('\n').filter(l => l.trim());
+  return lines.map((line, i) => {
+    const e = esc(line);
+    if (i === 0)               return `<div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">${e}</div>`;
+    if (i === lines.length - 1) return `<div style="margin-top:8px;color:#B8860B;font-weight:700;">${e}</div>`;
+    return `<div>${e}</div>`;
+  }).join('');
+}
+
+function resetGreeting() {
+  document.getElementById('admin-greeting').value = DEFAULT_GREETING;
+}
+
 // ── Default prompts (mirrors api/chat.js) ────────────────────────
 const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
 const DEFAULT_ADMIN_PROMPTS = {
@@ -881,38 +1003,236 @@ const DEFAULT_ADMIN_PROMPTS = {
   shulchan: RABBI_PERSONA + `תלמד שולחן ערוך סעיף אחד בכל פעם, ותשאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
 };
 
-// ── Streak ───────────────────────────────────────────────────────
-function todayStr() { return new Date().toISOString().slice(0, 10); }
 
-function getStreak() {
-  try { return JSON.parse(localStorage.getItem('chavruta_streak') || '{"count":0,"lastDate":""}'); }
-  catch { return { count: 0, lastDate: '' }; }
+// ── Share Card ────────────────────────────────────────────────────
+async function openShareModal() {
+  document.getElementById('modal-share-card').classList.remove('hidden');
+  await document.fonts.ready;
+  generateShareCard();
 }
 
-function updateStreak() {
-  const today = todayStr();
-  const s = getStreak();
-  if (s.lastDate === today) return; // already counted today
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  s.count = (s.lastDate === yesterday) ? s.count + 1 : 1;
-  s.lastDate = today;
-  localStorage.setItem('chavruta_streak', JSON.stringify(s));
-  renderStreak();
+function closeShareModal() {
+  document.getElementById('modal-share-card').classList.add('hidden');
 }
 
-function renderStreak() {
-  const s = getStreak();
-  if (s.count > 0) {
-    document.getElementById('streak-num').textContent = s.count;
-    document.getElementById('streak-badge').classList.remove('hidden');
+async function generateShareCard() {
+  const canvas = document.getElementById('share-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 1080, H = 1080;
+  canvas.width = W;
+  canvas.height = H;
+
+  const cfg = SHARE_CARD_CONFIG;
+  const dark = cfg.theme !== 'light';
+  const GOLD   = '#F0C040';
+  const GOLDDARK = '#B8860B';
+  const textMain = dark ? '#FDF8EF' : '#1B3A6B';
+
+  // ── Background ──
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  if (dark) {
+    bg.addColorStop(0,   '#0A1628');
+    bg.addColorStop(0.5, '#1B3A6B');
+    bg.addColorStop(1,   '#0A1628');
+  } else {
+    bg.addColorStop(0, '#FDF8EF');
+    bg.addColorStop(1, '#F0E6C8');
   }
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Borders ──
+  ctx.strokeStyle = GOLDDARK;
+  ctx.lineWidth = 10;
+  _scRoundRect(ctx, 24, 24, W-48, H-48, 26);
+  ctx.stroke();
+  ctx.lineWidth = 2;
+  _scRoundRect(ctx, 46, 46, W-92, H-92, 18);
+  ctx.stroke();
+
+  // ── Corner diamonds ──
+  [[68,68],[W-68,68],[68,H-68],[W-68,H-68]].forEach(([x,y]) => {
+    ctx.fillStyle = GOLDDARK;
+    ctx.beginPath();
+    ctx.moveTo(x, y-13); ctx.lineTo(x+13, y);
+    ctx.lineTo(x, y+13); ctx.lineTo(x-13, y);
+    ctx.closePath(); ctx.fill();
+  });
+
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+
+  // ── App name ──
+  ctx.fillStyle = GOLD;
+  ctx.font = `bold 68px 'Noto Serif Hebrew', serif`;
+  ctx.fillText(cfg.headerText || 'חברותא | שירת התורה', W/2, 172);
+
+  // ── Subtitle ──
+  ctx.fillStyle = dark ? 'rgba(240,192,64,0.65)' : GOLDDARK;
+  ctx.font = `38px 'Noto Serif Hebrew', serif`;
+  ctx.fillText(cfg.subtitle || 'לימוד תורה אינטראקטיבי', W/2, 232);
+
+  // ── Divider ──
+  _scDivider(ctx, W/2, 278, 700, GOLDDARK);
+
+  // ── "I learned today" ──
+  ctx.fillStyle = textMain;
+  ctx.font = `46px 'Noto Serif Hebrew', serif`;
+  ctx.fillText(cfg.learnedText || 'למדתי היום את', W/2, 390);
+
+  // ── Book + chapter (large gold, auto-shrink) ──
+  ctx.fillStyle = GOLD;
+  let bookFontSize = 88;
+  const bookLabel = `${S.book?.he || ''} ${buildUnitLabel()}`;
+  ctx.font = `bold ${bookFontSize}px 'Noto Serif Hebrew', serif`;
+  while (ctx.measureText(bookLabel).width > W - 120 && bookFontSize > 52) {
+    bookFontSize -= 4;
+    ctx.font = `bold ${bookFontSize}px 'Noto Serif Hebrew', serif`;
+  }
+  ctx.fillText(bookLabel, W/2, 508);
+
+  // ── Divider ──
+  _scDivider(ctx, W/2, 562, 520, GOLDDARK);
+
+  // ── Score ──
+  ctx.fillStyle = textMain;
+  ctx.font = `52px 'Noto Serif Hebrew', serif`;
+  const scoreLabel = (cfg.scoreText || 'וצברתי {score} נקודות')
+    .replace('{score}', S.sessionScore);
+  ctx.fillText(scoreLabel, W/2, 652);
+
+  // ── Stars ──
+  const stars = Math.min(5, Math.max(1, Math.round(S.sessionScore / 8)));
+  ctx.direction = 'ltr';
+  ctx.font = `68px sans-serif`;
+  ctx.fillText('⭐'.repeat(stars), W/2, 740);
+  ctx.direction = 'rtl';
+
+  // ── Divider ──
+  _scDivider(ctx, W/2, 788, 700, GOLDDARK);
+
+  // ── CTA ──
+  ctx.fillStyle = textMain;
+  ctx.font = `46px 'Noto Serif Hebrew', serif`;
+  ctx.fillText(cfg.ctaText || 'בוא ללמוד תורה גם אתה!', W/2, 888);
+
+  // ── URL ──
+  ctx.fillStyle = GOLD;
+  ctx.font = `bold 40px Arial, sans-serif`;
+  ctx.direction = 'ltr';
+  ctx.fillText(cfg.siteUrl || 'chavruta.vercel.app', W/2, 958);
 }
 
-// ── Share ─────────────────────────────────────────────────────────
-function shareSession() {
-  const col  = COLLECTIONS[S.collectionKey];
-  const text = `למדתי ${S.book.he} ${buildUnitLabel()} וצברתי ${S.sessionScore} נקודות ב-חברותא 📖\nhttps://chavruta.vercel.app`;
+function _scRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y,   x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x,   y+h, x,     y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x,   y,   x+r,   y);
+  ctx.closePath();
+}
+
+function _scDivider(ctx, cx, y, width, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - width/2, y);
+  ctx.lineTo(cx + width/2, y);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, y-11); ctx.lineTo(cx+11, y);
+  ctx.lineTo(cx, y+11); ctx.lineTo(cx-11, y);
+  ctx.closePath(); ctx.fill();
+}
+
+function downloadShareCard() {
+  const canvas = document.getElementById('share-canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  const bookName = (S.book?.he || 'chavruta').replace(/\s+/g, '-');
+  link.download = `chavruta-${bookName}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function shareCardToWhatsapp() {
+  const cfg = SHARE_CARD_CONFIG;
+  const url  = cfg.siteUrl?.startsWith('http') ? cfg.siteUrl : `https://${cfg.siteUrl || 'chavruta.vercel.app'}`;
+  const text = `למדתי ${S.book?.he || ''} ${buildUnitLabel()} וצברתי ${S.sessionScore} נקודות ב-חברותא 📖\n${url}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function copyShareLink() {
+  const cfg = SHARE_CARD_CONFIG;
+  const url  = cfg.siteUrl?.startsWith('http') ? cfg.siteUrl : `https://${cfg.siteUrl || 'chavruta.vercel.app'}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-link-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ הועתק!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
+// Admin preview – opens the share modal with a dummy session if no session is active
+function previewShareCardAdmin() {
+  if (!S.book) {
+    S.book = { he: 'בראשית' };
+    S.unit = 1;
+    S.collectionKey = 'tanach';
+    S.sessionScore = 47;
+    const _wasDummy = true;
+    openShareModal().then(() => {
+      if (_wasDummy) { S.book = null; S.unit = null; S.sessionScore = 0; }
+    });
+    return;
+  }
+  openShareModal();
+}
+
+// Admin: save share card config
+async function saveShareCardConfig() {
+  const user = getUser();
+  if (!user) return;
+  const cfg = {
+    theme:      document.getElementById('sc-theme').value,
+    headerText: document.getElementById('sc-header').value,
+    subtitle:   document.getElementById('sc-subtitle').value,
+    learnedText: document.getElementById('sc-learned').value,
+    scoreText:  document.getElementById('sc-score-text').value,
+    ctaText:    document.getElementById('sc-cta').value,
+    siteUrl:    document.getElementById('sc-url').value,
+  };
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ shareCard: cfg }),
+    });
+    if (!r.ok) throw new Error();
+    SHARE_CARD_CONFIG = { ...SHARE_CARD_CONFIG, ...cfg };
+    const msg = document.getElementById('sc-save-msg');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2500);
+  } catch { alert('שגיאה בשמירה'); }
+}
+
+// Admin: populate share card fields when admin panel opens
+function populateShareCardAdmin() {
+  const cfg = SHARE_CARD_CONFIG;
+  document.getElementById('sc-theme').value      = cfg.theme || 'dark';
+  document.getElementById('sc-header').value     = cfg.headerText || '';
+  document.getElementById('sc-subtitle').value   = cfg.subtitle || '';
+  document.getElementById('sc-learned').value    = cfg.learnedText || '';
+  document.getElementById('sc-score-text').value = cfg.scoreText || '';
+  document.getElementById('sc-cta').value        = cfg.ctaText || '';
+  document.getElementById('sc-url').value        = cfg.siteUrl || '';
 }
 
 // ── Learning History ─────────────────────────────────────────────
@@ -1044,13 +1364,22 @@ async function loadHistory() {
 }
 
 // ── Greeting picker ──────────────────────────────────────────────
+const PICKER_LABELS = {
+  tanach:   { book: 'ספר',  unit: 'פרק'  },
+  mishnah:  { book: 'מסכת', unit: 'פרק'  },
+  shas:     { book: 'מסכת', unit: 'דף'   },
+  rambam:   { book: 'ספר',  unit: 'פרק'  },
+  shulchan: { book: 'חלק',  unit: 'סימן' },
+};
+
 function gpCollectionChange() {
   const key = document.getElementById('gp-collection').value;
   S.collectionKey = key;
   S.book = null; S.unit = null;
   const col = COLLECTIONS[key];
+  const lbl = PICKER_LABELS[key] || { book: 'ספר', unit: 'יחידה' };
   const bookSel = document.getElementById('gp-book');
-  bookSel.innerHTML = '<option value="">— ספר —</option>';
+  bookSel.innerHTML = `<option value="">— ${lbl.book} —</option>`;
   // Group by g field if available
   const groups = {};
   col.items.forEach(item => {
@@ -1079,7 +1408,7 @@ function gpCollectionChange() {
     }
   });
   const unitSel = document.getElementById('gp-unit');
-  unitSel.innerHTML = '<option value="">— יחידה —</option>';
+  unitSel.innerHTML = `<option value="">— ${lbl.unit} —</option>`;
   unitSel.disabled = true;
   const btn = document.getElementById('gp-start');
   btn.disabled = true; btn.style.opacity = '0.5';
@@ -1090,8 +1419,9 @@ function gpBookChange() {
   const col = COLLECTIONS[S.collectionKey];
   S.book = col.items.find(b => b.sf === sf) || null;
   S.unit = null;
+  const lbl = PICKER_LABELS[S.collectionKey] || { unit: 'יחידה' };
   const unitSel = document.getElementById('gp-unit');
-  unitSel.innerHTML = '<option value="">— יחידה —</option>';
+  unitSel.innerHTML = `<option value="">— ${lbl.unit} —</option>`;
   const btn = document.getElementById('gp-start');
   if (!S.book) { unitSel.disabled = true; btn.disabled = true; btn.style.opacity='0.5'; return; }
   unitSel.disabled = false;
@@ -1100,7 +1430,7 @@ function gpBookChange() {
       for (const a of ['a','b']) {
         const opt = document.createElement('option');
         opt.value = `${d}${a}`;
-        opt.textContent = `דף ${toHebrew(d)}' עמוד ${a==='a'?'א':'ב'}'`;
+        opt.textContent = `דף ${toHebrew(d)} עמוד ${a==='a'?'א':'ב'}'`;
         unitSel.appendChild(opt);
       }
     }
@@ -1108,7 +1438,7 @@ function gpBookChange() {
     for (let i = 1; i <= S.book.ch; i++) {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = `${col.unitLabel} ${toHebrew(i)}'`;
+      opt.textContent = `${col.unitLabel} ${toHebrew(i)}`;
       unitSel.appendChild(opt);
     }
   }
@@ -1178,10 +1508,7 @@ function showGreeting() {
           <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
         </div>
         <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
-          <div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">שלום! כאן רבי בניהו 👋</div>
-          <div>יחד נעמיק בתורה הקדושה.</div>
-          <div style="margin-top:6px;">בחר <strong>אוסף, ספר ויחידה</strong> — ואני אתחיל ללמוד איתך חברותא.</div>
-          <div style="margin-top:8px;color:#B8860B;font-weight:700;">מה תרצה ללמוד היום? 📖</div>
+          ${buildGreetingHtml(GLOBAL_GREETING)}
         </div>`;
       chatEl.appendChild(outer);
       document.getElementById('greeting-picker').classList.remove('hidden');
@@ -1297,10 +1624,8 @@ const DEFAULT_EMAIL_BODIES = {
 };
 
 async function loadEmailTemplates() {
-  const user = getUser();
-  if (!user) return;
   try {
-    const res  = await fetch(`/api/email-templates?adminEmail=${encodeURIComponent(user.email)}`);
+    const res  = await fetch('/api/email-templates', { headers: { 'x-admin-secret': getAdminSecret() } });
     const data = await res.json();
     for (const type of ['welcome', 'approval', 'admin_notify']) {
       const tmpl = data[type];
@@ -1311,15 +1636,14 @@ async function loadEmailTemplates() {
 }
 
 async function saveEmailTemplate(type) {
-  const user    = getUser();
   const subject = document.getElementById(`email-subj-${type}`).value.trim();
   const body    = document.getElementById(`email-body-${type}`).value.trim();
   if (!subject || !body) return;
   try {
     await fetch('/api/email-templates', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adminEmail: user.email, type, subject, body })
+      headers: adminHeaders(),
+      body: JSON.stringify({ type, subject, body })
     });
     const msg = document.getElementById(`email-save-msg-${type}`);
     msg.classList.remove('hidden');
@@ -1338,6 +1662,10 @@ async function init() {
     try {
       const res = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
       const data = await res.json();
+      // Persist isAdmin flag if server says so (updates stale localStorage)
+      if (data.isAdmin && !user.isAdmin) {
+        localStorage.setItem('chavruta_user', JSON.stringify({ ...user, isAdmin: true }));
+      }
       if (data.status === 'approved') {
         updateUserUI();
       } else if (data.status === 'not_found') {
@@ -1348,6 +1676,7 @@ async function init() {
           body: JSON.stringify({ name: user.name, email: user.email })
         });
         const d2 = await r2.json();
+        if (d2.isAdmin) localStorage.setItem('chavruta_user', JSON.stringify({ ...user, isAdmin: true }));
         if (d2.status === 'approved') updateUserUI(); else showPendingScreen();
       } else {
         showPendingScreen();
@@ -1357,9 +1686,14 @@ async function init() {
       updateUserUI();
     }
   } else {
-    document.getElementById('modal-register').classList.remove('hidden');
-    setTimeout(() => document.getElementById('reg-name').focus(), 200);
+    document.getElementById('landing-page').classList.remove('hidden');
   }
+}
+
+function showRegisterFromLanding() {
+  document.getElementById('landing-page').classList.add('hidden');
+  document.getElementById('modal-register').classList.remove('hidden');
+  setTimeout(() => document.getElementById('reg-name').focus(), 200);
 }
 
 init();
