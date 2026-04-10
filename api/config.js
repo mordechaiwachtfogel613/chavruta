@@ -61,10 +61,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
   if (req.method === 'GET') {
-    const [model, greeting, shareCard, ...prompts] = await Promise.all([
+    const [model, greeting, shareCard, thinkingMsgs, ...prompts] = await Promise.all([
       kv.get('config:model'),
       kv.get('config:greeting'),
       kv.get('config:shareCard'),
+      kv.get('config:thinkingMsgs'),
       ...PROMPT_KEYS.map(k => kv.get(`config:prompt:${k}`)),
     ]);
     const promptsObj = {};
@@ -74,13 +75,14 @@ export default async function handler(req, res) {
       greeting: greeting || null,
       prompts: promptsObj,
       shareCard: shareCard || DEFAULT_SHARE_CARD,
+      thinkingMsgs: thinkingMsgs || null,
     });
   }
 
   if (req.method === 'POST') {
     if (!isAdminAuthed(req)) return res.status(403).json({ error: 'Forbidden' });
 
-    const { model, greeting, prompts, shareCard } = req.body || {};
+    const { model, greeting, prompts, shareCard, thinkingMsgs } = req.body || {};
     const ops = [];
 
     if (model !== undefined && model !== '') {
@@ -100,6 +102,15 @@ export default async function handler(req, res) {
             ? kv.set(`config:prompt:${k}`, String(prompts[k]).slice(0, 2000))
             : kv.del(`config:prompt:${k}`));
         }
+      }
+    }
+    if (thinkingMsgs !== undefined) {
+      // Save as array of non-empty strings (max 20 messages, each max 120 chars)
+      if (Array.isArray(thinkingMsgs) && thinkingMsgs.length > 0) {
+        const cleaned = thinkingMsgs.map(m => String(m).slice(0, 120).trim()).filter(Boolean).slice(0, 20);
+        ops.push(cleaned.length ? kv.set('config:thinkingMsgs', cleaned) : kv.del('config:thinkingMsgs'));
+      } else {
+        ops.push(kv.del('config:thinkingMsgs'));
       }
     }
     await Promise.all(ops);

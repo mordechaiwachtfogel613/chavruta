@@ -2,9 +2,10 @@
 // חברותא – אפליקציית לימוד | Frontend Logic
 // ================================================================
 
-let GLOBAL_MODEL      = null; // loaded from server on init
-let GLOBAL_GREETING   = null; // loaded from server on init
-let GLOBAL_PROMPTS    = {};   // loaded from server on init
+let GLOBAL_MODEL         = null; // loaded from server on init
+let GLOBAL_GREETING      = null; // loaded from server on init
+let GLOBAL_PROMPTS       = {};   // loaded from server on init
+let GLOBAL_THINKING_MSGS = null; // custom thinking messages from admin
 let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
 let SOUND_WRONG       = null; // custom wrong-answer sound (data URL)
 let SHARE_CARD_CONFIG = {     // share card design, overridden from server
@@ -21,9 +22,10 @@ async function loadGlobalConfig() {
   try {
     const r = await fetch('/api/config');
     const d = await r.json();
-    GLOBAL_MODEL    = d.model;
-    GLOBAL_GREETING = d.greeting || null;
-    GLOBAL_PROMPTS  = d.prompts  || {};
+    GLOBAL_MODEL         = d.model;
+    GLOBAL_GREETING      = d.greeting || null;
+    GLOBAL_PROMPTS       = d.prompts  || {};
+    GLOBAL_THINKING_MSGS = Array.isArray(d.thinkingMsgs) && d.thinkingMsgs.length ? d.thinkingMsgs : null;
     SOUND_CORRECT   = d.sound_correct || null;
     SOUND_WRONG     = d.sound_wrong   || null;
     if (d.shareCard) SHARE_CARD_CONFIG = { ...SHARE_CARD_CONFIG, ...d.shareCard };
@@ -678,6 +680,8 @@ function showAdminEditor() {
 
   document.getElementById('admin-model-select').value = GLOBAL_MODEL || 'anthropic/claude-opus-4';
   document.getElementById('admin-greeting').value = GLOBAL_GREETING || DEFAULT_GREETING;
+  document.getElementById('admin-thinking-msgs').value =
+    (GLOBAL_THINKING_MSGS || t('thinkingMsgs')).join('\n');
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
@@ -744,12 +748,21 @@ async function saveAdminPrompts() {
     const res = await fetch('/api/config', {
       method: 'POST',
       headers: adminHeaders(),
-      body: JSON.stringify({ model, greeting: greeting || null, prompts })
+      body: JSON.stringify({
+        model,
+        greeting: greeting || null,
+        prompts,
+        thinkingMsgs: document.getElementById('admin-thinking-msgs').value
+          .split('\n').map(s => s.trim()).filter(Boolean),
+      })
     });
     if (!res.ok) throw new Error(`${res.status}`);
     GLOBAL_MODEL = model;
     GLOBAL_GREETING = greeting || null;
     for (const k of keys) GLOBAL_PROMPTS[k] = prompts[k] || null;
+    const savedMsgs = document.getElementById('admin-thinking-msgs').value
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    GLOBAL_THINKING_MSGS = savedMsgs.length ? savedMsgs : null;
     msg.textContent = '✓ נשמר בהצלחה';
   } catch {
     msg.textContent = '⚠ שגיאה בשמירה';
@@ -1038,7 +1051,7 @@ function showTyping() {
   d.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;';
 
   // Pick random subset of messages (shuffle, take up to all)
-  const msgs = [...t('thinkingMsgs')].sort(() => Math.random() - 0.5);
+  const msgs = [...(GLOBAL_THINKING_MSGS || t('thinkingMsgs'))].sort(() => Math.random() - 0.5);
   let idx = 0;
 
   d.innerHTML = `
@@ -1205,6 +1218,10 @@ function buildGreetingHtml(text) {
 
 function resetGreeting() {
   document.getElementById('admin-greeting').value = DEFAULT_GREETING;
+}
+
+function resetThinkingMsgs() {
+  document.getElementById('admin-thinking-msgs').value = t('thinkingMsgs').join('\n');
 }
 
 // ── Default prompts (mirrors api/chat.js) ────────────────────────
