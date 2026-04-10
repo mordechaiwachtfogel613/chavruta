@@ -1,6 +1,6 @@
 import { kv } from '@vercel/kv';
 
-const ADMIN = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const ADMIN = (process.env.ADMIN_EMAIL || 'a0583298194@gmail.com').trim().toLowerCase();
 const FROM  = process.env.RESEND_FROM || 'onboarding@resend.dev';
 const BASE  = 'font-family:Arial,sans-serif;direction:rtl;text-align:right;background:#faf8f3;padding:32px;border-radius:16px;max-width:480px;margin:auto;';
 
