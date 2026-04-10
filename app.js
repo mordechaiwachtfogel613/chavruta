@@ -1707,20 +1707,56 @@ function showGreeting() {
       chatEl.innerHTML = '';
       const outer = document.createElement('div');
       outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;margin-top:8px;';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble-ai rounded-2xl p-4';
+      bubble.style.cssText = 'flex:1;line-height:1.9;font-size:1rem;';
       outer.innerHTML = `
         <div style="flex-shrink:0;text-align:center;">
           <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
           <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
-        </div>
-        <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.9;font-size:1rem;">
-          ${buildGreetingHtml(GLOBAL_GREETING)}
         </div>`;
+      outer.appendChild(bubble);
       chatEl.appendChild(outer);
-      document.getElementById('greeting-picker').classList.remove('hidden');
-      document.getElementById('chat-input-row').classList.add('hidden');
-      document.getElementById('input-area').classList.remove('hidden');
-      setInput(true);
-      gpCollectionChange();
+
+      // Typewriter effect — word by word
+      const lines = (GLOBAL_GREETING || t('defaultGreeting')).split('\n').filter(l => l.trim());
+      const totalLines = lines.length;
+      let lineIdx = 0;
+
+      function typeLine() {
+        if (lineIdx >= totalLines) {
+          document.getElementById('greeting-picker').classList.remove('hidden');
+          document.getElementById('chat-input-row').classList.add('hidden');
+          document.getElementById('input-area').classList.remove('hidden');
+          setInput(true);
+          gpCollectionChange();
+          return;
+        }
+        const line = lines[lineIdx];
+        const isFirst = lineIdx === 0;
+        const isLast  = lineIdx === totalLines - 1;
+        const el = document.createElement('div');
+        if (isFirst) el.style.cssText = 'font-weight:800;font-size:1.05rem;color:#1B3A6B;';
+        if (isLast)  el.style.cssText = 'margin-top:8px;color:#B8860B;font-weight:700;';
+        bubble.appendChild(el);
+
+        const words = line.split(' ');
+        let wordIdx = 0;
+        const delay = isFirst ? 35 : 42; // ms per word
+
+        const interval = setInterval(() => {
+          if (wordIdx >= words.length) {
+            clearInterval(interval);
+            lineIdx++;
+            setTimeout(typeLine, isFirst ? 80 : 60);
+            return;
+          }
+          el.textContent += (wordIdx === 0 ? '' : ' ') + words[wordIdx];
+          wordIdx++;
+        }, delay);
+      }
+
+      typeLine();
     };
     welcome.appendChild(startBtn);
   }, 3200);
