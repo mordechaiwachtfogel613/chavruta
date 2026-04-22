@@ -319,9 +319,117 @@
       .logo-text p  { display: none; }
       .bubble-wrap  { max-width: 90%; }
     }
+
+    /* ── Code Gate Overlay ── */
+    #code-gate {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--teal) 100%);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .code-gate-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0,0,0,.35);
+    }
+    .code-gate-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    .code-gate-box h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+    .code-gate-box p {
+      font-size: .9rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    #codeInput {
+      width: 100%;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 1.2rem;
+      text-align: center;
+      letter-spacing: 6px;
+      outline: none;
+      color: var(--text);
+      margin-bottom: 16px;
+      transition: border-color .2s;
+    }
+    #codeInput:focus { border-color: var(--teal); }
+    #codeError {
+      color: #c0392b;
+      font-size: .85rem;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+    #codeSubmit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    #codeSubmit:hover { opacity: .88; }
+
+    /* ── Limit Banner ── */
+    .limit-banner {
+      background: linear-gradient(135deg, #fff8e8, #fff3d0);
+      border: 2px solid var(--gold);
+      border-radius: 16px;
+      padding: 20px 24px;
+      font-size: .92rem;
+      line-height: 1.8;
+      color: #5a3a00;
+      align-self: center;
+      max-width: 92%;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .limit-banner strong {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+    .limit-banner a { color: var(--teal); font-weight: 700; }
   </style>
 </head>
 <body>
+
+<!-- Code Gate Overlay -->
+<div id="code-gate">
+  <div class="code-gate-box">
+    <div class="code-gate-icon">🧭</div>
+    <h2>ברוכים הבאים למסע</h2>
+    <p>כדי להתחיל, אנא הכניסו את קוד הגישה</p>
+    <input type="text" id="codeInput" placeholder="_ _ _" maxlength="10" autocomplete="off" inputmode="numeric">
+    <div id="codeError"></div>
+    <button id="codeSubmit">כניסה ←</button>
+  </div>
+</div>
+
 <div class="page-wrap">
 
   <!-- Header -->
@@ -376,19 +484,30 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────
-const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו, לפרטים נוספים אפשר לעיין באתר של מכון בינת הלב בקישור המצורף https://a0533161912.wixsite.com/my-site-8, בהצלחה`;
+const ACCESS_CODE    = '613';
+const MSG_LIMIT      = 30;
+const LS_COUNT_KEY   = 'masav_msg_count';
+const SS_AUTH_KEY    = 'masav_authed';
+const BINAT_URL      = 'https://a0533161912.wixsite.com/my-site-8';
 
-const PROMO_MESSAGE = `- - - - - - - - - - -\n\n___________________________\nנ.ב.\nלמכון בינת הלב יש אבחון מהפכני, שאנשי מקצוע מעידים עליו שהוא טוב יותר מכל האבחונים שהם מכירים, אם מסקרן אתכם לראות יותר פרטים - היכנסו לקישור המצורף: https://a0533161912.wixsite.com/my-site-8\n\nבהצלחה`;
+const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו, לפרטים נוספים אפשר לעיין באתר של מכון בינת הלב בקישור המצורף ${BINAT_URL}, בהצלחה`;
+
+const PROMO_MESSAGE = `- - - - - - - - - - -\n\n___________________________\nנ.ב.\nלמכון בינת הלב יש אבחון מהפכני, שאנשי מקצוע מעידים עליו שהוא טוב יותר מכל האבחונים שהם מכירים, אם מסקרן אתכם לראות יותר פרטים - היכנסו לקישור המצורף: ${BINAT_URL}\n\nבהצלחה`;
 
 // ── State ──────────────────────────────────────────────────────────
-const history    = [];   // { role, content } pairs sent to API
-let   aiRespCount = 0;   // counts AI responses (for promo every 10)
+const history    = [];
+let   aiRespCount = 0;
 let   isLoading   = false;
+let   msgCount    = parseInt(localStorage.getItem(LS_COUNT_KEY) || '0', 10);
 
 // ── DOM refs ───────────────────────────────────────────────────────
-const messagesEl = document.getElementById('messages');
-const inputEl    = document.getElementById('userInput');
-const sendBtn    = document.getElementById('sendBtn');
+const messagesEl  = document.getElementById('messages');
+const inputEl     = document.getElementById('userInput');
+const sendBtn     = document.getElementById('sendBtn');
+const codeGateEl  = document.getElementById('code-gate');
+const codeInputEl = document.getElementById('codeInput');
+const codeErrorEl = document.getElementById('codeError');
+const codeSubmit  = document.getElementById('codeSubmit');
 
 // ── Helpers ────────────────────────────────────────────────────────
 function scrollBottom() {
@@ -396,8 +515,7 @@ function scrollBottom() {
 }
 
 function linkify(text) {
-  // Convert URLs to clickable links
-  return text.replace(/(https?:\/\/[^\s]+)/g, url =>
+  return text.replace(/(https?:\/\/[^\s<]+)/g, url =>
     `<a href="${url}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:underline;">${url}</a>`
   );
 }
@@ -413,12 +531,6 @@ function addBubble(role, text) {
 
   const bubble = document.createElement('div');
   bubble.className = `bubble ${isAI ? 'bubble-ai' : 'bubble-user'}`;
-  bubble.innerHTML = linkify(text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // restore the <a> tags we intentionally added in linkify:
-    // Actually we need to do this differently - let's escape first then linkify
-  );
-
-  // Re-do: escape then linkify properly
   bubble.innerHTML = linkify(
     text
       .replace(/&/g,'&amp;')
@@ -438,28 +550,40 @@ function addPromo() {
   const div = document.createElement('div');
   div.className = 'promo-banner';
   const text = PROMO_MESSAGE;
-  const parts = text.split('https://a0533161912.wixsite.com/my-site-8');
+  const parts = text.split(BINAT_URL);
   div.innerHTML =
     parts[0].replace(/\n/g,'<br>') +
-    `<a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">https://a0533161912.wixsite.com/my-site-8</a>` +
+    `<a href="${BINAT_URL}" target="_blank" rel="noopener">${BINAT_URL}</a>` +
     (parts[1] || '').replace(/\n/g,'<br>');
   messagesEl.appendChild(div);
   scrollBottom();
+}
+
+function showLimitBanner() {
+  const div = document.createElement('div');
+  div.className = 'limit-banner';
+  div.innerHTML =
+    `<strong>הגעת למגבלת השימוש שלך</strong>` +
+    `אם אתם מעוניינים באבחונים נוספים אפשר ליצור איתנו קשר באתר בינת הלב —` +
+    `<br><a href="${BINAT_URL}" target="_blank" rel="noopener">מכון בינת הלב ←</a>`;
+  messagesEl.appendChild(div);
+  scrollBottom();
+  // Disable input permanently
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+  inputEl.placeholder = 'הגעת למגבלת ההודעות';
 }
 
 function showThinking() {
   const wrap = document.createElement('div');
   wrap.className = 'thinking-wrap';
   wrap.id = 'thinking';
-
   const avatar = document.createElement('div');
   avatar.className = 'avatar avatar-ai';
   avatar.textContent = '🧭';
-
   const dots = document.createElement('div');
   dots.className = 'thinking-dots';
   dots.innerHTML = '<span></span><span></span><span></span>';
-
   wrap.appendChild(avatar);
   wrap.appendChild(dots);
   messagesEl.appendChild(wrap);
@@ -472,15 +596,44 @@ function hideThinking() {
 }
 
 function setLoading(val) {
-  isLoading  = val;
+  isLoading = val;
   sendBtn.disabled = val;
   inputEl.disabled = val;
 }
 
+// ── Code Gate ─────────────────────────────────────────────────────
+function checkCodeGate() {
+  if (sessionStorage.getItem(SS_AUTH_KEY) === '1') {
+    codeGateEl.style.display = 'none';
+    startChat();
+  }
+}
+
+function submitCode() {
+  const entered = codeInputEl.value.trim();
+  if (entered === ACCESS_CODE) {
+    sessionStorage.setItem(SS_AUTH_KEY, '1');
+    codeGateEl.style.display = 'none';
+    startChat();
+  } else {
+    codeErrorEl.textContent = 'הקוד שגוי, אנא נסה שנית';
+    codeInputEl.value = '';
+    codeInputEl.focus();
+  }
+}
+
+codeSubmit.addEventListener('click', submitCode);
+codeInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitCode();
+});
+
 // ── Init: show opening message ────────────────────────────────────
-function init() {
+function startChat() {
+  // If already at limit, show opening + limit banner immediately
   addBubble('ai', OPENING_MESSAGE);
-  // Opening message counts as response #0 – not counted toward promo
+  if (msgCount >= MSG_LIMIT) {
+    showLimitBanner();
+  }
 }
 
 // ── Send ───────────────────────────────────────────────────────────
@@ -488,10 +641,20 @@ async function send() {
   const text = inputEl.value.trim();
   if (!text || isLoading) return;
 
+  // Enforce message limit
+  if (msgCount >= MSG_LIMIT) {
+    showLimitBanner();
+    return;
+  }
+
   // Add user bubble
   addBubble('user', text);
   inputEl.value = '';
   autoResize();
+
+  // Increment and persist count
+  msgCount++;
+  localStorage.setItem(LS_COUNT_KEY, msgCount);
 
   // Add to history
   history.push({ role: 'user', content: text });
@@ -515,18 +678,21 @@ async function send() {
       return;
     }
 
-    const data = await res.json();
+    const data  = await res.json();
     const reply = data.reply || '';
 
-    // Add to history as assistant
     history.push({ role: 'assistant', content: reply });
-
     addBubble('ai', reply);
 
     // Promo every 10 AI responses
     aiRespCount++;
     if (aiRespCount % 10 === 0) {
       addPromo();
+    }
+
+    // Show limit banner after last allowed message
+    if (msgCount >= MSG_LIMIT) {
+      showLimitBanner();
     }
 
   } catch (err) {
@@ -556,7 +722,7 @@ inputEl.addEventListener('keydown', e => {
 inputEl.addEventListener('input', autoResize);
 
 // ── Start ─────────────────────────────────────────────────────────
-init();
+checkCodeGate();
 </script>
 </body>
 </html>
