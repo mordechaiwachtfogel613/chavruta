@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מסע | מכון בינת הלב</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1a2e5a;
+      --navy-dark: #0f1e3d;
+      --teal:      #1a7a6b;
+      --teal-light:#22a08a;
+      --gold:      #c8963c;
+      --gold-light:#e8b85a;
+      --bg:        #f5f7fa;
+      --white:     #ffffff;
+      --text:      #1e2a3a;
+      --text-muted:#5a6a7e;
+      --border:    #dce4ef;
+      --bubble-ai-bg:   #ffffff;
+      --bubble-user-bg: #1a2e5a;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Heebo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Layout ── */
+    .page-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--teal) 100%);
+      color: #fff;
+      padding: 0 24px;
+      box-shadow: 0 3px 16px rgba(0,0,0,.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+    .logo-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(200,150,60,.4);
+    }
+    .logo-text h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      line-height: 1.2;
+    }
+    .logo-text p {
+      font-size: .78rem;
+      opacity: .78;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .agent-tag {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .4px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .agent-tag .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #5ef5a0;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .4; }
+    }
+
+    /* ── Hero strip ── */
+    .hero-strip {
+      background: linear-gradient(90deg, var(--teal) 0%, var(--teal-light) 100%);
+      color: #fff;
+      text-align: center;
+      padding: 10px 24px;
+      font-size: .82rem;
+      font-weight: 500;
+      letter-spacing: .2px;
+    }
+    .hero-strip a {
+      color: var(--gold-light);
+      text-decoration: underline;
+      font-weight: 700;
+    }
+
+    /* ── Chat container ── */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ── Messages area ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Bubble ── */
+    .bubble-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 78%;
+    }
+    .bubble-wrap.ai-wrap  { align-self: flex-start; }
+    .bubble-wrap.user-wrap { align-self: flex-end; flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .avatar-ai   { background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; }
+    .avatar-user { background: linear-gradient(135deg, var(--navy), #3a5a9a); color: #fff; }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.65;
+      font-size: .93rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble-ai {
+      background: var(--bubble-ai-bg);
+      border: 1px solid var(--border);
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .bubble-user {
+      background: var(--bubble-user-bg);
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* ── Promo banner (every 10 responses) ── */
+    .promo-banner {
+      background: linear-gradient(135deg, #fff8e8, #fff3d0);
+      border: 1.5px solid var(--gold);
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: .86rem;
+      line-height: 1.7;
+      color: #5a3a00;
+      align-self: center;
+      max-width: 92%;
+      text-align: center;
+    }
+    .promo-banner a { color: var(--teal); font-weight: 700; }
+    .promo-banner .promo-sep {
+      border: none;
+      border-top: 1px dashed var(--gold);
+      margin: 10px 0;
+    }
+
+    /* ── Thinking indicator ── */
+    .thinking-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      align-self: flex-start;
+    }
+    .thinking-dots {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      border-bottom-right-radius: 4px;
+      padding: 13px 18px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal-light);
+      animation: bounce 1.2s infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: .2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); }
+      30%          { transform: translateY(-8px); }
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      padding: 14px 0 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky;
+      bottom: 0;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    #userInput {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-family: 'Heebo', sans-serif;
+      font-size: .93rem;
+      resize: none;
+      line-height: 1.5;
+      outline: none;
+      background: var(--white);
+      color: var(--text);
+      min-height: 48px;
+      max-height: 140px;
+      transition: border-color .2s;
+    }
+    #userInput:focus { border-color: var(--teal); }
+    #userInput::placeholder { color: var(--text-muted); }
+
+    #sendBtn {
+      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity .2s, transform .1s;
+      box-shadow: 0 2px 8px rgba(26,122,107,.35);
+    }
+    #sendBtn:hover:not(:disabled) { opacity: .88; }
+    #sendBtn:active:not(:disabled) { transform: scale(.95); }
+    #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--navy-dark);
+      color: rgba(255,255,255,.5);
+      text-align: center;
+      font-size: .73rem;
+      padding: 10px 16px;
+    }
+    footer a { color: var(--gold-light); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Scrollbar ── */
+    #messages::-webkit-scrollbar { width: 5px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .logo-text h1 { font-size: 1.1rem; }
+      .logo-text p  { display: none; }
+      .bubble-wrap  { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-block">
+        <div class="logo-icon">🧭</div>
+        <div class="logo-text">
+          <h1>מכון בינת הלב</h1>
+          <p>כלים מתקדמים לאבחון אישיות ומימוש פוטנציאל</p>
+        </div>
+      </div>
+      <div class="agent-tag">
+        <span class="dot"></span>
+        מסע · פעיל
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero strip -->
+  <div class="hero-strip">
+    מסע — כלי בינה מלאכותית לגילוי הרצונות העמוקים שלך &nbsp;|&nbsp;
+    <a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">לאתר המכון ←</a>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-container">
+    <div id="messages"></div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="userInput"
+          placeholder="כתוב את תשובתך כאן..."
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button id="sendBtn" title="שלח">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    מסע הוא פרויקט מבית
+    <a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">מכון בינת הלב</a>
+    &nbsp;·&nbsp; כל הזכויות שמורות
+  </footer>
+
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────
+const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו, לפרטים נוספים אפשר לעיין באתר של מכון בינת הלב בקישור המצורף https://a0533161912.wixsite.com/my-site-8, בהצלחה`;
+
+const PROMO_MESSAGE = `- - - - - - - - - - -\n\n___________________________\nנ.ב.\nלמכון בינת הלב יש אבחון מהפכני, שאנשי מקצוע מעידים עליו שהוא טוב יותר מכל האבחונים שהם מכירים, אם מסקרן אתכם לראות יותר פרטים - היכנסו לקישור המצורף: https://a0533161912.wixsite.com/my-site-8\n\nבהצלחה`;
+
+// ── State ──────────────────────────────────────────────────────────
+const history    = [];   // { role, content } pairs sent to API
+let   aiRespCount = 0;   // counts AI responses (for promo every 10)
+let   isLoading   = false;
+
+// ── DOM refs ───────────────────────────────────────────────────────
+const messagesEl = document.getElementById('messages');
+const inputEl    = document.getElementById('userInput');
+const sendBtn    = document.getElementById('sendBtn');
+
+// ── Helpers ────────────────────────────────────────────────────────
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function linkify(text) {
+  // Convert URLs to clickable links
+  return text.replace(/(https?:\/\/[^\s]+)/g, url =>
+    `<a href="${url}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:underline;">${url}</a>`
+  );
+}
+
+function addBubble(role, text) {
+  const isAI = role === 'ai';
+  const wrap = document.createElement('div');
+  wrap.className = `bubble-wrap ${isAI ? 'ai-wrap' : 'user-wrap'}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${isAI ? 'avatar-ai' : 'avatar-user'}`;
+  avatar.textContent = isAI ? '🧭' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${isAI ? 'bubble-ai' : 'bubble-user'}`;
+  bubble.innerHTML = linkify(text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // restore the <a> tags we intentionally added in linkify:
+    // Actually we need to do this differently - let's escape first then linkify
+  );
+
+  // Re-do: escape then linkify properly
+  bubble.innerHTML = linkify(
+    text
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/\n/g,'<br>')
+  );
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+  return bubble;
+}
+
+function addPromo() {
+  const div = document.createElement('div');
+  div.className = 'promo-banner';
+  const text = PROMO_MESSAGE;
+  const parts = text.split('https://a0533161912.wixsite.com/my-site-8');
+  div.innerHTML =
+    parts[0].replace(/\n/g,'<br>') +
+    `<a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">https://a0533161912.wixsite.com/my-site-8</a>` +
+    (parts[1] || '').replace(/\n/g,'<br>');
+  messagesEl.appendChild(div);
+  scrollBottom();
+}
+
+function showThinking() {
+  const wrap = document.createElement('div');
+  wrap.className = 'thinking-wrap';
+  wrap.id = 'thinking';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar avatar-ai';
+  avatar.textContent = '🧭';
+
+  const dots = document.createElement('div');
+  dots.className = 'thinking-dots';
+  dots.innerHTML = '<span></span><span></span><span></span>';
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(dots);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function hideThinking() {
+  const el = document.getElementById('thinking');
+  if (el) el.remove();
+}
+
+function setLoading(val) {
+  isLoading  = val;
+  sendBtn.disabled = val;
+  inputEl.disabled = val;
+}
+
+// ── Init: show opening message ────────────────────────────────────
+function init() {
+  addBubble('ai', OPENING_MESSAGE);
+  // Opening message counts as response #0 – not counted toward promo
+}
+
+// ── Send ───────────────────────────────────────────────────────────
+async function send() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+
+  // Add user bubble
+  addBubble('user', text);
+  inputEl.value = '';
+  autoResize();
+
+  // Add to history
+  history.push({ role: 'user', content: text });
+
+  setLoading(true);
+  showThinking();
+
+  try {
+    const res = await fetch('/api/masav', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ messages: history }),
+    });
+
+    hideThinking();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'שגיאה לא ידועה' }));
+      addBubble('ai', `אירעה שגיאה: ${err.error || res.status}`);
+      setLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+    const reply = data.reply || '';
+
+    // Add to history as assistant
+    history.push({ role: 'assistant', content: reply });
+
+    addBubble('ai', reply);
+
+    // Promo every 10 AI responses
+    aiRespCount++;
+    if (aiRespCount % 10 === 0) {
+      addPromo();
+    }
+
+  } catch (err) {
+    hideThinking();
+    addBubble('ai', 'אירעה שגיאת רשת. אנא נסה שוב.');
+  }
+
+  setLoading(false);
+}
+
+// ── Auto-resize textarea ──────────────────────────────────────────
+function autoResize() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+}
+
+// ── Event listeners ───────────────────────────────────────────────
+sendBtn.addEventListener('click', send);
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+
+inputEl.addEventListener('input', autoResize);
+
+// ── Start ─────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
