@@ -627,13 +627,36 @@ codeInputEl.addEventListener('keydown', e => {
   if (e.key === 'Enter') submitCode();
 });
 
-// ── Init: show opening message ────────────────────────────────────
-function startChat() {
-  // If already at limit, show opening + limit banner immediately
+// ── Init: show opening message then ask first question ───────────
+async function startChat() {
   addBubble('ai', OPENING_MESSAGE);
   if (msgCount >= MSG_LIMIT) {
     showLimitBanner();
+    return;
   }
+  // Automatically trigger the first question from the AI
+  setLoading(true);
+  showThinking();
+  try {
+    const trigger = [{ role: 'user', content: 'התחל' }];
+    const res = await fetch('/api/masav', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ messages: trigger }),
+    });
+    hideThinking();
+    if (res.ok) {
+      const data  = await res.json();
+      const reply = data.reply || '';
+      // Store in history so conversation continues naturally
+      history.push({ role: 'assistant', content: reply });
+      addBubble('ai', reply);
+      aiRespCount++;
+    }
+  } catch (e) {
+    hideThinking();
+  }
+  setLoading(false);
 }
 
 // ── Send ───────────────────────────────────────────────────────────
