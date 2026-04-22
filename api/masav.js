@@ -3,6 +3,8 @@
 // סוכן הבינה המלאכותית של מכון בינת הלב
 // ================================================================
 
+import { kv } from '@vercel/kv';
+
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL  = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 
@@ -52,6 +54,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    const kvModel = await kv.get('config:model');
+    const model   = (kvModel && String(kvModel).trim()) ? String(kvModel).trim() : DEFAULT_MODEL;
+
     const orRes = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -61,7 +66,7 @@ export default async function handler(req, res) {
         'X-Title':       'Masav - Binat HaLev Institute',
       },
       body: JSON.stringify({
-        model:      DEFAULT_MODEL,
+        model,
         max_tokens: 1500,
         messages: [
           { role: 'system', content: MASAV_SYSTEM_PROMPT },
