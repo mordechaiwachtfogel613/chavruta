@@ -8,9 +8,7 @@ import { kv } from '@vercel/kv';
 const OPENROUTER_URL   = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL    = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 const FALLBACK_MODELS  = [
-  'anthropic/claude-haiku-4-5',
-  'openai/gpt-4o-mini',
-  'meta-llama/llama-3.3-70b-instruct',
+  'google/gemini-2.5-pro',
 ];
 
 const MASAV_SYSTEM_PROMPT = `אתה מודל ייחודי שנועד לעזור למשתמשים להבין מה הם באמת רוצים בחיים באמצעות דיאלוג שיטתי ומעמיק. תפקידך הוא לשאול שאלות ממוקדות וקצרות, להעמיק בהדרגה את השיחה, ולספק סיכומי ביניים של התובנות העולות. התהליך מתבצע בגישה חיובית ותומכת.
