@@ -5,8 +5,13 @@
 
 import { kv } from '@vercel/kv';
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL  = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
+const OPENROUTER_URL   = 'https://openrouter.ai/api/v1/chat/completions';
+const DEFAULT_MODEL    = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
+const FALLBACK_MODELS  = [
+  'anthropic/claude-haiku-4-5',
+  'openai/gpt-4o-mini',
+  'meta-llama/llama-3.3-70b-instruct',
+];
 
 const MASAV_SYSTEM_PROMPT = `אתה מודל ייחודי שנועד לעזור למשתמשים להבין מה הם באמת רוצים בחיים באמצעות דיאלוג שיטתי ומעמיק. תפקידך הוא לשאול שאלות ממוקדות וקצרות, להעמיק בהדרגה את השיחה, ולספק סיכומי ביניים של התובנות העולות. התהליך מתבצע בגישה חיובית ותומכת.
 אתה חלק מ"מסע" של מכון בינת הלב, המפתח כלים מתקדמים להערכת אישיות מבוססי בינה מלאכותית, שנועדו לעזור לאנשים להצליח בכל תחומי החיים.
@@ -54,36 +59,46 @@ export default async function handler(req, res) {
   }
 
   try {
-    const kvModel = await kv.get('config:model');
-    const model   = (kvModel && String(kvModel).trim()) ? String(kvModel).trim() : DEFAULT_MODEL;
+    const kvModel    = await kv.get('config:model');
+    const primaryModel = (kvModel && String(kvModel).trim()) ? String(kvModel).trim() : DEFAULT_MODEL;
+    const modelsToTry  = [primaryModel, ...FALLBACK_MODELS.filter(m => m !== primaryModel)];
 
-    const orRes = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type':  'application/json',
-        'HTTP-Referer':  process.env.APP_URL || 'https://chavruta.vercel.app',
-        'X-Title':       'Masav - Binat HaLev Institute',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 1500,
-        messages: [
-          { role: 'system', content: MASAV_SYSTEM_PROMPT },
-          ...messages,
-        ],
-      }),
-    });
+    let lastError = null;
 
-    if (!orRes.ok) {
+    for (const model of modelsToTry) {
+      const orRes = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type':  'application/json',
+          'HTTP-Referer':  process.env.APP_URL || 'https://chavruta.vercel.app',
+          'X-Title':       'Masav - Binat HaLev Institute',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1500,
+          messages: [
+            { role: 'system', content: MASAV_SYSTEM_PROMPT },
+            ...messages,
+          ],
+        }),
+      });
+
+      if (orRes.ok) {
+        const orData = await orRes.json();
+        const reply  = orData.choices?.[0]?.message?.content ?? '';
+        return res.status(200).json({ reply });
+      }
+
       const errBody = await orRes.text();
-      throw new Error(`OpenRouter ${orRes.status}: ${errBody}`);
+      lastError = `OpenRouter ${orRes.status} (${model}): ${errBody}`;
+      console.warn(`[masav/api] Model ${model} failed (${orRes.status}), trying next...`);
+
+      // Only retry on rate-limit / server errors; stop on auth errors
+      if (orRes.status === 401 || orRes.status === 403) break;
     }
 
-    const orData = await orRes.json();
-    const reply  = orData.choices?.[0]?.message?.content ?? '';
-
-    res.status(200).json({ reply });
+    throw new Error(lastError || 'כל המודלים נכשלו');
 
   } catch (err) {
     console.error('[masav/api] Error:', err);
