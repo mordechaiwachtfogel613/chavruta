@@ -636,7 +636,7 @@ async function startChat() {
   btn.target = '_blank';
   btn.rel = 'noopener';
   btn.textContent = 'לאתר מכון בינת הלב ←';
-  btn.style.cssText = 'display:inline-block;margin-top:12px;padding:8px 18px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-radius:20px;font-weight:700;font-size:.85rem;text-decoration:none;';
+  btn.style.cssText = 'display:block;margin-top:12px;padding:8px 18px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-radius:20px;font-weight:700;font-size:.85rem;text-decoration:none;width:fit-content;';
   openingBubble.appendChild(btn);
   if (msgCount >= MSG_LIMIT) {
     showLimitBanner();
