@@ -490,7 +490,7 @@ const LS_COUNT_KEY   = 'masav_msg_count';
 const SS_AUTH_KEY    = 'masav_authed';
 const BINAT_URL      = 'https://a0533161912.wixsite.com/my-site-8';
 
-const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו, לפרטים נוספים אפשר לעיין באתר של מכון בינת הלב בקישור המצורף ${BINAT_URL}, בהצלחה`;
+const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו. בהצלחה`;
 
 const PROMO_MESSAGE = `- - - - - - - - - - -\n\n___________________________\nנ.ב.\nלמכון בינת הלב יש אבחון מהפכני, שאנשי מקצוע מעידים עליו שהוא טוב יותר מכל האבחונים שהם מכירים, אם מסקרן אתכם לראות יותר פרטים - היכנסו לקישור המצורף: ${BINAT_URL}\n\nבהצלחה`;
 
@@ -629,7 +629,15 @@ codeInputEl.addEventListener('keydown', e => {
 
 // ── Init: show opening message then ask first question ───────────
 async function startChat() {
-  addBubble('ai', OPENING_MESSAGE);
+  const openingBubble = addBubble('ai', OPENING_MESSAGE);
+  // Add link button inside the opening bubble
+  const btn = document.createElement('a');
+  btn.href = BINAT_URL;
+  btn.target = '_blank';
+  btn.rel = 'noopener';
+  btn.textContent = 'לאתר מכון בינת הלב ←';
+  btn.style.cssText = 'display:inline-block;margin-top:12px;padding:8px 18px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-radius:20px;font-weight:700;font-size:.85rem;text-decoration:none;';
+  openingBubble.appendChild(btn);
   if (msgCount >= MSG_LIMIT) {
     showLimitBanner();
     return;
