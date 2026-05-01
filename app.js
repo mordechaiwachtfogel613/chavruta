@@ -3,7 +3,8 @@
 // ================================================================
 
 let GLOBAL_MODEL         = null; // loaded from server on init
-let GLOBAL_GREETING      = null; // loaded from server on init
+let GLOBAL_GREETING_HE   = null; // loaded from server on init (Hebrew greeting)
+let GLOBAL_GREETING_EN   = null; // loaded from server on init (English greeting)
 let GLOBAL_PROMPTS       = {};   // loaded from server on init
 let GLOBAL_THINKING_MSGS = null; // custom thinking messages from admin
 let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
@@ -23,7 +24,8 @@ async function loadGlobalConfig() {
     const r = await fetch('/api/config');
     const d = await r.json();
     GLOBAL_MODEL         = d.model;
-    GLOBAL_GREETING      = d.greeting || null;
+    GLOBAL_GREETING_HE   = d.greetingHe || d.greeting || null;
+    GLOBAL_GREETING_EN   = d.greetingEn || null;
     GLOBAL_PROMPTS       = d.prompts  || {};
     GLOBAL_THINKING_MSGS = Array.isArray(d.thinkingMsgs) && d.thinkingMsgs.length ? d.thinkingMsgs : null;
     SOUND_CORRECT   = d.sound_correct || null;
@@ -45,6 +47,7 @@ const TRANSLATIONS = {
     historyBtn: '📚 הלמידה שלי',
     logoutBtn: 'יציאה',
     langToggle: '🌐 EN',
+    rabbiName: 'רבי בניהו',
     landingTitle: 'שלום, כאן רבי בניהו',
     landingSub: 'חברותא – בינה מלאכותית ללימוד תורה',
     landingAccurate: 'שתמיד נשאר מדויק',
@@ -135,6 +138,7 @@ const TRANSLATIONS = {
     historyBtn: '📚 My Learning',
     logoutBtn: 'Sign Out',
     langToggle: '🌐 עב',
+    rabbiName: 'Rabbi Binyahu',
     landingTitle: 'Shalom, I am Rabbi Binyahu',
     landingSub: 'Chavruta – AI-powered Torah learning',
     landingAccurate: 'Always accurate to the sources',
@@ -242,6 +246,12 @@ function applyLang() {
   // Update wrong popup text
   const wrongInner = document.getElementById('wrong-popup-inner');
   if (wrongInner) wrongInner.textContent = t('wrongText');
+  // Switch chat direction based on language
+  const isHe = currentLang === 'he';
+  const chatEl = document.getElementById('chat');
+  if (chatEl) chatEl.dir = isHe ? '' : 'ltr';
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) chatInput.style.direction = isHe ? 'rtl' : 'ltr';
 }
 
 function getPickerLabels(key) {
@@ -500,6 +510,49 @@ const COLLECTIONS = {
   shas:     { label: 'ש"ס בבלי',   items: SHAS,     type: 'daf',     unitLabel: 'דף',   fetchRef: (item, unit) => `${item.sf}.${unit}` },
   rambam:   { label: 'רמב"ם',      items: RAMBAM,   type: 'chapter', unitLabel: 'פרק',  fetchRef: (item, unit) => `${item.sf}.${unit}` },
   shulchan: { label: 'שולחן ערוך', items: SHULCHAN, type: 'chapter', unitLabel: 'סימן', fetchRef: (item, unit) => `${item.sf}.${unit}` },
+};
+
+// ── Commentators per collection ──────────────────────────────────
+// For Shas: Steinsaltz is called "ביאור" per user request
+const COMMENTATORS = {
+  tanach: [
+    { id: 'rashi',    he: 'רש"י',      ref: (sf, ch, v) => `Rashi on ${sf}.${ch}.${v}` },
+    { id: 'ibnezra',  he: 'אבן עזרא',  ref: (sf, ch, v) => `Ibn Ezra on ${sf}.${ch}.${v}` },
+    { id: 'ramban',   he: 'רמב"ן',     ref: (sf, ch, v) => `Ramban on ${sf}.${ch}.${v}` },
+    { id: 'sforno',   he: 'ספורנו',    ref: (sf, ch, v) => `Sforno on ${sf}.${ch}.${v}` },
+    { id: 'kliyakar', he: 'כלי יקר',   ref: (sf, ch, v) => `Kli Yakar on ${sf}.${ch}.${v}` },
+  ],
+  mishnah: [
+    { id: 'bartenura', he: 'ברטנורא',      ref: (sf, ch, v) => `Bartenura on Mishnah ${sf}.${ch}.${v}` },
+    { id: 'rambam',    he: 'רמב"ם',        ref: (sf, ch, v) => `Rambam on Mishnah ${sf}.${ch}.${v}` },
+    { id: 'tiferet',   he: 'תפארת ישראל',  ref: (sf, ch, v) => `Tiferet Yisrael on Mishnah ${sf}.${ch}.${v}` },
+  ],
+  shas: [
+    { id: 'rashi',    he: 'רש"י',    ref: (sf, ch, v) => `Rashi on ${sf}.${ch}.${v}` },
+    { id: 'tosafot',  he: 'תוספות',  ref: (sf, ch, v) => `Tosafot on ${sf}.${ch}.${v}` },
+    { id: 'biyur',    he: 'ביאור',   ref: (sf, ch, v) => `Steinsaltz on ${sf}.${ch}.${v}` },
+    { id: 'maharsha', he: 'מהרש"א',  ref: (sf, ch, v) => `Maharsha on ${sf}.${ch}.${v}` },
+  ],
+  rambam: [
+    { id: 'kessef',   he: 'כסף משנה',   ref: (sf, ch, v) => `Kessef Mishneh on ${sf}.${ch}.${v}` },
+    { id: 'lechem',   he: 'לחם משנה',   ref: (sf, ch, v) => `Lechem Mishneh on ${sf}.${ch}.${v}` },
+    { id: 'mishnehl', he: 'משנה למלך',  ref: (sf, ch, v) => `Mishneh LaMelech on ${sf}.${ch}.${v}` },
+  ],
+  shulchan: [
+    { id: 'magen',    he: 'מגן אברהם',   ref: (sf, ch, v) => `Magen Avraham on ${sf}.${ch}.${v}` },
+    { id: 'mishnahb', he: 'משנה ברורה',  ref: (sf, ch, v) => `Mishnah Berurah on ${sf}.${ch}.${v}` },
+    { id: 'shach',    he: 'ש"ך',         ref: (sf, ch, v) => `Shach on ${sf}.${ch}.${v}` },
+    { id: 'taz',      he: 'ט"ז',         ref: (sf, ch, v) => `Taz on ${sf}.${ch}.${v}` },
+  ],
+};
+
+// ── Split-view state ─────────────────────────────────────────────
+const SV = {
+  active: false,
+  selectedCommentators: new Set(),
+  commentaryCache: {},   // key: `commId:verseIdx`
+  hoveredVerseIdx: null,
+  hoverDebounce: null,
 };
 
 // ── State ────────────────────────────────────────────────────────
@@ -771,6 +824,190 @@ async function saveAdminPrompts() {
   setTimeout(() => msg.classList.add('hidden'), 2500);
 }
 
+// ── Split-view: toggle ───────────────────────────────────────────
+function toggleSplitView() {
+  if (SV.active) {
+    _closeSplitView();
+  } else {
+    _openSplitView();
+  }
+}
+
+function _openSplitView() {
+  SV.active = true;
+  document.getElementById('app').classList.add('split-mode');
+  const btn = document.getElementById('split-view-btn');
+  if (btn) btn.textContent = '✕ סגור פרק';
+  renderTextPanel();
+}
+
+function _closeSplitView() {
+  SV.active = false;
+  document.getElementById('app').classList.remove('split-mode');
+  const btn = document.getElementById('split-view-btn');
+  if (btn) btn.textContent = '📖 פתח פרק';
+  document.getElementById('chapter-text-scroll').innerHTML = '';
+  document.getElementById('commentary-area').style.display = 'none';
+  document.getElementById('commentary-content').innerHTML = '';
+}
+
+// ── Split-view: render text panel ───────────────────────────────
+function renderTextPanel() {
+  if (!S.book || !S.unit || !S.verses.length) return;
+
+  // Title
+  document.getElementById('text-panel-title').textContent =
+    `${S.book.he} | ${buildUnitLabel()}`;
+
+  // Reset commentary cache when new chapter is shown
+  SV.commentaryCache = {};
+  SV.hoveredVerseIdx = null;
+  document.getElementById('commentary-area').style.display = 'none';
+
+  // Build commentator selector chips
+  _buildCommentatorsBar();
+
+  // Render verses
+  const scroll = document.getElementById('chapter-text-scroll');
+  scroll.innerHTML = '';
+
+  S.verses.forEach((verse, idx) => {
+    const div = document.createElement('div');
+    div.className = 'verse-item';
+    div.dataset.verseIdx = idx;
+
+    const numSpan = document.createElement('span');
+    numSpan.className = 'verse-num-badge';
+    // For Shas show segment number as Arabic, others as Hebrew numeral
+    numSpan.textContent = S.collectionKey === 'shas' ? (idx + 1) : toHebrew(idx + 1);
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'verse-text-content';
+    textSpan.textContent = verse;
+
+    div.appendChild(numSpan);
+    div.appendChild(textSpan);
+
+    div.addEventListener('mouseenter', () => _onVerseHover(idx));
+
+    scroll.appendChild(div);
+  });
+}
+
+function _buildCommentatorsBar() {
+  const bar = document.getElementById('commentators-bar');
+  bar.innerHTML = '<span style="font-size:0.75rem;color:#6B7280;flex-shrink:0;">מפרשים:</span>';
+
+  const comms = COMMENTATORS[S.collectionKey] || [];
+
+  // Default: first commentator selected
+  if (SV.selectedCommentators.size === 0 && comms.length > 0) {
+    SV.selectedCommentators.add(comms[0].id);
+  }
+
+  comms.forEach(comm => {
+    const chip = document.createElement('button');
+    const selected = SV.selectedCommentators.has(comm.id);
+    chip.className = 'commentator-chip' + (selected ? ' chip-selected' : '');
+    chip.textContent = comm.he;
+    chip.onclick = () => {
+      if (SV.selectedCommentators.has(comm.id)) {
+        if (SV.selectedCommentators.size > 1) SV.selectedCommentators.delete(comm.id);
+      } else {
+        SV.selectedCommentators.add(comm.id);
+      }
+      chip.classList.toggle('chip-selected', SV.selectedCommentators.has(comm.id));
+      // Refresh commentary for currently hovered verse
+      if (SV.hoveredVerseIdx !== null) _showCommentaryForVerse(SV.hoveredVerseIdx);
+    };
+    bar.appendChild(chip);
+  });
+}
+
+// ── Split-view: hover & commentary ──────────────────────────────
+function _onVerseHover(idx) {
+  if (SV.hoverDebounce) clearTimeout(SV.hoverDebounce);
+
+  // Visual highlight
+  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('verse-active'));
+  const el = document.querySelector(`.verse-item[data-verse-idx="${idx}"]`);
+  if (el) el.classList.add('verse-active');
+
+  SV.hoveredVerseIdx = idx;
+  SV.hoverDebounce = setTimeout(() => _showCommentaryForVerse(idx), 250);
+}
+
+async function _showCommentaryForVerse(verseIdx) {
+  const comms = (COMMENTATORS[S.collectionKey] || []).filter(c => SV.selectedCommentators.has(c.id));
+  if (!comms.length) return;
+
+  const commArea    = document.getElementById('commentary-area');
+  const commContent = document.getElementById('commentary-content');
+  const commLabel   = document.getElementById('commentary-verse-label');
+
+  commArea.style.display = 'block';
+  const labelNum = S.collectionKey === 'shas' ? (verseIdx + 1) : toHebrew(verseIdx + 1);
+  commLabel.textContent = `${S.book.he} | ${buildUnitLabel()} | קטע ${labelNum}`;
+  commContent.innerHTML = '<div style="color:#9CA3AF;font-size:0.85rem;padding:4px 0;">טוען פירושים...</div>';
+
+  const results = await Promise.all(comms.map(c => _fetchCommentary(c, verseIdx)));
+
+  commContent.innerHTML = '';
+  let hasContent = false;
+
+  results.forEach((text, i) => {
+    if (!text) return;
+    hasContent = true;
+    const block = document.createElement('div');
+    block.className = 'commentary-block';
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'comm-name';
+    nameDiv.textContent = comms[i].he + ':';
+    const textDiv = document.createElement('div');
+    textDiv.className = 'comm-text';
+    textDiv.textContent = text;
+    block.appendChild(nameDiv);
+    block.appendChild(textDiv);
+    commContent.appendChild(block);
+  });
+
+  if (!hasContent) {
+    commContent.innerHTML = '<div style="color:#9CA3AF;font-size:0.85rem;padding:4px 0;">אין פירוש זמין לקטע זה.</div>';
+  }
+}
+
+async function _fetchCommentary(comm, verseIdx) {
+  const cacheKey = `${comm.id}:${verseIdx}`;
+  if (cacheKey in SV.commentaryCache) return SV.commentaryCache[cacheKey];
+
+  const sf  = S.book.sf;
+  const ch  = S.unit;
+  const v   = verseIdx + 1;
+  const ref = comm.ref(sf, ch, v);
+
+  try {
+    const res = await fetch(`/api/sefaria?ref=${encodeURIComponent(ref)}`);
+    if (!res.ok) { SV.commentaryCache[cacheKey] = null; return null; }
+    const data = await res.json();
+
+    let raw = data.he || '';
+    if (Array.isArray(raw)) {
+      raw = raw.flat ? raw.flat(4) : raw;
+      raw = Array.isArray(raw) ? raw.filter(x => typeof x === 'string').join(' ') : String(raw);
+    }
+    // Strip HTML tags
+    const tmp = document.createElement('div');
+    tmp.innerHTML = String(raw).replace(/<br\s*\/?>/gi, '\n');
+    const text = tmp.textContent.trim();
+
+    SV.commentaryCache[cacheKey] = text || null;
+    return text || null;
+  } catch {
+    SV.commentaryCache[cacheKey] = null;
+    return null;
+  }
+}
+
 // ── Fetch content from Sefaria ───────────────────────────────────
 async function fetchContent(collectionKey, item, unit) {
   const col = COLLECTIONS[collectionKey];
@@ -825,6 +1062,7 @@ async function startLearning() {
     document.getElementById('chat-input-row').classList.remove('hidden');
     document.getElementById('input-area').classList.remove('hidden');
     document.getElementById('header-new-btn').classList.remove('hidden');
+    document.getElementById('split-view-btn').classList.remove('hidden');
     document.getElementById('modal-finished').classList.add('hidden');
 
     // Add session header inside chat
@@ -985,7 +1223,7 @@ function renderAI(data) {
   outer.innerHTML = `
     <div style="flex-shrink:0;text-align:center;">
       <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;display:block;">
-      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;white-space:nowrap;">רבי בניהו</div>
+      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;white-space:nowrap;">${t('rabbiName')}</div>
     </div>
     <div class="rabbi-bubble-inner" style="flex:1;min-width:0;"></div>`;
   box.appendChild(outer);
@@ -1160,6 +1398,13 @@ function resetSession() {
   document.getElementById('modal-finished').classList.add('hidden');
   document.getElementById('input-area').classList.add('hidden');
   document.getElementById('header-new-btn').classList.add('hidden');
+  document.getElementById('split-view-btn').classList.add('hidden');
+
+  // Reset split view
+  if (SV.active) _closeSplitView();
+  SV.selectedCommentators.clear();
+  SV.commentaryCache = {};
+  SV.hoveredVerseIdx = null;
 
   // Save to history if session had activity
   if (S.sessionStarted && S.sessionScore > 0 && S.book) {
@@ -1731,7 +1976,7 @@ function showGreeting() {
       outer.innerHTML = `
         <div style="flex-shrink:0;text-align:center;">
           <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-          <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">רבי בניהו</div>
+          <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">${t('rabbiName')}</div>
         </div>`;
       outer.appendChild(bubble);
       chatEl.appendChild(outer);

@@ -351,6 +351,162 @@
     .anim-3 { animation-delay: 1.6s;  }
     .anim-sub { animation-delay: 2.4s; }
     #chat [id$="-msg"] { transition: opacity 0.2s ease; }
+
+    /* ── Split-screen layout ── */
+    #content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      direction: ltr; /* physical left=left for split positioning */
+    }
+    #content-area #chat {
+      flex: 1;
+      overflow-y: auto;
+      direction: rtl; /* restore RTL inside chat */
+    }
+    #app.split-mode #chat {
+      flex: 0 0 50%;
+      border-left: 1px solid #E8DCC8;
+    }
+
+    /* ── Text panel (right half in split mode) ── */
+    #text-panel {
+      display: none;
+      flex: 0 0 50%;
+      flex-direction: column;
+      overflow: hidden;
+      background: #FFFBF5;
+      direction: rtl;
+    }
+    #app.split-mode #text-panel { display: flex; }
+
+    #text-panel-header {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #FDF8EF, #F5EDD0);
+      border-bottom: 1px solid #E8DCC8;
+      padding: 8px 12px;
+    }
+    #text-panel-title {
+      font-weight: 700;
+      color: #1B3A6B;
+      font-size: 0.9rem;
+    }
+    #commentators-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    #chapter-text-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+    }
+    .verse-item {
+      display: flex;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 3px;
+      align-items: flex-start;
+    }
+    .verse-item:hover, .verse-item.verse-active {
+      background: rgba(184,134,11,0.1);
+    }
+    .verse-num-badge {
+      flex-shrink: 0;
+      font-weight: 700;
+      color: #B8860B;
+      font-size: 0.8rem;
+      min-width: 22px;
+      line-height: 1.7;
+    }
+    .verse-text-content {
+      font-size: 0.97rem;
+      line-height: 1.75;
+      color: #2C1810;
+    }
+
+    /* ── Commentary area ── */
+    #commentary-area {
+      flex-shrink: 0;
+      max-height: 38%;
+      overflow-y: auto;
+      border-top: 2px solid #E8DCC8;
+      padding: 10px 14px;
+      background: #fff;
+    }
+    #commentary-verse-label {
+      font-size: 0.78rem;
+      color: #6B7280;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .commentary-block {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #F0EAD6;
+    }
+    .commentary-block:last-child { border-bottom: none; margin-bottom: 0; }
+    .comm-name {
+      font-weight: 700;
+      color: #1B3A6B;
+      font-size: 0.82rem;
+      margin-bottom: 3px;
+    }
+    .comm-text {
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: #2C1810;
+    }
+
+    /* ── Commentator chips ── */
+    .commentator-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.77rem;
+      cursor: pointer;
+      border: 1.5px solid #D4C5A9;
+      background: #fff;
+      color: #2C1810;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .commentator-chip.chip-selected {
+      background: #1B3A6B;
+      color: #fff;
+      border-color: #1B3A6B;
+    }
+    .commentator-chip:hover:not(.chip-selected) { background: #F0E6C8; }
+
+    /* ── Split view button ── */
+    #split-view-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #F0C040;
+      border-radius: 8px;
+      padding: 5px 11px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    #split-view-btn:hover { background: rgba(255,255,255,0.25); }
+
+    @media (max-width: 640px) {
+      #app.split-mode #chat { flex: 0 0 55%; }
+      #app.split-mode #text-panel { flex: 0 0 45%; }
+      .verse-text-content { font-size: 0.85rem; }
+      .commentator-chip { font-size: 0.7rem; padding: 2px 7px; }
+    }
   </style>
 </head>
 <body>
@@ -781,6 +937,10 @@
         שיחה חדשה ↺
       </button>
 
+      <button id="split-view-btn" onclick="toggleSplitView()" class="hidden">
+        📖 פתח פרק
+      </button>
+
       <!-- Loading spinner (inline) -->
       <svg id="header-spinner" class="hidden spinner w-5 h-5 text-goldLight" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -812,16 +972,45 @@
     </div>
   </header>
 
-  <!-- ── Chat area ── -->
-  <div id="chat">
-    <!-- Welcome state -->
-    <div id="welcome">
-      <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;" data-i18n="greetingHello">שלום</p>
-      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;" data-i18n="greetingName">אני רבי בניהו</p>
-      <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;" data-i18n="greetingSubtitle">יחד נעמיק בתורה הקדושה</p>
+  <!-- ── Content area: chat (left) + text panel (right) ── -->
+  <div id="content-area">
+
+    <!-- Chat -->
+    <div id="chat">
+      <!-- Welcome state -->
+      <div id="welcome">
+        <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
+        <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;" data-i18n="greetingHello">שלום</p>
+        <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;" data-i18n="greetingName">אני רבי בניהו</p>
+        <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;" data-i18n="greetingSubtitle">יחד נעמיק בתורה הקדושה</p>
+      </div>
     </div>
-  </div>
+
+    <!-- Text panel (Sefaria chapter + commentaries) — hidden until split mode -->
+    <div id="text-panel">
+      <!-- Header: title + commentator selector -->
+      <div id="text-panel-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span id="text-panel-title"></span>
+          <button onclick="toggleSplitView()" title="סגור פרק"
+                  style="background:none;border:none;color:#9CA3AF;font-size:1.1rem;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
+        </div>
+        <div id="commentators-bar">
+          <span style="font-size:0.75rem;color:#6B7280;flex-shrink:0;">מפרשים:</span>
+        </div>
+      </div>
+
+      <!-- Chapter verses (scrollable) -->
+      <div id="chapter-text-scroll"></div>
+
+      <!-- Commentary shown on hover (hidden until a verse is hovered) -->
+      <div id="commentary-area" style="display:none;">
+        <div id="commentary-verse-label"></div>
+        <div id="commentary-content"></div>
+      </div>
+    </div>
+
+  </div><!-- /#content-area -->
 
   <!-- ── Input area (hidden until session starts) ── -->
   <div id="input-area" class="hidden">
