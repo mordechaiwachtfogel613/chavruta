@@ -485,7 +485,7 @@
 <script>
 // ── Constants ──────────────────────────────────────────────────────
 const ACCESS_CODE    = '613';
-const MSG_LIMIT      = 30;
+const MSG_LIMIT      = 60;
 const LS_COUNT_KEY   = 'masav_msg_count';
 const SS_AUTH_KEY    = 'masav_authed';
 const BINAT_URL      = 'https://a0533161912.wixsite.com/my-site-8';
@@ -645,13 +645,17 @@ async function startChat() {
   // Automatically trigger the first question from the AI
   setLoading(true);
   showThinking();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
   try {
     const trigger = [{ role: 'user', content: 'התחל' }];
     const res = await fetch('/api/masav', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ messages: trigger }),
+      signal:  ctrl.signal,
     });
+    clearTimeout(timer);
     hideThinking();
     if (res.ok) {
       const data  = await res.json();
@@ -660,9 +664,13 @@ async function startChat() {
       history.push({ role: 'assistant', content: reply });
       addBubble('ai', reply);
       aiRespCount++;
+    } else {
+      addBubble('ai', 'סליחה, נתקלתי בבעיה טכנית. אנא נסה לרענן את הדף.');
     }
   } catch (e) {
+    clearTimeout(timer);
     hideThinking();
+    addBubble('ai', 'סליחה, נתקלתי בבעיה טכנית. אנא נסה לרענן את הדף.');
   }
   setLoading(false);
 }
