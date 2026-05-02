@@ -12,6 +12,33 @@ const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 // ── Default system prompt intros per collection ──────────────────
 const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
 
+const DEFAULT_PROMPT_IYUN = RABBI_PERSONA + `אתה לומד בעיון עמוק פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.
+צטט את המפרשים בשמם, הצג מחלוקות ביניהם, וחבר בין דבריהם לפשט הפסוק. שאל שאלות מעמיקות שמעוררות מחשבה.`;
+
+const DEFAULT_PROMPT_BEKIUT = RABBI_PERSONA + `אתה לומד בבקיאות פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.
+הצג את עיקר הפסוק ועיקר דברי כל מפרש בקצרה. שאל שאלות קצרות שבודקות הבנה בסיסית של הפסוק ודברי המפרשים.`;
+
+const VERSE_STUDY_RULES = `
+חוקי הפעולה:
+1. פידבק קצר על התשובה הקודמת (ריק בהודעה הראשונה).
+2. ניקוד: 5=נכון לגמרי | 2=חלקי/כיוון נכון | 0=שגוי.
+3. שאל שאלה אחת בלבד על הפסוק ופירושי המפרשים.
+4. אם ביקשו הסבר — מלא שדה explanation בהסבר קצר ומדויק.
+5. לאחר 3-4 שאלות — כתוב ברכה חמה ב-feedback ושים is_finished=true.
+
+כלל ברזל: החזר אך ורק JSON תקין — ללא טקסט לפניו, ללא \`\`\`json, ללא שום תוספות.
+
+פורמט חובה (שמות שדות אלה בדיוק):
+{
+  "feedback":       "פידבק על התשובה האחרונה",
+  "score":          0,
+  "next_verse_num": 1,
+  "next_verse":     "הפסוק או הציטוט שדנים בו",
+  "next_question":  "שאלה אחת על הפסוק/מפרשים",
+  "explanation":    "",
+  "is_finished":    false
+}`;
+
 const DEFAULT_PROMPTS = {
   tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
   mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
@@ -98,6 +125,9 @@ export default async function handler(req, res) {
     collection_type,
     custom_prompt,
     lang,
+    study_mode,      // 'iyun' | 'bekiut' | undefined
+    commentary_text, // commentaries text for verse mode
+    verse_num,       // 1-based verse number
   } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
@@ -111,30 +141,46 @@ export default async function handler(req, res) {
   }
 
   // ── Build system prompt ────────────────────────────────────────
-  const isEnglish = lang === 'en';
-  const collectionKey  = ['tanach','mishnah','shas','rambam','shulchan'].includes(collection_type)
+  const isEnglish   = lang === 'en';
+  const isVerseMode = study_mode === 'iyun' || study_mode === 'bekiut';
+  const collectionKey = ['tanach','mishnah','shas','rambam','shulchan'].includes(collection_type)
     ? collection_type : 'tanach';
-  const [kvPrompt, kvModel] = await Promise.all([
-    kv.get(`config:prompt:${collectionKey}`),
-    kv.get('config:model'),
-  ]);
-  const defaultPrompts = isEnglish ? DEFAULT_PROMPTS_EN : DEFAULT_PROMPTS;
-  const universalRules = isEnglish ? UNIVERSAL_RULES_EN : UNIVERSAL_RULES;
-  // KV admin prompts are Hebrew-only; skip them in English mode
-  const introPrompt = (kvPrompt && kvPrompt.trim() && !isEnglish)
-    ? kvPrompt.trim()
-    : (defaultPrompts[collectionKey] || defaultPrompts.tanach);
-  const chapterHeader = isEnglish
-    ? `Current section: ${book_name} | Unit: ${chapter_num} (${total_verses} units)`
-    : `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)`;
+
+  const kvKeys = isVerseMode
+    ? [`config:prompt:${study_mode}`, 'config:model']
+    : [`config:prompt:${collectionKey}`, 'config:model'];
+  const [kvPrompt, kvModel] = await Promise.all(kvKeys.map(k => kv.get(k)));
+
+  let introPrompt, universalRules, chapterHeader;
+
+  if (isVerseMode) {
+    const defaultVersePrompt = study_mode === 'iyun' ? DEFAULT_PROMPT_IYUN : DEFAULT_PROMPT_BEKIUT;
+    introPrompt   = (kvPrompt && kvPrompt.trim() && !isEnglish) ? kvPrompt.trim() : defaultVersePrompt;
+    universalRules = VERSE_STUDY_RULES;
+    chapterHeader  =
+      `הפסוק הנוכחי: ${book_name} | ${chapter_num} | פסוק ${verse_num || 1}\n\n` +
+      `הפסוק:\n${chapter_text}\n\n` +
+      (commentary_text
+        ? `פירושי המפרשים:\n${commentary_text}`
+        : '(לא נבחרו מפרשים)');
+  } else {
+    const defaultPrompts = isEnglish ? DEFAULT_PROMPTS_EN : DEFAULT_PROMPTS;
+    universalRules = isEnglish ? UNIVERSAL_RULES_EN : UNIVERSAL_RULES;
+    // KV admin prompts are Hebrew-only; skip them in English mode
+    introPrompt = (kvPrompt && kvPrompt.trim() && !isEnglish)
+      ? kvPrompt.trim()
+      : (defaultPrompts[collectionKey] || defaultPrompts.tanach);
+    chapterHeader = isEnglish
+      ? `Current section: ${book_name} | Unit: ${chapter_num} (${total_verses} units)`
+      : `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)`;
+  }
 
   const systemWithChapter =
     `${introPrompt}\n` +
     `${universalRules}\n\n` +
     `${chapterHeader}\n` +
     `──────────────────────────────\n` +
-    `${chapter_text}\n` +
-    `──────────────────────────────`;
+    (isVerseMode ? '' : `${chapter_text}\n──────────────────────────────`);
 
   // ── Call OpenRouter ────────────────────────────────────────────
   try {
@@ -147,8 +193,9 @@ export default async function handler(req, res) {
         'X-Title':       'Chavruta - Jewish Learning App',
       },
       body: JSON.stringify({
-        model:      kvModel || DEFAULT_MODEL,
-        max_tokens: 1024,
+        model:           kvModel || DEFAULT_MODEL,
+        max_tokens:      1024,
+        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemWithChapter },
           ...messages,
