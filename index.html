@@ -622,7 +622,8 @@
             <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
             <option value="anthropic/claude-3.5-haiku">Claude 3.5 Haiku</option>
           </optgroup>
-          <optgroup label="Google (Gemini)">
+          <optgroup label="Google (Gemini + Gemma)">
+            <option value="google/gemma-4-31b-it">Gemma 4 31B</option>
             <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
             <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
@@ -708,6 +709,32 @@
             <button onclick="resetPrompt('shulchan')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
           </div>
           <textarea id="admin-prompt-shulchan" class="admin-textarea" rows="4"></textarea>
+        </div>
+      </div>
+
+      <hr class="border-gray-200 my-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm text-gray-500">הנחיות ללימוד מהפסוקייה (לחיצה על הכפתורים בפרק):</p>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <span class="text-sm font-semibold text-navy">הפעל כפתורים</span>
+          <input type="checkbox" id="admin-verse-mode-enabled" onchange="saveVerseModeEnabled()"
+                 style="width:18px;height:18px;cursor:pointer;accent-color:#1B3A6B;">
+        </label>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">📚 לימוד בעיון</label>
+            <button onclick="resetPrompt('iyun')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-iyun" class="admin-textarea" rows="4"></textarea>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">🏃 לימוד בבקיאות</label>
+            <button onclick="resetPrompt('bekiut')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-bekiut" class="admin-textarea" rows="4"></textarea>
         </div>
       </div>
 
@@ -994,6 +1021,18 @@
           <span id="text-panel-title"></span>
           <button onclick="toggleSplitView()" title="סגור פרק"
                   style="background:none;border:none;color:#9CA3AF;font-size:1.1rem;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
+        </div>
+        <div style="display:flex;gap:6px;margin:6px 0 4px 0;position:relative;">
+          <button id="panel-btn-iyun" onclick="startLearningFromPanel('iyun')" disabled
+                  title="האפשרות הזאת באמצע פיתוח"
+                  style="flex:1;background:#9CA3AF;color:#e5e7eb;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:inherit;opacity:0.6;">
+            📚 ללמוד בעיון
+          </button>
+          <button id="panel-btn-bekiut" onclick="startLearningFromPanel('bekiut')" disabled
+                  title="האפשרות הזאת באמצע פיתוח"
+                  style="flex:1;background:#9CA3AF;color:#e5e7eb;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:inherit;opacity:0.6;">
+            🏃 ללמוד בבקיאות
+          </button>
         </div>
         <div id="commentators-bar">
           <span style="font-size:0.75rem;color:#6B7280;flex-shrink:0;">מפרשים:</span>

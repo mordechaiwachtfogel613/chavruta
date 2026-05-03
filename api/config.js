@@ -9,6 +9,7 @@ const ALLOWED_MODELS = new Set([
   'anthropic/claude-3.5-sonnet',
   'anthropic/claude-3.5-haiku',
   // Google
+  'google/gemma-4-31b-it',
   'google/gemini-2.5-pro',
   'google/gemini-2.5-flash',
   'google/gemini-2.5-flash-lite',
@@ -34,7 +35,7 @@ const ALLOWED_MODELS = new Set([
 ]);
 
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
-const PROMPT_KEYS = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
+const PROMPT_KEYS = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan', 'iyun', 'bekiut'];
 
 const DEFAULT_SHARE_CARD = {
   theme: 'dark',
@@ -61,11 +62,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
   if (req.method === 'GET') {
-    const [model, greeting, shareCard, thinkingMsgs, ...prompts] = await Promise.all([
+    const [model, greeting, shareCard, thinkingMsgs, verseModeEnabled, ...prompts] = await Promise.all([
       kv.get('config:model'),
       kv.get('config:greeting'),
       kv.get('config:shareCard'),
       kv.get('config:thinkingMsgs'),
+      kv.get('config:verseModeEnabled'),
       ...PROMPT_KEYS.map(k => kv.get(`config:prompt:${k}`)),
     ]);
     const promptsObj = {};
@@ -76,13 +78,14 @@ export default async function handler(req, res) {
       prompts: promptsObj,
       shareCard: shareCard || DEFAULT_SHARE_CARD,
       thinkingMsgs: thinkingMsgs || null,
+      verseModeEnabled: verseModeEnabled === true,
     });
   }
 
   if (req.method === 'POST') {
     if (!isAdminAuthed(req)) return res.status(403).json({ error: 'Forbidden' });
 
-    const { model, greeting, prompts, shareCard, thinkingMsgs } = req.body || {};
+    const { model, greeting, prompts, shareCard, thinkingMsgs, verseModeEnabled } = req.body || {};
     const ops = [];
 
     if (model !== undefined && model !== '') {
@@ -112,6 +115,9 @@ export default async function handler(req, res) {
       } else {
         ops.push(kv.del('config:thinkingMsgs'));
       }
+    }
+    if (verseModeEnabled !== undefined) {
+      ops.push(verseModeEnabled ? kv.set('config:verseModeEnabled', true) : kv.del('config:verseModeEnabled'));
     }
     await Promise.all(ops);
     return res.json({ ok: true });
