@@ -1229,6 +1229,9 @@ async function startLearning() {
     document.getElementById('split-view-btn').classList.remove('hidden');
     document.getElementById('modal-finished').classList.add('hidden');
 
+    // Auto-open the text panel
+    if (!SV.active) _openSplitView();
+
     // Add session header inside chat
     const col = COLLECTIONS[S.collectionKey];
     const unitLabel = buildUnitLabel();
