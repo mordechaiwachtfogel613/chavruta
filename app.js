@@ -2,10 +2,29 @@
 // חברותא – אפליקציית לימוד | Frontend Logic
 // ================================================================
 
+// ── Default prompts (must be before all functions that reference them) ──
+const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
+const DEFAULT_ADMIN_PROMPTS = {
+  tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
+  mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
+  shas:     RABBI_PERSONA + `תלמד גמרא עמוד אחר עמוד, ותשאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
+  rambam:   RABBI_PERSONA + `תלמד רמב"ם הלכה אחת בכל פעם, ותשאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
+  shulchan: RABBI_PERSONA + `תלמד שולחן ערוך סעיף אחד בכל פעם, ותשאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
+};
+const DEFAULT_IYUN_PROMPT   = RABBI_PERSONA + `אתה לומד בעיון עמוק פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nצטט את המפרשים בשמם, הצג מחלוקות ביניהם, וחבר בין דבריהם לפשט הפסוק. שאל שאלות מעמיקות שמעוררות מחשבה.`;
+const DEFAULT_BEKIUT_PROMPT = RABBI_PERSONA + `אתה לומד בבקיאות פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nהצג את עיקר הפסוק ועיקר דברי כל מפרש בקצרה. שאל שאלות קצרות שבודקות הבנה בסיסית של הפסוק ודברי המפרשים.`;
+const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
+יחד נעמיק בתורה הקדושה.
+בחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.
+מה תרצה ללמוד היום? 📖`;
+
 let GLOBAL_MODEL         = null; // loaded from server on init
 let GLOBAL_GREETING_HE   = null; // loaded from server on init (Hebrew greeting)
 let GLOBAL_GREETING_EN   = null; // loaded from server on init (English greeting)
 let GLOBAL_PROMPTS       = {};   // loaded from server on init
+let GLOBAL_PROMPT_IYUN        = null;  // verse-mode iyun prompt
+let GLOBAL_PROMPT_BEKIUT      = null;  // verse-mode bekiut prompt
+let GLOBAL_VERSE_MODE_ENABLED = false; // verse-mode buttons enabled (admin-controlled)
 let GLOBAL_THINKING_MSGS = null; // custom thinking messages from admin
 let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
 let SOUND_WRONG       = null; // custom wrong-answer sound (data URL)
@@ -27,6 +46,10 @@ async function loadGlobalConfig() {
     GLOBAL_GREETING_HE   = d.greetingHe || d.greeting || null;
     GLOBAL_GREETING_EN   = d.greetingEn || null;
     GLOBAL_PROMPTS       = d.prompts  || {};
+    GLOBAL_PROMPT_IYUN        = d.prompts?.iyun   || null;
+    GLOBAL_PROMPT_BEKIUT      = d.prompts?.bekiut || null;
+    GLOBAL_VERSE_MODE_ENABLED = d.verseModeEnabled === true;
+    _applyVerseModeEnabled(GLOBAL_VERSE_MODE_ENABLED);
     GLOBAL_THINKING_MSGS = Array.isArray(d.thinkingMsgs) && d.thinkingMsgs.length ? d.thinkingMsgs : null;
     SOUND_CORRECT   = d.sound_correct || null;
     SOUND_WRONG     = d.sound_wrong   || null;
@@ -98,6 +121,7 @@ const TRANSLATIONS = {
     errSefariaDown: 'ספריא אינה זמינה כרגע',
     errSefariaDownDetail: 'שרת ספריא.org אינו מגיב. זה לרוב זמני — נסה שוב בעוד כמה דקות.',
     errOccurred: 'אירעה שגיאה',
+    errTimeout: 'הבקשה ארכה יותר מדי זמן — נסה שוב.',
     errTryOther: 'בחר יחידה אחרת מהתפריט או נסה שוב.',
     parseErrMsg: 'לא הצלחתי להבין מה תרצה ללמוד. נסה כך:',
     parseErrOr: 'או בחר מהתפריט ולחץ התחל.',
@@ -189,6 +213,7 @@ const TRANSLATIONS = {
     errSefariaDown: 'Sefaria is currently unavailable',
     errSefariaDownDetail: 'The Sefaria.org server is not responding. This is usually temporary — try again in a few minutes.',
     errOccurred: 'An error occurred',
+    errTimeout: 'The request took too long — please try again.',
     errTryOther: 'Choose another unit from the menu or try again.',
     parseErrMsg: "I could not understand what you'd like to study. Try like this:",
     parseErrOr: 'Or select from the menu and click Start.',
@@ -568,6 +593,10 @@ const S = {
   adminAuthed:    false,
   sessionStarted: false,
   greetingMode:   false,
+  studyMode:      null,     // 'iyun' | 'bekiut' | null
+  commentaryText: null,     // commentary text for verse mode
+  studyVerseIdx:  null,     // verse index for verse mode
+  wrongAttempts:  0,        // consecutive wrong answers on current unit (reset on correct)
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -732,7 +761,7 @@ function showAdminEditor() {
   document.getElementById('admin-save-msg').classList.add('hidden');
 
   document.getElementById('admin-model-select').value = GLOBAL_MODEL || 'anthropic/claude-opus-4';
-  document.getElementById('admin-greeting').value = GLOBAL_GREETING || DEFAULT_GREETING;
+  document.getElementById('admin-greeting').value = GLOBAL_GREETING_HE || DEFAULT_GREETING;
   document.getElementById('admin-thinking-msgs').value =
     (GLOBAL_THINKING_MSGS || t('thinkingMsgs')).join('\n');
 
@@ -740,6 +769,9 @@ function showAdminEditor() {
   for (const k of keys) {
     document.getElementById(`admin-prompt-${k}`).value = GLOBAL_PROMPTS[k] || DEFAULT_ADMIN_PROMPTS[k];
   }
+  document.getElementById('admin-prompt-iyun').value   = GLOBAL_PROMPT_IYUN   || DEFAULT_IYUN_PROMPT;
+  document.getElementById('admin-prompt-bekiut').value = GLOBAL_PROMPT_BEKIUT || DEFAULT_BEKIUT_PROMPT;
+  document.getElementById('admin-verse-mode-enabled').checked = GLOBAL_VERSE_MODE_ENABLED;
 
   loadAdminUsers();
   loadEmailTemplates();
@@ -782,8 +814,60 @@ async function setUserStatus(email, status) {
   loadAdminUsers();
 }
 
+function _applyVerseModeEnabled(enabled) {
+  const DISABLED_STYLE = 'flex:1;background:#9CA3AF;color:#e5e7eb;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:inherit;opacity:0.6;';
+  const IYUN_STYLE     = 'flex:1;background:#1B3A6B;color:#F0C040;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
+  const BEKIUT_STYLE   = 'flex:1;background:#B8860B;color:#fff;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
+
+  const iyunBtn   = document.getElementById('panel-btn-iyun');
+  const bekiutBtn = document.getElementById('panel-btn-bekiut');
+  if (!iyunBtn || !bekiutBtn) return;
+
+  if (enabled) {
+    iyunBtn.disabled   = false;
+    bekiutBtn.disabled = false;
+    iyunBtn.style.cssText   = IYUN_STYLE;
+    bekiutBtn.style.cssText = BEKIUT_STYLE;
+    iyunBtn.title   = '';
+    bekiutBtn.title = '';
+    iyunBtn.onmouseenter   = () => { iyunBtn.style.opacity   = '.82'; };
+    iyunBtn.onmouseleave   = () => { iyunBtn.style.opacity   = '1';  };
+    bekiutBtn.onmouseenter = () => { bekiutBtn.style.opacity = '.82'; };
+    bekiutBtn.onmouseleave = () => { bekiutBtn.style.opacity = '1';  };
+  } else {
+    iyunBtn.disabled   = true;
+    bekiutBtn.disabled = true;
+    iyunBtn.style.cssText   = DISABLED_STYLE;
+    bekiutBtn.style.cssText = DISABLED_STYLE;
+    iyunBtn.title   = 'האפשרות הזאת באמצע פיתוח';
+    bekiutBtn.title = 'האפשרות הזאת באמצע פיתוח';
+    iyunBtn.onmouseenter   = null;
+    iyunBtn.onmouseleave   = null;
+    bekiutBtn.onmouseenter = null;
+    bekiutBtn.onmouseleave = null;
+  }
+}
+
+async function saveVerseModeEnabled() {
+  const enabled = document.getElementById('admin-verse-mode-enabled').checked;
+  try {
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ verseModeEnabled: enabled }),
+    });
+    GLOBAL_VERSE_MODE_ENABLED = enabled;
+    _applyVerseModeEnabled(enabled);
+  } catch {
+    // revert checkbox on failure
+    document.getElementById('admin-verse-mode-enabled').checked = !enabled;
+  }
+}
+
 function resetPrompt(k) {
-  document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
+  if (k === 'iyun')   document.getElementById('admin-prompt-iyun').value   = DEFAULT_IYUN_PROMPT;
+  else if (k === 'bekiut') document.getElementById('admin-prompt-bekiut').value = DEFAULT_BEKIUT_PROMPT;
+  else document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
 }
 
 async function saveAdminPrompts() {
@@ -791,11 +875,16 @@ async function saveAdminPrompts() {
   const model = document.getElementById('admin-model-select').value;
   const greeting = document.getElementById('admin-greeting').value.trim();
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
+  const allDefaults = { ...DEFAULT_ADMIN_PROMPTS, iyun: DEFAULT_IYUN_PROMPT, bekiut: DEFAULT_BEKIUT_PROMPT };
   const prompts = {};
   for (const k of keys) {
     const val = document.getElementById(`admin-prompt-${k}`).value.trim();
-    prompts[k] = (val && val !== DEFAULT_ADMIN_PROMPTS[k]) ? val : '';
+    prompts[k] = (val && val !== allDefaults[k]) ? val : '';
   }
+  const iyunVal   = document.getElementById('admin-prompt-iyun').value.trim();
+  const bekiutVal = document.getElementById('admin-prompt-bekiut').value.trim();
+  prompts.iyun   = (iyunVal   && iyunVal   !== DEFAULT_IYUN_PROMPT)   ? iyunVal   : '';
+  prompts.bekiut = (bekiutVal && bekiutVal !== DEFAULT_BEKIUT_PROMPT) ? bekiutVal : '';
   const msg = document.getElementById('admin-save-msg');
   try {
     const res = await fetch('/api/config', {
@@ -811,8 +900,10 @@ async function saveAdminPrompts() {
     });
     if (!res.ok) throw new Error(`${res.status}`);
     GLOBAL_MODEL = model;
-    GLOBAL_GREETING = greeting || null;
+    GLOBAL_GREETING_HE = greeting || null;
     for (const k of keys) GLOBAL_PROMPTS[k] = prompts[k] || null;
+    GLOBAL_PROMPT_IYUN   = prompts.iyun   || null;
+    GLOBAL_PROMPT_BEKIUT = prompts.bekiut || null;
     const savedMsgs = document.getElementById('admin-thinking-msgs').value
       .split('\n').map(s => s.trim()).filter(Boolean);
     GLOBAL_THINKING_MSGS = savedMsgs.length ? savedMsgs : null;
@@ -849,6 +940,64 @@ function _closeSplitView() {
   document.getElementById('chapter-text-scroll').innerHTML = '';
   document.getElementById('commentary-area').style.display = 'none';
   document.getElementById('commentary-content').innerHTML = '';
+}
+
+// ── Start learning from panel (iyun / bekiut) ────────────────────
+async function startLearningFromPanel(mode) {
+  if (!S.book || !S.unit || !S.verses.length) return;
+
+  const verseIdx  = SV.hoveredVerseIdx !== null ? SV.hoveredVerseIdx : 0;
+  const verseText = S.verses[verseIdx] || '';
+
+  // Gather commentary from cache; fetch if missing
+  const comms = (COMMENTATORS[S.collectionKey] || [])
+    .filter(c => SV.selectedCommentators.has(c.id));
+  const commentaryParts = [];
+  for (const comm of comms) {
+    const cacheKey = `${comm.id}:${verseIdx}`;
+    let text = SV.commentaryCache[cacheKey];
+    if (!text) text = await _fetchCommentary(comm, verseIdx);
+    if (text) commentaryParts.push(`[${comm.he}]: ${text}`);
+  }
+
+  // Close split view
+  _closeSplitView();
+
+  // Reset session state for verse mode
+  S.messages       = [];
+  S.sessionScore   = 0;
+  S.sessionStarted = true;
+  S.greetingMode   = false;
+  S.studyMode      = mode;
+  S.commentaryText = commentaryParts.join('\n\n');
+  S.studyVerseIdx  = verseIdx;
+  S.waitingForFirstQuestion = true;
+
+  // Show chat UI
+  document.getElementById('greeting-picker').classList.add('hidden');
+  document.getElementById('chat-input-row').classList.remove('hidden');
+  document.getElementById('input-area').classList.remove('hidden');
+  document.getElementById('header-new-btn').classList.remove('hidden');
+  document.getElementById('split-view-btn').classList.remove('hidden');
+  setInput(true);
+
+  const chatEl = document.getElementById('chat');
+  chatEl.innerHTML = '';
+
+  // Session header
+  const unitLabel  = buildUnitLabel();
+  const modeLabel  = mode === 'iyun' ? '📚 לימוד בעיון' : '🏃 לימוד בבקיאות';
+  const verseLabel = S.collectionKey === 'shas'
+    ? `קטע ${verseIdx + 1}`
+    : `פסוק ${toHebrew(verseIdx + 1)}`;
+  const header = document.createElement('div');
+  header.className = 'text-center text-sm text-gray-400 mb-4 pb-2 border-b border-parchmentDark';
+  header.innerHTML = `<span class="font-semibold" style="color:#B8860B;">${esc(S.book.he)}</span> · <span class="font-semibold text-navy">${esc(unitLabel)}</span> · ${esc(verseLabel)} · <span style="color:#B8860B;">${modeLabel}</span>`;
+  chatEl.appendChild(header);
+
+  // Trigger first AI call
+  S.messages.push({ role: 'user', content: t('aiFirstMessage') });
+  await callAI();
 }
 
 // ── Split-view: render text panel ───────────────────────────────
@@ -935,6 +1084,18 @@ function _onVerseHover(idx) {
 
   SV.hoveredVerseIdx = idx;
   SV.hoverDebounce = setTimeout(() => _showCommentaryForVerse(idx), 250);
+}
+
+// Auto-highlight verse in split panel when Rabbi moves to a new verse
+function _autoHighlightVerse(idx) {
+  if (!SV.active) return;
+  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('verse-active'));
+  const el = document.querySelector(`.verse-item[data-verse-idx="${idx}"]`);
+  if (!el) return;
+  el.classList.add('verse-active');
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  SV.hoveredVerseIdx = idx;
+  _showCommentaryForVerse(idx);
 }
 
 async function _showCommentaryForVerse(verseIdx) {
@@ -1044,6 +1205,9 @@ async function startLearning() {
   S.sessionScore   = 0;
   S.sessionStarted = false;
   S.greetingMode   = false;
+  S.studyMode      = null;
+  S.commentaryText = null;
+  S.studyVerseIdx  = null;
 
   const btn     = document.getElementById('gp-start');
   const spinner = document.getElementById('header-spinner');
@@ -1131,22 +1295,38 @@ async function callAI() {
   try {
     const col         = COLLECTIONS[S.collectionKey];
     const unitLabel   = buildUnitLabel();
+    const isVerseMode = S.studyMode === 'iyun' || S.studyMode === 'bekiut';
     const body = {
       messages:        S.messages,
-      chapter_text:    S.verses.map((v, i) => `${i + 1}. ${v}`).join('\n'),
+      chapter_text:    isVerseMode
+        ? `1. ${S.verses[S.studyVerseIdx ?? 0] || ''}`
+        : S.verses.map((v, i) => `${i + 1}. ${v}`).join('\n'),
       book_name:       S.book.he,
       chapter_num:     unitLabel,
-      total_verses:    S.verses.length,
+      total_verses:    isVerseMode ? 1 : S.verses.length,
       collection_type: S.collectionKey,
       lang:            currentLang,
     };
+    if (isVerseMode) {
+      body.study_mode      = S.studyMode;
+      body.commentary_text = S.commentaryText || '';
+      body.verse_num       = (S.studyVerseIdx !== null ? S.studyVerseIdx : 0) + 1;
+    }
     if (GLOBAL_MODEL) body.model = GLOBAL_MODEL;
 
-    const res = await fetch('/api/chat', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 30000);
+    let res;
+    try {
+      res = await fetch('/api/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+        signal:  controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     removeTyping(tid);
 
@@ -1162,7 +1342,8 @@ async function callAI() {
   } catch (e) {
     removeTyping(tid);
     console.error(e);
-    appendError(`${t('errOccurred')}: ${e.message}`);
+    const msg = e.name === 'AbortError' ? t('errTimeout') : `${t('errOccurred')}: ${e.message}`;
+    appendError(msg);
     setInput(true);
   } finally {
     S.loading = false;
@@ -1171,10 +1352,16 @@ async function callAI() {
 
 // ── Process AI JSON ──────────────────────────────────────────────
 function processResponse(data) {
-  if (data.score > 0) addScore(data.score);
   const isInitial = S.waitingForFirstQuestion;
   S.waitingForFirstQuestion = false;
-  if (!isInitial && data.score === 0 && data.feedback && data.feedback.trim()) wrongAnswer();
+  if (data.score > 0) {
+    addScore(data.score);
+    S.wrongAttempts = 0;
+  } else if (!isInitial && data.score === 0 && data.feedback && data.feedback.trim()) {
+    S.wrongAttempts++;
+    deductScore(2);
+    wrongAnswer();
+  }
 
   // Override verse from authoritative local source
   if (data.next_verse_num && S.verses[data.next_verse_num - 1]) {
@@ -1182,6 +1369,9 @@ function processResponse(data) {
   }
 
   renderAI(data);
+
+  // Auto-highlight the current verse in the split-view panel
+  if (data.next_verse_num) _autoHighlightVerse(data.next_verse_num - 1);
 
   if (data.is_finished) {
     showFinished();
@@ -1341,6 +1531,13 @@ function addScore(pts) {
   playCorrectSound();
 }
 
+function deductScore(pts) {
+  S.totalScore   -= pts;
+  S.sessionScore -= pts;
+  localStorage.setItem('chavruta_score', S.totalScore);
+  refreshScores();
+}
+
 function refreshScores() {
   document.getElementById('score-display').textContent = S.totalScore;
 }
@@ -1445,12 +1642,6 @@ function esc(str) {
   return d.innerHTML;
 }
 
-// ── Greeting ──────────────────────────────────────────────────────
-const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
-יחד נעמיק בתורה הקדושה.
-בחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.
-מה תרצה ללמוד היום? 📖`;
-
 function buildGreetingHtml(text) {
   const lines = (text || t('defaultGreeting')).split('\n').filter(l => l.trim());
   return lines.map((line, i) => {
@@ -1468,17 +1659,6 @@ function resetGreeting() {
 function resetThinkingMsgs() {
   document.getElementById('admin-thinking-msgs').value = t('thinkingMsgs').join('\n');
 }
-
-// ── Default prompts (mirrors api/chat.js) ────────────────────────
-const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
-const DEFAULT_ADMIN_PROMPTS = {
-  tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
-  mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
-  shas:     RABBI_PERSONA + `תלמד גמרא עמוד אחר עמוד, ותשאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
-  rambam:   RABBI_PERSONA + `תלמד רמב"ם הלכה אחת בכל פעם, ותשאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
-  shulchan: RABBI_PERSONA + `תלמד שולחן ערוך סעיף אחד בכל פעם, ותשאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
-};
-
 
 // ── Share Card ────────────────────────────────────────────────────
 async function openShareModal() {
@@ -1982,7 +2162,7 @@ function showGreeting() {
       chatEl.appendChild(outer);
 
       // Typewriter effect — word by word
-      const lines = (GLOBAL_GREETING || t('defaultGreeting')).split('\n').filter(l => l.trim());
+      const lines = (GLOBAL_GREETING_HE || t('defaultGreeting')).split('\n').filter(l => l.trim());
       const totalLines = lines.length;
       let lineIdx = 0;
 

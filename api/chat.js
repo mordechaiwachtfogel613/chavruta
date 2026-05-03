@@ -62,7 +62,7 @@ const UNIVERSAL_RULES = `
 חוקי הפעולה:
 1. פידבק קצר על התשובה הקודמת (ריק בהודעה הראשונה).
 2. ניקוד: 5=נכון לגמרי | 2=חלקי/כיוון נכון | 0=שגוי.
-3. הצג את היחידה הבאה לפי הסדר – אל תדלג.
+3. הצג את היחידה הבאה לפי הסדר – אל תדלג. חריג: אם הניקוד הוא 0 (תשובה שגויה), הצג שוב את אותה יחידה בדיוק (השאר next_verse_num ו-next_verse זהים לקודמים) ושאל בסוף: "האם אתה חושב שיש לך תשובה טובה יותר?". עשה זאת לכל היותר פעמיים נוספות (סה"כ 3 תשובות שגויות על אותה יחידה), ולאחר מכן עבור ליחידה הבאה.
 4. שאל שאלה אחת בלבד – מעמיקה ומעוררת מחשבה.
 5. אם ביקשו הסבר – מלא שדה explanation בהסבר קצר ומדויק. לאחר ההסבר – עבור ליחידה הבאה.
 6. כשסיימת את כל היחידות – כתוב ברכה חמה ב-feedback ושים is_finished=true.
@@ -84,7 +84,7 @@ const UNIVERSAL_RULES_EN = `
 Operating rules:
 1. Brief feedback on the previous answer (empty in the first message).
 2. Score: 5=fully correct | 2=partial/right direction | 0=wrong.
-3. Present the next unit in order — do not skip.
+3. Present the next unit in order — do not skip. Exception: if score is 0 (wrong answer), re-present the exact same unit (keep next_verse_num and next_verse identical to the previous response) and ask at the end: "Do you think you have a better answer?". Do this at most twice more (3 wrong answers total on the same unit), then move to the next unit.
 4. Ask only one question — deep and thought-provoking.
 5. If an explanation is requested — fill the explanation field with a brief, precise explanation. After explaining — move to the next unit.
 6. When all units are finished — write a warm blessing in feedback and set is_finished=true.
