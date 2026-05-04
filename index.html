@@ -501,6 +501,25 @@
     }
     #split-view-btn:hover { background: rgba(255,255,255,0.25); }
 
+    /* ── Learn with friend button ── */
+    #learn-friend-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(184,134,11,0.25);
+      border: 1px solid rgba(240,192,64,0.6);
+      color: #F0C040;
+      border-radius: 8px;
+      padding: 5px 11px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    #learn-friend-btn:hover { background: rgba(184,134,11,0.45); }
+
     @media (max-width: 640px) {
       #app.split-mode #chat { flex: 0 0 55%; }
       #app.split-mode #text-panel { flex: 0 0 45%; }
@@ -658,6 +677,15 @@
         </div>
         <p class="text-xs text-gray-400 mb-2">כל שורה = משפט אחד. המשפטים מוצגים באקראי בזמן שהבינה חושבת.</p>
         <textarea id="admin-thinking-msgs" class="admin-textarea" rows="7" dir="rtl"></textarea>
+      </div>
+      <!-- Chavruta thinking messages -->
+      <div class="mb-5">
+        <div class="flex justify-between items-center mb-1">
+          <label class="text-sm font-semibold text-navy">🤝 משפטי "רבי בניהו חושב..." בחברותא</label>
+          <button onclick="resetChavrutaThinkingMsgs()" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+        </div>
+        <p class="text-xs text-gray-400 mb-2">מוצגים בזמן שרבי בניהו מעריך את שתי התשובות בלמידת חברותא. כל שורה = משפט אחד.</p>
+        <textarea id="admin-chavruta-thinking-msgs" class="admin-textarea" rows="7" dir="rtl"></textarea>
       </div>
       <hr class="border-gray-200 mb-4">
 
@@ -967,6 +995,8 @@
       <button id="split-view-btn" onclick="toggleSplitView()" class="hidden">
         📖 פתח פרק
       </button>
+
+      <a href="/chavruta.html" id="learn-friend-btn" title="ללמוד עם חבר">👥 ללמוד עם חבר</a>
 
       <!-- Loading spinner (inline) -->
       <svg id="header-spinner" class="hidden spinner w-5 h-5 text-goldLight" fill="none" viewBox="0 0 24 24">

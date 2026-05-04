@@ -26,6 +26,7 @@ let GLOBAL_PROMPT_IYUN        = null;  // verse-mode iyun prompt
 let GLOBAL_PROMPT_BEKIUT      = null;  // verse-mode bekiut prompt
 let GLOBAL_VERSE_MODE_ENABLED = false; // verse-mode buttons enabled (admin-controlled)
 let GLOBAL_THINKING_MSGS = null; // custom thinking messages from admin
+let GLOBAL_CHAVRUTA_THINKING_MSGS = null; // custom thinking messages for chavruta mode
 let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
 let SOUND_WRONG       = null; // custom wrong-answer sound (data URL)
 let SHARE_CARD_CONFIG = {     // share card design, overridden from server
@@ -51,6 +52,7 @@ async function loadGlobalConfig() {
     GLOBAL_VERSE_MODE_ENABLED = d.verseModeEnabled === true;
     _applyVerseModeEnabled(GLOBAL_VERSE_MODE_ENABLED);
     GLOBAL_THINKING_MSGS = Array.isArray(d.thinkingMsgs) && d.thinkingMsgs.length ? d.thinkingMsgs : null;
+    GLOBAL_CHAVRUTA_THINKING_MSGS = Array.isArray(d.chavrutaThinkingMsgs) && d.chavrutaThinkingMsgs.length ? d.chavrutaThinkingMsgs : null;
     SOUND_CORRECT   = d.sound_correct || null;
     SOUND_WRONG     = d.sound_wrong   || null;
     if (d.shareCard) SHARE_CARD_CONFIG = { ...SHARE_CARD_CONFIG, ...d.shareCard };
@@ -764,6 +766,16 @@ function showAdminEditor() {
   document.getElementById('admin-greeting').value = GLOBAL_GREETING_HE || DEFAULT_GREETING;
   document.getElementById('admin-thinking-msgs').value =
     (GLOBAL_THINKING_MSGS || t('thinkingMsgs')).join('\n');
+  document.getElementById('admin-chavruta-thinking-msgs').value =
+    (GLOBAL_CHAVRUTA_THINKING_MSGS || [
+      'רבי בניהו בוחן את שתי התשובות...',
+      'רבי בניהו מדייק בניסוחים...',
+      'רבי בניהו מחלק בין המשיבים...',
+      'רבי בניהו שוקל את הטיעונים...',
+      'רבי בניהו מסתכל בשני הכיוונים...',
+      'רבי בניהו מתעמק בסוגיא...',
+      'רבי בניהו מחפש את הראיה המכרעת...',
+    ]).join('\n');
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
   for (const k of keys) {
@@ -896,6 +908,8 @@ async function saveAdminPrompts() {
         prompts,
         thinkingMsgs: document.getElementById('admin-thinking-msgs').value
           .split('\n').map(s => s.trim()).filter(Boolean),
+        chavrutaThinkingMsgs: document.getElementById('admin-chavruta-thinking-msgs').value
+          .split('\n').map(s => s.trim()).filter(Boolean),
       })
     });
     if (!res.ok) throw new Error(`${res.status}`);
@@ -907,6 +921,9 @@ async function saveAdminPrompts() {
     const savedMsgs = document.getElementById('admin-thinking-msgs').value
       .split('\n').map(s => s.trim()).filter(Boolean);
     GLOBAL_THINKING_MSGS = savedMsgs.length ? savedMsgs : null;
+    const savedChavrutaMsgs = document.getElementById('admin-chavruta-thinking-msgs').value
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    GLOBAL_CHAVRUTA_THINKING_MSGS = savedChavrutaMsgs.length ? savedChavrutaMsgs : null;
     msg.textContent = '✓ נשמר בהצלחה';
   } catch {
     msg.textContent = '⚠ שגיאה בשמירה';
@@ -1661,6 +1678,18 @@ function resetGreeting() {
 
 function resetThinkingMsgs() {
   document.getElementById('admin-thinking-msgs').value = t('thinkingMsgs').join('\n');
+}
+
+function resetChavrutaThinkingMsgs() {
+  document.getElementById('admin-chavruta-thinking-msgs').value = [
+    'רבי בניהו בוחן את שתי התשובות...',
+    'רבי בניהו מדייק בניסוחים...',
+    'רבי בניהו מחלק בין המשיבים...',
+    'רבי בניהו שוקל את הטיעונים...',
+    'רבי בניהו מסתכל בשני הכיוונים...',
+    'רבי בניהו מתעמק בסוגיא...',
+    'רבי בניהו מחפש את הראיה המכרעת...',
+  ].join('\n');
 }
 
 // ── Share Card ────────────────────────────────────────────────────
