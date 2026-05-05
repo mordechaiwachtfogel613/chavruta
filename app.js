@@ -547,7 +547,9 @@ const COMMENTATORS = {
     { id: 'ibnezra',  he: 'אבן עזרא',  ref: (sf, ch, v) => `Ibn Ezra on ${sf}.${ch}.${v}` },
     { id: 'ramban',   he: 'רמב"ן',     ref: (sf, ch, v) => `Ramban on ${sf}.${ch}.${v}` },
     { id: 'sforno',   he: 'ספורנו',    ref: (sf, ch, v) => `Sforno on ${sf}.${ch}.${v}` },
-    { id: 'kliyakar', he: 'כלי יקר',   ref: (sf, ch, v) => `Kli Yakar on ${sf}.${ch}.${v}` },
+    { id: 'kliyakar',      he: 'כלי יקר',      ref: (sf, ch, v) => `Kli Yakar on ${sf}.${ch}.${v}` },
+    { id: 'metzudat_david', he: 'מצודת דוד',   ref: (sf, ch, v) => `Metzudat David on ${sf}.${ch}.${v}` },
+    { id: 'metzudat_zion',  he: 'מצודת ציון',  ref: (sf, ch, v) => `Metzudat Zion on ${sf}.${ch}.${v}` },
   ],
   mishnah: [
     { id: 'bartenura', he: 'ברטנורא',      ref: (sf, ch, v) => `Bartenura on Mishnah ${sf}.${ch}.${v}` },
