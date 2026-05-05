@@ -1157,11 +1157,10 @@ async function _showCommentaryForVerse(verseIdx) {
 }
 
 async function _fetchCommentary(comm, verseIdx) {
-  const cacheKey = `${comm.id}:${verseIdx}`;
-  if (cacheKey in SV.commentaryCache) return SV.commentaryCache[cacheKey];
-
   const sf  = S.book.sf;
   const ch  = S.unit;
+  const cacheKey = `${comm.id}:${sf}:${ch}:${verseIdx}`;
+  if (cacheKey in SV.commentaryCache) return SV.commentaryCache[cacheKey];
   const v   = verseIdx + 1;
   const ref = comm.ref(sf, ch, v);
 
