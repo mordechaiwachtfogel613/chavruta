@@ -265,10 +265,16 @@ const F = {
   errorStreak:   0,
   lastActivity:  Date.now(),
   disconnectTimer: null,
-  // Video
-  videoOn:       false,
-  signalSince:   0,
-  signalTimer:   null,
+  // Video / WebRTC
+  videoOn:        false,
+  localStream:    null,
+  pc:             null,
+  remoteStream:   null,
+  iceQueue:       [],      // buffered ICE candidates before setRemoteDescription
+  peerReady:      false,   // did the other side signal 'video-ready'?
+  negotiating:    false,   // prevent double-offer
+  signalSince:    0,
+  signalTimer:    null,
   // Auto-advance
   autoNextTimer:  null,
   // Thinking animation
@@ -951,34 +957,151 @@ function showAuthGate(msg) {
   showScreen('auth-gate');
 }
 
-// ── Video (Jitsi embed) ──────────────────────────────────────────
-// Each chavruta room gets its own Jitsi room named after the roomId.
-// Both participants open the same Jitsi URL → no signaling needed.
+// ── Video / WebRTC ───────────────────────────────────────────────
+// Layout: inline bar above chat, two <video> tiles side-by-side.
+// Signaling: piggyback on existing /api/signal KV relay.
+// Protocol:
+//   1. Each side clicks "הפעל וידאו" → gets camera, sends {type:'video-ready'}
+//   2. When BOTH sides are ready, host sends offer
+//   3. Guest replies with answer
+//   4. ICE candidates are buffered until remote desc is set, then flushed
 
-function F_toggleVideo() {
-  const btn = document.getElementById('video-toggle-btn');
+const RTC_CONFIG = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+]};
+
+function videoSetStatus(txt) {
+  const el = document.getElementById('video-status');
+  if (el) el.textContent = txt;
+}
+
+function videoSignal(payload) {
+  if (!F.roomId || !F.me?.role) return;
+  fetch('/api/signal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roomId: F.roomId, from: F.me.role, payload }),
+  }).catch(() => {});
+}
+
+async function F_toggleVideo() {
   if (F.videoOn) {
-    F.videoOn = false;
-    if (btn) btn.textContent = '🎥 הפעל וידאו';
-    const frame = document.getElementById('jitsi-frame');
-    if (frame) frame.src = '';
-    document.getElementById('video-float')?.classList.remove('active');
+    videoClose();
     return;
   }
 
-  if (!F.roomId) { alert('חדר לא נמצא — נסה שוב.'); return; }
+  const btn = document.getElementById('video-toggle-btn');
+  const closeBtn = document.getElementById('video-bar-close');
+  if (btn) btn.disabled = true;
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch {
+    alert('לא ניתן לגשת למצלמה/מיקרופון — ודא שנתת הרשאה.');
+    if (btn) btn.disabled = false;
+    return;
+  }
 
   F.videoOn = true;
-  if (btn) btn.textContent = '📹 כבה וידאו';
+  F.localStream = stream;
+  F.iceQueue = [];
+  F.negotiating = false;
 
-  // Jitsi room name: "chavruta-<roomId>" (no spaces, URL-safe)
-  const jitsiRoom = 'chavruta-' + F.roomId.replace(/[^a-zA-Z0-9]/g, '');
-  const myName = encodeURIComponent(F.me?.name || 'לומד');
-  const src = `https://meet.jit.si/${jitsiRoom}#userInfo.displayName="${myName}"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.TOOLBAR_BUTTONS=["microphone","camera","hangup","tileview"]`;
+  // Show local video immediately
+  const lv = document.getElementById('local-video');
+  if (lv) lv.srcObject = stream;
 
-  const frame = document.getElementById('jitsi-frame');
-  if (frame) frame.src = src;
-  document.getElementById('video-float')?.classList.add('active');
+  // Show bar
+  document.getElementById('video-bar')?.classList.add('active');
+  if (closeBtn) closeBtn.style.display = '';
+  if (btn) { btn.textContent = '📹 כבה וידאו'; btn.disabled = false; }
+  videoSetStatus('ממתין לחבר...');
+
+  // Tell the other side we're ready
+  videoSignal({ type: 'video-ready' });
+
+  // If the other side already signaled ready before us → host creates offer now
+  if (F.peerReady && F.me?.role === 'host') {
+    await videoCreateOffer();
+  }
+}
+
+function videoClose() {
+  videoSignal({ type: 'video-bye' });
+  videoCleanup();
+}
+
+function videoCleanup() {
+  F.videoOn    = false;
+  F.peerReady  = false;
+  F.iceQueue   = [];
+  F.negotiating = false;
+
+  if (F.localStream) { F.localStream.getTracks().forEach(t => t.stop()); F.localStream = null; }
+  if (F.pc) { F.pc.close(); F.pc = null; }
+  F.remoteStream = null;
+
+  const lv = document.getElementById('local-video');
+  const rv = document.getElementById('remote-video');
+  if (lv) lv.srcObject = null;
+  if (rv) rv.srcObject = null;
+
+  document.getElementById('video-bar')?.classList.remove('active');
+  const closeBtn = document.getElementById('video-bar-close');
+  if (closeBtn) closeBtn.style.display = 'none';
+  const btn = document.getElementById('video-toggle-btn');
+  if (btn) btn.textContent = '🎥 הפעל וידאו';
+  videoSetStatus('');
+}
+
+function videoMakePeer() {
+  if (F.pc) { F.pc.close(); F.pc = null; }
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  F.pc = pc;
+
+  // Attach local tracks
+  if (F.localStream) F.localStream.getTracks().forEach(t => pc.addTrack(t, F.localStream));
+
+  // Remote stream
+  F.remoteStream = new MediaStream();
+  const rv = document.getElementById('remote-video');
+  if (rv) rv.srcObject = F.remoteStream;
+  pc.ontrack = e => {
+    e.streams[0]?.getTracks().forEach(t => F.remoteStream.addTrack(t));
+    videoSetStatus('מחובר ✓');
+  };
+
+  // Send ICE candidates
+  pc.onicecandidate = e => {
+    if (e.candidate) videoSignal({ type: 'ice', candidate: e.candidate });
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') videoSetStatus('חיבור נכשל');
+    if (pc.connectionState === 'disconnected') videoSetStatus('מתנתק...');
+  };
+
+  return pc;
+}
+
+async function videoFlushIce(pc) {
+  for (const c of F.iceQueue) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+  }
+  F.iceQueue = [];
+}
+
+async function videoCreateOffer() {
+  if (F.negotiating) return;
+  F.negotiating = true;
+  videoSetStatus('מתחבר...');
+  const pc = videoMakePeer();
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  videoSignal({ type: 'offer', sdp: pc.localDescription });
 }
 
 // ── Signal polling (typing + WebRTC) ────────────────────────────
@@ -1005,7 +1128,7 @@ async function pollSignals() {
   } catch {}
 }
 
-function handleSignalMsg(msg) {
+async function handleSignalMsg(msg) {
   // Typing indicator
   if (msg.type === 'typing') {
     const otherName = msg.name || (F.me?.role === 'host' ? F.room?.guest?.name : F.room?.host?.name) || 'השני';
@@ -1016,6 +1139,54 @@ function handleSignalMsg(msg) {
       if (F.typingClearTimer) clearTimeout(F.typingClearTimer);
       F.typingClearTimer = setTimeout(() => indicator.classList.remove('visible'), 3000);
     }
+    return;
+  }
+
+  // Other side enabled video
+  if (msg.type === 'video-ready') {
+    F.peerReady = true;
+    if (F.videoOn && F.me?.role === 'host' && !F.negotiating) {
+      await videoCreateOffer();
+    }
+    return;
+  }
+
+  // Other side disabled video
+  if (msg.type === 'video-bye') {
+    if (F.videoOn) videoCleanup();
+    else F.peerReady = false;
+    return;
+  }
+
+  // Guest receives offer from host
+  if (msg.type === 'offer' && F.me?.role === 'guest' && F.videoOn) {
+    videoSetStatus('מתחבר...');
+    const pc = videoMakePeer();
+    await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    await videoFlushIce(pc);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    videoSignal({ type: 'answer', sdp: pc.localDescription });
+    return;
+  }
+
+  // Host receives answer from guest
+  if (msg.type === 'answer' && F.me?.role === 'host' && F.pc) {
+    if (F.pc.signalingState === 'have-local-offer') {
+      await F.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      await videoFlushIce(F.pc);
+    }
+    return;
+  }
+
+  // ICE candidate
+  if (msg.type === 'ice' && msg.candidate) {
+    if (F.pc?.remoteDescription) {
+      try { await F.pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch {}
+    } else {
+      F.iceQueue.push(msg.candidate);
+    }
+    return;
   }
 }
 
@@ -1334,20 +1505,7 @@ async function init() {
   }
 
   showScreen('create-screen');
-
-  // Set up dragging for floating panels (after DOM is ready)
-  const videoFloat = document.getElementById('video-float');
-  const vfHandle   = document.getElementById('vf-handle');
-  if (videoFloat && vfHandle) makeDraggable(videoFloat, vfHandle);
-
 }
-
-// Also set up drag handle for video float after DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  const videoFloat = document.getElementById('video-float');
-  const vfHandle   = document.getElementById('vf-handle');
-  if (videoFloat && vfHandle) makeDraggable(videoFloat, vfHandle);
-});
 
 // ── Textarea: Enter to submit, typing signal ─────────────────────
 document.getElementById('answer-textarea')?.addEventListener('keydown', e => {

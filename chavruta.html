@@ -600,43 +600,53 @@
     }
     #disconnected-banner.active { display: block; }
 
-    /* ── Floating video (Jitsi embed) ── */
-    #video-float {
+    /* ── Inline video bar ── */
+    #video-bar {
       display: none;
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 420px;
-      height: 320px;
-      z-index: 1001;
-      background: #111;
-      border-radius: 12px;
-      border: 2px solid rgba(240,192,64,0.55);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.45);
-      resize: both;
-      overflow: hidden;
-      min-width: 280px;
-      min-height: 200px;
-      max-width: 900px;
-      max-height: 700px;
-      flex-direction: column;
-    }
-    #video-float.active { display: flex; }
-    #vf-handle {
       flex-shrink: 0;
-      height: 28px;
-      background: linear-gradient(135deg, #1B3A6B, #0F2240);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 8px;
-      cursor: move;
-      user-select: none;
+      height: 180px;
+      background: #111;
+      border-bottom: 2px solid rgba(240,192,64,0.4);
+      gap: 2px;
     }
-    #vf-handle span { font-size: 0.72rem; color: rgba(255,255,255,0.9); }
-    .vf-close { background: none; border: none; color: rgba(255,255,255,0.8); font-size: 1rem; cursor: pointer; padding: 0 2px; line-height: 1; }
-    .vf-close:hover { color: #fff; }
-    #jitsi-frame { flex: 1; width: 100%; border: none; display: block; }
+    #video-bar.active { display: flex; }
+    #video-bar video {
+      flex: 1;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      display: block;
+    }
+    #local-video { transform: scaleX(-1); } /* mirror self-view */
+    #video-bar-close {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      background: rgba(0,0,0,0.55);
+      border: none;
+      color: #fff;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      padding: 2px 8px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #video-status {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.8);
+      background: rgba(0,0,0,0.45);
+      border-radius: 6px;
+      padding: 2px 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #video-bar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
 
     /* ── Inline text panel (right side) ── */
     #room-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; min-height: 0; }
@@ -723,7 +733,7 @@
       .end-score-col { min-width: 160px; }
       #room-body { flex-direction: column; }
       #text-panel-float { width: 100%; border-left: none; border-top: 1.5px solid #D4C5A9; max-height: 45vh; }
-      #video-float { bottom: 70px; right: 8px; width: calc(100vw - 16px); height: 260px; }
+      #video-bar { height: 140px; }
     }
   </style>
 </head>
@@ -839,6 +849,16 @@
       <button id="tp-open-btn" onclick="F_toggleTextPanel()" class="room-ctrl-btn">📖 פתח טקסט</button>
     </div>
 
+    <!-- Inline video bar -->
+    <div id="video-bar-wrap">
+      <div id="video-bar">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video"  autoplay playsinline muted></video>
+      </div>
+      <button id="video-bar-close" onclick="F_toggleVideo()" style="display:none;">✕ כבה וידאו</button>
+      <div id="video-status"></div>
+    </div>
+
     <!-- Body: text panel (right) + chat (left) -->
     <div id="room-body">
 
@@ -911,16 +931,6 @@
     </div>
   </div>
 
-  <!-- ── Floating video container (Jitsi embed) ── -->
-  <div id="video-float">
-    <div id="vf-handle">
-      <span id="vf-room-label">📹 וידאו</span>
-      <button class="vf-close" onclick="F_toggleVideo()">✕</button>
-    </div>
-    <iframe id="jitsi-frame"
-      allow="camera; microphone; fullscreen; display-capture; autoplay"
-      allowfullscreen></iframe>
-  </div>
 
 
 </div><!-- #friend-app -->
