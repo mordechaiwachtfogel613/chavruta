@@ -280,6 +280,27 @@
       transition: width 0.4s ease;
     }
 
+    /* ── Verdict bubble (showing_feedback phase) ── */
+    .chavruta-verdict-bubble {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      align-self: stretch;
+    }
+    .chavruta-verdict-bubble img {
+      width: 34px; height: 34px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #B8860B; flex-shrink: 0;
+    }
+    .chavruta-verdict-content {
+      flex: 1;
+      background: linear-gradient(135deg, #FFFBF0, #FFF5D0);
+      border: 1px solid #D4A808;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .chavruta-verdict-winner { font-size: 0.9rem; font-weight: 700; color: #B8860B; margin-bottom: 6px; }
+    .chavruta-verdict-players { font-size: 0.8rem; color: #444; line-height: 1.7; }
+
     /* ── Input area ── */
     #input-area {
       flex-shrink: 0;
@@ -579,14 +600,14 @@
     }
     #disconnected-banner.active { display: block; }
 
-    /* ── Floating video ── */
+    /* ── Floating video (Jitsi embed) ── */
     #video-float {
       display: none;
       position: fixed;
       bottom: 90px;
       right: 20px;
-      width: 360px;
-      height: 270px;
+      width: 420px;
+      height: 320px;
       z-index: 1001;
       background: #111;
       border-radius: 12px;
@@ -594,68 +615,40 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.45);
       resize: both;
       overflow: hidden;
-      min-width: 220px;
-      min-height: 165px;
+      min-width: 280px;
+      min-height: 200px;
       max-width: 900px;
-      max-height: 675px;
+      max-height: 700px;
+      flex-direction: column;
     }
-    #video-float.active { display: block; }
-    #remote-video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    #local-video {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      width: 28%;
-      height: 28%;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1.5px solid rgba(240,192,64,0.7);
-      background: #000;
-      z-index: 2;
-    }
+    #video-float.active { display: flex; }
     #vf-handle {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 26px;
-      background: linear-gradient(rgba(0,0,0,0.6), transparent);
+      flex-shrink: 0;
+      height: 28px;
+      background: linear-gradient(135deg, #1B3A6B, #0F2240);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 6px;
+      padding: 0 8px;
       cursor: move;
-      z-index: 3;
       user-select: none;
     }
-    .vf-label-row { display: flex; gap: 5px; font-size: 0.62rem; color: rgba(255,255,255,0.85); }
-    .vf-close { background: none; border: none; color: rgba(255,255,255,0.85); font-size: 1rem; cursor: pointer; padding: 0 2px; line-height: 1; }
+    #vf-handle span { font-size: 0.72rem; color: rgba(255,255,255,0.9); }
+    .vf-close { background: none; border: none; color: rgba(255,255,255,0.8); font-size: 1rem; cursor: pointer; padding: 0 2px; line-height: 1; }
     .vf-close:hover { color: #fff; }
+    #jitsi-frame { flex: 1; width: 100%; border: none; display: block; }
 
-    /* ── Floating text panel ── */
+    /* ── Inline text panel (right side) ── */
+    #room-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; min-height: 0; }
+    #chat-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
     #text-panel-float {
       display: none;
-      position: fixed;
-      top: 110px;
-      left: 20px;
-      width: 290px;
-      height: 480px;
-      z-index: 998;
-      background: #FFFBF5;
-      border: 1.5px solid #D4C5A9;
-      border-radius: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
       flex-direction: column;
+      width: 300px;
+      flex-shrink: 0;
+      background: #FFFBF5;
+      border-left: 1.5px solid #D4C5A9;
       overflow: hidden;
-      resize: both;
-      min-width: 210px;
-      min-height: 280px;
-      max-width: 600px;
-      max-height: 90vh;
     }
     #text-panel-float.active { display: flex; }
     #tp-handle {
@@ -663,7 +656,7 @@
       background: linear-gradient(135deg, #1B3A6B, #0F2240);
       color: #fff;
       padding: 7px 10px;
-      cursor: move;
+      cursor: default;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -728,8 +721,9 @@
       .msg-answer { max-width: 85%; }
       .end-scores { flex-direction: column; align-items: center; }
       .end-score-col { min-width: 160px; }
-      #text-panel-float { left: 4px; right: 4px; width: calc(100vw - 8px) !important; }
-      #video-float { bottom: 70px; right: 8px; }
+      #room-body { flex-direction: column; }
+      #text-panel-float { width: 100%; border-left: none; border-top: 1.5px solid #D4C5A9; max-height: 45vh; }
+      #video-float { bottom: 70px; right: 8px; width: calc(100vw - 16px); height: 260px; }
     }
   </style>
 </head>
@@ -839,40 +833,51 @@
       </div>
     </div>
 
-    <!-- Verdict bar (shown when verdict arrives, auto-cleared on next question) -->
-    <div id="verdict-bar"></div>
-
     <!-- Room controls bar -->
     <div id="room-controls-bar">
       <button id="video-toggle-btn" onclick="F_toggleVideo()" class="room-ctrl-btn">🎥 הפעל וידאו</button>
       <button id="tp-open-btn" onclick="F_toggleTextPanel()" class="room-ctrl-btn">📖 פתח טקסט</button>
     </div>
 
-    <!-- Chat area -->
-    <div id="friend-chat"></div>
+    <!-- Body: text panel (right) + chat (left) -->
+    <div id="room-body">
 
-    <!-- Input area -->
-    <div id="input-area">
-      <div id="status-pill-wrap" style="margin-bottom:7px;"></div>
-      <div id="typing-indicator"></div>
-
-      <div style="display:flex;gap:8px;align-items:flex-end;" id="answer-row">
-        <textarea id="answer-textarea" rows="2" placeholder="כתוב את תשובתך לשאלה..." disabled></textarea>
-        <button class="send-btn" id="send-btn" onclick="F_submitAnswer()" disabled>שלח תשובה</button>
+      <!-- Inline text panel -->
+      <div id="text-panel-float">
+        <div id="tp-handle">
+          <span id="tp-title">📖 טקסט</span>
+          <button class="tp-close" onclick="F_closeTextPanel()">✕</button>
+        </div>
+        <div id="tp-commentators-bar">
+          <span style="font-size:0.72rem;color:#6B7280;flex-shrink:0;">מפרשים:</span>
+        </div>
+        <div id="tp-verses-scroll"></div>
+        <div id="tp-commentary-area">
+          <div id="tp-commentary-label" class="tp-comm-label"></div>
+          <div id="tp-commentary-content"></div>
+        </div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
-        <button class="end-btn" id="end-btn" onclick="F_endSession()">סיים שיעור</button>
+      <!-- Chat column -->
+      <div id="chat-col">
+        <div id="friend-chat"></div>
+        <div id="input-area">
+          <div id="status-pill-wrap" style="margin-bottom:7px;"></div>
+          <div id="typing-indicator"></div>
 
-        <!-- start button (shown only in 'ready' phase, host only) -->
-        <button class="send-btn hidden" id="start-btn" onclick="F_clickStart()"
-                style="background:#22a06b;">
-          התחל שיעור ▶
-        </button>
+          <div style="display:flex;gap:8px;align-items:flex-end;" id="answer-row">
+            <textarea id="answer-textarea" rows="2" placeholder="כתוב את תשובתך לשאלה..." disabled></textarea>
+            <button class="send-btn" id="send-btn" onclick="F_submitAnswer()" disabled>שלח תשובה</button>
+          </div>
 
-        <!-- next-btn: kept for JS compat but never shown — auto-advance handles this -->
-        <button class="next-btn hidden" id="next-btn" onclick="F_clickNext()" style="display:none!important;"></button>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+            <button class="end-btn" id="end-btn" onclick="F_endSession()">סיים שיעור</button>
+            <button class="send-btn hidden" id="start-btn" onclick="F_clickStart()" style="background:#22a06b;">התחל שיעור ▶</button>
+            <button class="next-btn hidden" id="next-btn" onclick="F_clickNext()" style="display:none!important;"></button>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -906,35 +911,17 @@
     </div>
   </div>
 
-  <!-- ── Floating video container ── -->
+  <!-- ── Floating video container (Jitsi embed) ── -->
   <div id="video-float">
-    <video id="remote-video" autoplay playsinline></video>
-    <video id="local-video" autoplay muted playsinline></video>
     <div id="vf-handle">
-      <div class="vf-label-row">
-        <span id="local-tile-label">אני</span>
-        <span style="opacity:0.5;">•</span>
-        <span id="remote-tile-label">החבר</span>
-      </div>
+      <span id="vf-room-label">📹 וידאו</span>
       <button class="vf-close" onclick="F_toggleVideo()">✕</button>
     </div>
+    <iframe id="jitsi-frame"
+      allow="camera; microphone; fullscreen; display-capture; autoplay"
+      allowfullscreen></iframe>
   </div>
 
-  <!-- ── Floating text panel ── -->
-  <div id="text-panel-float">
-    <div id="tp-handle">
-      <span id="tp-title">📖 טקסט</span>
-      <button class="tp-close" onclick="F_closeTextPanel()">✕</button>
-    </div>
-    <div id="tp-commentators-bar">
-      <span style="font-size:0.72rem;color:#6B7280;flex-shrink:0;">מפרשים:</span>
-    </div>
-    <div id="tp-verses-scroll"></div>
-    <div id="tp-commentary-area">
-      <div id="tp-commentary-label" class="tp-comm-label"></div>
-      <div id="tp-commentary-content"></div>
-    </div>
-  </div>
 
 </div><!-- #friend-app -->
 

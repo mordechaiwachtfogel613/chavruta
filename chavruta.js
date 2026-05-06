@@ -265,11 +265,8 @@ const F = {
   errorStreak:   0,
   lastActivity:  Date.now(),
   disconnectTimer: null,
-  // WebRTC
+  // Video
   videoOn:       false,
-  pc:            null,
-  localStream:   null,
-  remoteStream:  null,
   signalSince:   0,
   signalTimer:   null,
   // Auto-advance
@@ -277,6 +274,8 @@ const F = {
   // Thinking animation
   thinkingAnimEl:  null,
   thinkingAnimTimer: null,
+  // Verdict bubble
+  verdictBubbleEl: null,
   // Typing indicator
   typingThrottle:  false,
   typingClearTimer: null,
@@ -406,7 +405,8 @@ async function fetchVerses(colKey, bookIdx, unit) {
   if (typeof rawVerses === 'string') rawVerses = [rawVerses];
   if (!Array.isArray(rawVerses)) rawVerses = [];
 
-  const strip = s => String(s || '').replace(/<[^>]+>/g, '').trim();
+  const decodeHtml = s => { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; };
+  const strip = s => decodeHtml(String(s || '').replace(/<[^>]+>/g, '')).trim();
   return rawVerses.map(v => strip(v)).filter(Boolean);
 }
 
@@ -656,10 +656,11 @@ function renderAnswer(msg, room) {
   scrollChat();
 }
 
-// ── Render: verdict → shows in verdict bar (NOT chat) ───────────
+// ── Render: verdict → shows as chat bubble ───────────────────────
 function renderVerdict(msg, room) {
-  const bar = document.getElementById('verdict-bar');
-  if (!bar) return;
+  if (F.verdictBubbleEl) { F.verdictBubbleEl.remove(); F.verdictBubbleEl = null; }
+  const chat = document.getElementById('friend-chat');
+  if (!chat) return;
 
   const hostName  = room.host?.name  || 'מארח';
   const guestName = room.guest?.name || 'אורח';
@@ -670,24 +671,21 @@ function renderVerdict(msg, room) {
 
   const scoreStars = s => s >= 5 ? '⭐⭐⭐' : s >= 2 ? '⭐⭐' : '⭐';
 
-  bar.innerHTML = `
-    <span class="vb-winner">${winnerText}</span>
-    <span class="vb-divider">|</span>
-    <span class="vb-player-wrap">
-      <strong>${esc(hostName)}</strong>
-      <span class="vb-round-score">+${msg.scoreHost ?? 0}</span>
-      ${scoreStars(msg.scoreHost ?? 0)}
-      ${msg.fbHost ? ` — ${esc(msg.fbHost)}` : ''}
-    </span>
-    <span class="vb-divider">|</span>
-    <span class="vb-player-wrap">
-      <strong>${esc(guestName)}</strong>
-      <span class="vb-round-score">+${msg.scoreGuest ?? 0}</span>
-      ${scoreStars(msg.scoreGuest ?? 0)}
-      ${msg.fbGuest ? ` — ${esc(msg.fbGuest)}` : ''}
-    </span>
+  const el = document.createElement('div');
+  el.className = 'chavruta-verdict-bubble';
+  el.innerHTML = `
+    <img src="rabbi.png" alt="רבי בניהו">
+    <div class="chavruta-verdict-content">
+      <div class="chavruta-verdict-winner">${winnerText}</div>
+      <div class="chavruta-verdict-players">
+        <strong>${esc(hostName)}</strong> <span class="vb-round-score">+${msg.scoreHost ?? 0}</span> ${scoreStars(msg.scoreHost ?? 0)}${msg.fbHost ? ` — ${esc(msg.fbHost)}` : ''}<br>
+        <strong>${esc(guestName)}</strong> <span class="vb-round-score">+${msg.scoreGuest ?? 0}</span> ${scoreStars(msg.scoreGuest ?? 0)}${msg.fbGuest ? ` — ${esc(msg.fbGuest)}` : ''}
+      </div>
+    </div>
   `;
-  bar.classList.add('active');
+  chat.appendChild(el);
+  F.verdictBubbleEl = el;
+  scrollChat();
 }
 
 // ── Thinking animation (during evaluating phase) ─────────────────
@@ -772,9 +770,9 @@ function switchPhaseUI(room) {
   const myRole   = F.me?.role;
   const haveSent = !!room.pendingAnswers?.[myRole];
 
-  // Verdict bar: clear when a new question starts
+  // Clear verdict bubble when a new question starts
   if (phase === 'asking') {
-    document.getElementById('verdict-bar')?.classList.remove('active');
+    if (F.verdictBubbleEl) { F.verdictBubbleEl.remove(); F.verdictBubbleEl = null; }
   }
 
   // Thinking animation: show during evaluating, hide otherwise
@@ -953,103 +951,34 @@ function showAuthGate(msg) {
   showScreen('auth-gate');
 }
 
-// ── WebRTC ──────────────────────────────────────────────────────
+// ── Video (Jitsi embed) ──────────────────────────────────────────
+// Each chavruta room gets its own Jitsi room named after the roomId.
+// Both participants open the same Jitsi URL → no signaling needed.
 
-async function F_toggleVideo() {
+function F_toggleVideo() {
   const btn = document.getElementById('video-toggle-btn');
   if (F.videoOn) {
-    cleanupWebRTC();
+    F.videoOn = false;
     if (btn) btn.textContent = '🎥 הפעל וידאו';
+    const frame = document.getElementById('jitsi-frame');
+    if (frame) frame.src = '';
     document.getElementById('video-float')?.classList.remove('active');
-    if (F.roomId && F.me?.role) {
-      fetch('/api/signal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId: F.roomId, from: F.me.role, payload: { type: 'bye' } }),
-      }).catch(() => {});
-    }
     return;
   }
 
-  try {
-    F.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  } catch (e) {
-    alert('לא ניתן לגשת למצלמה/מיקרופון. ודא שנתת הרשאה ושהמכשיר תומך.');
-    return;
-  }
+  if (!F.roomId) { alert('חדר לא נמצא — נסה שוב.'); return; }
 
   F.videoOn = true;
   if (btn) btn.textContent = '📹 כבה וידאו';
 
-  const localVideo = document.getElementById('local-video');
-  if (localVideo) localVideo.srcObject = F.localStream;
+  // Jitsi room name: "chavruta-<roomId>" (no spaces, URL-safe)
+  const jitsiRoom = 'chavruta-' + F.roomId.replace(/[^a-zA-Z0-9]/g, '');
+  const myName = encodeURIComponent(F.me?.name || 'לומד');
+  const src = `https://meet.jit.si/${jitsiRoom}#userInfo.displayName="${myName}"&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&interfaceConfig.SHOW_JITSI_WATERMARK=false&interfaceConfig.TOOLBAR_BUTTONS=["microphone","camera","hangup","tileview"]`;
+
+  const frame = document.getElementById('jitsi-frame');
+  if (frame) frame.src = src;
   document.getElementById('video-float')?.classList.add('active');
-
-  // Set tile labels
-  const myName    = F.me?.name || 'אני';
-  const otherName = F.room ? (F.me?.role === 'host' ? F.room.guest?.name : F.room.host?.name) || 'החבר' : 'החבר';
-  document.getElementById('local-tile-label').textContent  = myName;
-  document.getElementById('remote-tile-label').textContent = otherName;
-
-  setupPeer(F.me?.role || 'host');
-}
-
-function cleanupWebRTC() {
-  F.videoOn = false;
-  if (F.localStream)  { F.localStream.getTracks().forEach(t => t.stop()); F.localStream = null; }
-  if (F.remoteStream) { F.remoteStream = null; }
-  if (F.pc)           { F.pc.close(); F.pc = null; }
-  const lv = document.getElementById('local-video');
-  const rv = document.getElementById('remote-video');
-  if (lv) lv.srcObject = null;
-  if (rv) rv.srcObject = null;
-}
-
-async function setupPeer(role) {
-  const pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
-  });
-  F.pc = pc;
-
-  if (F.localStream) {
-    F.localStream.getTracks().forEach(t => pc.addTrack(t, F.localStream));
-  }
-
-  F.remoteStream = new MediaStream();
-  const remoteVideo = document.getElementById('remote-video');
-  if (remoteVideo) remoteVideo.srcObject = F.remoteStream;
-
-  pc.ontrack = e => {
-    e.streams[0]?.getTracks().forEach(t => F.remoteStream.addTrack(t));
-  };
-
-  pc.onicecandidate = e => {
-    if (e.candidate && F.roomId) {
-      fetch('/api/signal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId: F.roomId,
-          from: role,
-          payload: { type: 'ice', candidate: e.candidate },
-        }),
-      }).catch(() => {});
-    }
-  };
-
-  if (role === 'host') {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await fetch('/api/signal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        roomId: F.roomId,
-        from: 'host',
-        payload: { type: 'offer', sdp: pc.localDescription },
-      }),
-    });
-  }
 }
 
 // ── Signal polling (typing + WebRTC) ────────────────────────────
@@ -1070,15 +999,14 @@ async function pollSignals() {
     if (!resp.ok) return;
     const data = await resp.json();
     F.signalSince = data.nextSince || F.signalSince;
-
     for (const msg of (data.messages || [])) {
       await handleSignalMsg(msg);
     }
   } catch {}
 }
 
-async function handleSignalMsg(msg) {
-  // Typing indicator (always handle regardless of video)
+function handleSignalMsg(msg) {
+  // Typing indicator
   if (msg.type === 'typing') {
     const otherName = msg.name || (F.me?.role === 'host' ? F.room?.guest?.name : F.room?.host?.name) || 'השני';
     const indicator = document.getElementById('typing-indicator');
@@ -1086,53 +1014,8 @@ async function handleSignalMsg(msg) {
       indicator.textContent = `${otherName} מקליד...`;
       indicator.classList.add('visible');
       if (F.typingClearTimer) clearTimeout(F.typingClearTimer);
-      F.typingClearTimer = setTimeout(() => {
-        indicator.classList.remove('visible');
-      }, 3000);
+      F.typingClearTimer = setTimeout(() => indicator.classList.remove('visible'), 3000);
     }
-    return;
-  }
-
-  if (msg.type === 'bye') {
-    if (F.videoOn) {
-      cleanupWebRTC();
-      document.getElementById('video-float')?.classList.remove('active');
-      document.getElementById('video-toggle-btn').textContent = '🎥 הפעל וידאו';
-    }
-    return;
-  }
-
-  // WebRTC signals — only if video is on
-  if (!F.videoOn) return;
-
-  const pc = F.pc;
-  if (!pc) return;
-
-  if (msg.type === 'offer' && F.me?.role === 'guest') {
-    await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    await fetch('/api/signal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        roomId: F.roomId,
-        from: 'guest',
-        payload: { type: 'answer', sdp: pc.localDescription },
-      }),
-    });
-  }
-
-  if (msg.type === 'answer' && F.me?.role === 'host') {
-    if (pc.signalingState === 'have-local-offer') {
-      await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-    }
-  }
-
-  if (msg.type === 'ice' && msg.candidate) {
-    try {
-      await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-    } catch {}
   }
 }
 
@@ -1457,20 +1340,13 @@ async function init() {
   const vfHandle   = document.getElementById('vf-handle');
   if (videoFloat && vfHandle) makeDraggable(videoFloat, vfHandle);
 
-  const textPanel = document.getElementById('text-panel-float');
-  const tpHandle  = document.getElementById('tp-handle');
-  if (textPanel && tpHandle) makeDraggable(textPanel, tpHandle);
 }
 
-// Also set up drag handles after DOM ready (for the case where we go straight to room)
+// Also set up drag handle for video float after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   const videoFloat = document.getElementById('video-float');
   const vfHandle   = document.getElementById('vf-handle');
   if (videoFloat && vfHandle) makeDraggable(videoFloat, vfHandle);
-
-  const textPanel = document.getElementById('text-panel-float');
-  const tpHandle  = document.getElementById('tp-handle');
-  if (textPanel && tpHandle) makeDraggable(textPanel, tpHandle);
 });
 
 // ── Textarea: Enter to submit, typing signal ─────────────────────
