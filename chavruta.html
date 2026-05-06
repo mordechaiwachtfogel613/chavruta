@@ -647,14 +647,18 @@
       font-size: 0.9rem;
     }
     #video-placeholder .vid-icon { font-size: 3rem; opacity: 0.4; }
-    #video-bar-wrap { flex: 1; display: flex; flex-direction: column; position: relative; }
+    #video-bar-wrap { flex: 1; display: flex; flex-direction: column; position: relative; min-height: 0; }
     #video-bar {
       flex: 1;
       display: none;
       background: #000;
       gap: 2px;
+      min-height: 0;
     }
     #video-bar.active { display: flex; }
+    /* hide placeholder when video is active */
+    #video-bar.active ~ #video-placeholder,
+    #video-bar-wrap:has(#video-bar.active) #video-placeholder { display: none; }
     #video-bar video {
       flex: 1;
       height: 100%;

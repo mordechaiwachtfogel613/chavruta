@@ -287,6 +287,7 @@ const F = {
   typingClearTimer: null,
   // Phase tracking
   lastPhase:       null,
+  autoOpenDone:    false,
 };
 
 // ── Text panel state ─────────────────────────────────────────────
@@ -769,6 +770,13 @@ function switchPhaseUI(room) {
   // Start signal polling for active phases (enables typing indicators)
   if (!F.signalTimer) startSignalPoll();
 
+  // Auto-open text panel + video the first time we enter room-screen
+  if (!F.autoOpenDone) {
+    F.autoOpenDone = true;
+    if (!TP.open) F_openTextPanel();
+    if (!F.videoOn) F_toggleVideo();
+  }
+
   const textarea  = document.getElementById('answer-textarea');
   const sendBtn   = document.getElementById('send-btn');
   const startBtn  = document.getElementById('start-btn');
@@ -849,11 +857,12 @@ function renderEndScreen(room) {
 }
 
 function F_newRound() {
-  F.roomId      = null;
-  F.room        = null;
-  F.lastVersion = 0;
-  F.lastSeenMsg = 0;
-  F.lastActivity = Date.now();
+  F.roomId        = null;
+  F.room          = null;
+  F.lastVersion   = 0;
+  F.lastSeenMsg   = 0;
+  F.lastActivity  = Date.now();
+  F.autoOpenDone  = false;
   clearAutoNextTimer();
   hideChavrutaThinking();
   document.getElementById('friend-chat').innerHTML = '';
@@ -1014,8 +1023,10 @@ async function F_toggleVideo() {
   const lv = document.getElementById('local-video');
   if (lv) lv.srcObject = stream;
 
-  // Show bar
+  // Show bar, hide placeholder
   document.getElementById('video-bar')?.classList.add('active');
+  const ph = document.getElementById('video-placeholder');
+  if (ph) ph.style.display = 'none';
   if (closeBtn) closeBtn.style.display = '';
   if (btn) { btn.textContent = '📹 כבה וידאו'; btn.disabled = false; }
   videoSetStatus('ממתין לחבר...');
@@ -1050,6 +1061,8 @@ function videoCleanup() {
   if (rv) rv.srcObject = null;
 
   document.getElementById('video-bar')?.classList.remove('active');
+  const ph2 = document.getElementById('video-placeholder');
+  if (ph2) ph2.style.display = '';
   const closeBtn = document.getElementById('video-bar-close');
   if (closeBtn) closeBtn.style.display = 'none';
   const btn = document.getElementById('video-toggle-btn');
