@@ -857,10 +857,10 @@ function F_newRound() {
   clearAutoNextTimer();
   hideChavrutaThinking();
   document.getElementById('friend-chat').innerHTML = '';
-  document.getElementById('verdict-bar')?.classList.remove('active');
+  if (F.verdictBubbleEl) { F.verdictBubbleEl.remove(); F.verdictBubbleEl = null; }
   stopPolling();
   stopSignalPoll();
-  cleanupWebRTC();
+  videoCleanup();
   // Reset text panel
   TP.open = false;
   TP.verses = [];
