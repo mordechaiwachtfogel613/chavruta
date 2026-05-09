@@ -742,6 +742,21 @@
 
       <hr class="border-gray-200 my-4">
       <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold text-navy">🤝 לימוד עם חבר (חברותא דו-משתתפית)</p>
+      </div>
+      <p class="text-xs text-gray-400 mb-3">ניתן להשתמש ב-<code>{HOST}</code> ו-<code>{GUEST}</code> כמקום-שמור לשמות המשתתפים.</p>
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-sm font-semibold text-navy">הנחיות רבי בניהו בלימוד עם חבר</label>
+            <button onclick="resetPrompt('friend')" class="text-xs text-gray-400 hover:text-red-500">↺ אפס לברירת מחדל</button>
+          </div>
+          <textarea id="admin-prompt-friend" class="admin-textarea" rows="8"></textarea>
+        </div>
+      </div>
+
+      <hr class="border-gray-200 my-4">
+      <div class="flex items-center justify-between mb-3">
         <p class="text-sm text-gray-500">הנחיות ללימוד מהפסוקייה (לחיצה על הכפתורים בפרק):</p>
         <label class="flex items-center gap-2 cursor-pointer">
           <span class="text-sm font-semibold text-navy">הפעל כפתורים</span>

@@ -83,12 +83,16 @@ export default async function handler(req, res) {
     return;
   }
 
-  // ── Load model from KV (same key as chat.js) ──────────────────
-  let kvModel;
+  // ── Load model + custom friend prompt from KV ─────────────────
+  let kvModel, kvFriendPrompt;
   try {
-    kvModel = await kv.get('config:model');
+    [kvModel, kvFriendPrompt] = await Promise.all([
+      kv.get('config:model'),
+      kv.get('config:prompt:friend'),
+    ]);
   } catch {
     kvModel = null;
+    kvFriendPrompt = null;
   }
 
   // ── Build system prompt ────────────────────────────────────────
@@ -101,7 +105,12 @@ export default async function handler(req, res) {
     `${chapter_text}\n` +
     `──────────────────────────────`;
 
-  const systemPrompt = FRIEND_SYSTEM_PROMPT(host_name, guest_name) + '\n\n' + chapterHeader;
+  // Use admin-customized prompt if available (replace {HOST} and {GUEST} placeholders)
+  const basePrompt = kvFriendPrompt
+    ? kvFriendPrompt.replace(/\{HOST\}/g, host_name).replace(/\{GUEST\}/g, guest_name)
+    : FRIEND_SYSTEM_PROMPT(host_name, guest_name);
+
+  const systemPrompt = basePrompt + '\n\n' + chapterHeader;
 
   // ── Build messages array ───────────────────────────────────────
   // If both answers are present, append them as a user turn so the AI can compare.
