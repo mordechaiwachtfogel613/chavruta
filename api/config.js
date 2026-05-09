@@ -35,7 +35,7 @@ const ALLOWED_MODELS = new Set([
 ]);
 
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
-const PROMPT_KEYS = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan', 'iyun', 'bekiut'];
+const PROMPT_KEYS = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan', 'iyun', 'bekiut', 'friend'];
 
 const DEFAULT_SHARE_CARD = {
   theme: 'dark',
