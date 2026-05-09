@@ -13,7 +13,7 @@ const DEFAULT_ADMIN_PROMPTS = {
 };
 const DEFAULT_IYUN_PROMPT   = RABBI_PERSONA + `אתה לומד בעיון עמוק פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nצטט את המפרשים בשמם, הצג מחלוקות ביניהם, וחבר בין דבריהם לפשט הפסוק. שאל שאלות מעמיקות שמעוררות מחשבה.`;
 const DEFAULT_BEKIUT_PROMPT = RABBI_PERSONA + `אתה לומד בבקיאות פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nהצג את עיקר הפסוק ועיקר דברי כל מפרש בקצרה. שאל שאלות קצרות שבודקות הבנה בסיסית של הפסוק ודברי המפרשים.`;
-const DEFAULT_FRIEND_PROMPT =
+const DEFAULT_FRIEND_ENVELOPE =
 `אתה רבי בניהו לומד **בחברותא עם שני תלמידים**: {HOST} ו-{GUEST}.
 
 שניהם ענו על אותה שאלה. תפקידך:
@@ -26,6 +26,14 @@ const DEFAULT_FRIEND_PROMPT =
 בקריאה הראשונה (host_answer ו-guest_answer ריקים): אל תתן פידבק — פתח ישירות עם הפסוק הראשון ושאלה.
 
 כלל ברזל: החזר אך ורק JSON תקין — ללא טקסט לפניו, ללא \`\`\`json, ללא שום תוספות.`;
+
+const DEFAULT_FRIEND_COLLECTION_PROMPTS = {
+  tanach:   `שאל שאלות על פשט הפסוק, הקשר הספרותי, ומשמעות רוחנית.`,
+  mishnah:  `שאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
+  shas:     `שאל שאלות על שקלא וטריא, פירוש המושגים, ומסקנת הסוגיה.`,
+  rambam:   `שאל שאלות על ההלכה, מקורה, ויישומה המעשי.`,
+  shulchan: `שאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
+};
 
 const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
 יחד נעמיק בתורה הקדושה.
@@ -41,7 +49,8 @@ let GLOBAL_PROMPT_BEKIUT      = null;  // verse-mode bekiut prompt
 let GLOBAL_VERSE_MODE_ENABLED = false; // verse-mode buttons enabled (admin-controlled)
 let GLOBAL_THINKING_MSGS = null; // custom thinking messages from admin
 let GLOBAL_CHAVRUTA_THINKING_MSGS = null; // custom thinking messages for chavruta mode
-let GLOBAL_PROMPT_FRIEND = null; // custom friend-mode prompt from admin
+let GLOBAL_PROMPT_FRIEND_ENVELOPE = null;   // custom friend envelope prompt
+let GLOBAL_PROMPTS_FRIEND = {};             // custom friend per-collection prompts
 let SOUND_CORRECT     = null; // custom correct-answer sound (data URL)
 let SOUND_WRONG       = null; // custom wrong-answer sound (data URL)
 let SHARE_CARD_CONFIG = {     // share card design, overridden from server
@@ -64,7 +73,14 @@ async function loadGlobalConfig() {
     GLOBAL_PROMPTS       = d.prompts  || {};
     GLOBAL_PROMPT_IYUN        = d.prompts?.iyun    || null;
     GLOBAL_PROMPT_BEKIUT      = d.prompts?.bekiut  || null;
-    GLOBAL_PROMPT_FRIEND      = d.prompts?.friend  || null;
+    GLOBAL_PROMPT_FRIEND_ENVELOPE = d.prompts?.friend_envelope || null;
+    GLOBAL_PROMPTS_FRIEND = {
+      tanach:   d.prompts?.friend_tanach   || null,
+      mishnah:  d.prompts?.friend_mishnah  || null,
+      shas:     d.prompts?.friend_shas     || null,
+      rambam:   d.prompts?.friend_rambam   || null,
+      shulchan: d.prompts?.friend_shulchan || null,
+    };
     GLOBAL_VERSE_MODE_ENABLED = d.verseModeEnabled === true;
     _applyVerseModeEnabled(GLOBAL_VERSE_MODE_ENABLED);
     GLOBAL_THINKING_MSGS = Array.isArray(d.thinkingMsgs) && d.thinkingMsgs.length ? d.thinkingMsgs : null;
@@ -801,7 +817,11 @@ function showAdminEditor() {
   }
   document.getElementById('admin-prompt-iyun').value   = GLOBAL_PROMPT_IYUN   || DEFAULT_IYUN_PROMPT;
   document.getElementById('admin-prompt-bekiut').value = GLOBAL_PROMPT_BEKIUT || DEFAULT_BEKIUT_PROMPT;
-  document.getElementById('admin-prompt-friend').value = GLOBAL_PROMPT_FRIEND || DEFAULT_FRIEND_PROMPT;
+  document.getElementById('admin-prompt-friend_envelope').value = GLOBAL_PROMPT_FRIEND_ENVELOPE || DEFAULT_FRIEND_ENVELOPE;
+  const friendCollKeys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
+  for (const k of friendCollKeys) {
+    document.getElementById(`admin-prompt-friend_${k}`).value = GLOBAL_PROMPTS_FRIEND[k] || DEFAULT_FRIEND_COLLECTION_PROMPTS[k];
+  }
   document.getElementById('admin-verse-mode-enabled').checked = GLOBAL_VERSE_MODE_ENABLED;
 
   loadAdminUsers();
@@ -898,7 +918,8 @@ async function saveVerseModeEnabled() {
 function resetPrompt(k) {
   if (k === 'iyun')        document.getElementById('admin-prompt-iyun').value    = DEFAULT_IYUN_PROMPT;
   else if (k === 'bekiut') document.getElementById('admin-prompt-bekiut').value  = DEFAULT_BEKIUT_PROMPT;
-  else if (k === 'friend') document.getElementById('admin-prompt-friend').value  = DEFAULT_FRIEND_PROMPT;
+  else if (k === 'friend_envelope') document.getElementById('admin-prompt-friend_envelope').value = DEFAULT_FRIEND_ENVELOPE;
+  else if (k.startsWith('friend_')) document.getElementById(`admin-prompt-${k}`).value = DEFAULT_FRIEND_COLLECTION_PROMPTS[k.replace('friend_', '')] || '';
   else document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
 }
 
@@ -907,7 +928,7 @@ async function saveAdminPrompts() {
   const model = document.getElementById('admin-model-select').value;
   const greeting = document.getElementById('admin-greeting').value.trim();
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
-  const allDefaults = { ...DEFAULT_ADMIN_PROMPTS, iyun: DEFAULT_IYUN_PROMPT, bekiut: DEFAULT_BEKIUT_PROMPT, friend: DEFAULT_FRIEND_PROMPT };
+  const allDefaults = { ...DEFAULT_ADMIN_PROMPTS, iyun: DEFAULT_IYUN_PROMPT, bekiut: DEFAULT_BEKIUT_PROMPT };
   const prompts = {};
   for (const k of keys) {
     const val = document.getElementById(`admin-prompt-${k}`).value.trim();
@@ -915,10 +936,15 @@ async function saveAdminPrompts() {
   }
   const iyunVal   = document.getElementById('admin-prompt-iyun').value.trim();
   const bekiutVal = document.getElementById('admin-prompt-bekiut').value.trim();
-  const friendVal = document.getElementById('admin-prompt-friend').value.trim();
-  prompts.iyun   = (iyunVal   && iyunVal   !== DEFAULT_IYUN_PROMPT)    ? iyunVal   : '';
-  prompts.bekiut = (bekiutVal && bekiutVal !== DEFAULT_BEKIUT_PROMPT)  ? bekiutVal : '';
-  prompts.friend = (friendVal && friendVal !== DEFAULT_FRIEND_PROMPT)  ? friendVal : '';
+  prompts.iyun   = (iyunVal   && iyunVal   !== DEFAULT_IYUN_PROMPT)   ? iyunVal   : '';
+  prompts.bekiut = (bekiutVal && bekiutVal !== DEFAULT_BEKIUT_PROMPT) ? bekiutVal : '';
+  // Friend mode: envelope + per-collection
+  const envVal = document.getElementById('admin-prompt-friend_envelope').value.trim();
+  prompts.friend_envelope = (envVal && envVal !== DEFAULT_FRIEND_ENVELOPE) ? envVal : '';
+  for (const k of ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan']) {
+    const val = document.getElementById(`admin-prompt-friend_${k}`).value.trim();
+    prompts[`friend_${k}`] = (val && val !== DEFAULT_FRIEND_COLLECTION_PROMPTS[k]) ? val : '';
+  }
   const msg = document.getElementById('admin-save-msg');
   try {
     const res = await fetch('/api/config', {
@@ -940,7 +966,10 @@ async function saveAdminPrompts() {
     for (const k of keys) GLOBAL_PROMPTS[k] = prompts[k] || null;
     GLOBAL_PROMPT_IYUN   = prompts.iyun   || null;
     GLOBAL_PROMPT_BEKIUT = prompts.bekiut || null;
-    GLOBAL_PROMPT_FRIEND = prompts.friend || null;
+    GLOBAL_PROMPT_FRIEND_ENVELOPE = prompts.friend_envelope || null;
+    for (const k of ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan']) {
+      GLOBAL_PROMPTS_FRIEND[k] = prompts[`friend_${k}`] || null;
+    }
     const savedMsgs = document.getElementById('admin-thinking-msgs').value
       .split('\n').map(s => s.trim()).filter(Boolean);
     GLOBAL_THINKING_MSGS = savedMsgs.length ? savedMsgs : null;

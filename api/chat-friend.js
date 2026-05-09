@@ -83,34 +83,41 @@ export default async function handler(req, res) {
     return;
   }
 
-  // ── Load model + custom friend prompt from KV ─────────────────
-  let kvModel, kvFriendPrompt;
-  try {
-    [kvModel, kvFriendPrompt] = await Promise.all([
-      kv.get('config:model'),
-      kv.get('config:prompt:friend'),
-    ]);
-  } catch {
-    kvModel = null;
-    kvFriendPrompt = null;
-  }
-
-  // ── Build system prompt ────────────────────────────────────────
+  // ── Load model + custom friend prompts from KV ────────────────
   const collectionKey = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'].includes(collection_type)
     ? collection_type : 'tanach';
 
+  let kvModel, kvEnvelope, kvCollectionPrompt;
+  try {
+    [kvModel, kvEnvelope, kvCollectionPrompt] = await Promise.all([
+      kv.get('config:model'),
+      kv.get('config:prompt:friend_envelope'),
+      kv.get(`config:prompt:friend_${collectionKey}`),
+    ]);
+  } catch {
+    kvModel = null;
+    kvEnvelope = null;
+    kvCollectionPrompt = null;
+  }
+
+  // ── Build system prompt ────────────────────────────────────────
   const chapterHeader =
     `הפרק הנוכחי: ${book_name || ''} | יחידה: ${chapter_num || 1} (${total_verses || '?'} יחידות)\n\n` +
     `──────────────────────────────\n` +
     `${chapter_text}\n` +
     `──────────────────────────────`;
 
-  // Use admin-customized prompt if available (replace {HOST} and {GUEST} placeholders)
-  const basePrompt = kvFriendPrompt
-    ? kvFriendPrompt.replace(/\{HOST\}/g, host_name).replace(/\{GUEST\}/g, guest_name)
+  // Envelope: structural rules (points, exchanges, JSON format, etc.)
+  const envelopePart = kvEnvelope
+    ? kvEnvelope.replace(/\{HOST\}/g, host_name).replace(/\{GUEST\}/g, guest_name)
     : FRIEND_SYSTEM_PROMPT(host_name, guest_name);
 
-  const systemPrompt = basePrompt + '\n\n' + chapterHeader;
+  // Collection-specific question type instructions
+  const collectionPart = kvCollectionPrompt
+    ? `\n\nהנחיות לסוג השאלות:\n${kvCollectionPrompt}`
+    : '';
+
+  const systemPrompt = envelopePart + collectionPart + '\n\n' + chapterHeader;
 
   // ── Build messages array ───────────────────────────────────────
   // If both answers are present, append them as a user turn so the AI can compare.
