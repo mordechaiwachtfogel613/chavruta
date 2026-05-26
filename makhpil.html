@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מסע | מכון בינת הלב</title>
+  <title>מכפיל היעילות | מכון בינת הלב</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,13 +17,16 @@
       --teal-light:#22a08a;
       --gold:      #c8963c;
       --gold-light:#e8b85a;
+      --purple:    #5c2d91;
+      --purple-mid:#7b3fb5;
+      --purple-light:#9b5fd5;
       --bg:        #f5f7fa;
       --white:     #ffffff;
       --text:      #1e2a3a;
       --text-muted:#5a6a7e;
       --border:    #dce4ef;
       --bubble-ai-bg:   #ffffff;
-      --bubble-user-bg: #1a2e5a;
+      --bubble-user-bg: #5c2d91;
     }
 
     html, body {
@@ -42,7 +45,7 @@
 
     /* ── Header ── */
     header {
-      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--teal) 100%);
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--purple) 60%, var(--purple-light) 100%);
       color: #fff;
       padding: 0 24px;
       box-shadow: 0 3px 16px rgba(0,0,0,.35);
@@ -112,9 +115,45 @@
       50%      { opacity: .4; }
     }
 
+    /* ── Tools Nav ── */
+    .tools-nav {
+      background: rgba(0,0,0,.18);
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .tools-nav-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+      padding: 0 0;
+    }
+    .tools-nav a {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 20px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.65);
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .tools-nav a:hover {
+      color: rgba(255,255,255,.9);
+    }
+    .tools-nav a.active {
+      color: #fff;
+      border-bottom-color: var(--gold-light);
+    }
+    .tools-nav a .tool-emoji {
+      font-size: 1rem;
+    }
+
     /* ── Hero strip ── */
     .hero-strip {
-      background: linear-gradient(90deg, var(--teal) 0%, var(--teal-light) 100%);
+      background: linear-gradient(90deg, var(--purple) 0%, var(--purple-light) 100%);
       color: #fff;
       text-align: center;
       padding: 10px 24px;
@@ -170,7 +209,7 @@
       justify-content: center;
       font-size: 16px;
     }
-    .avatar-ai   { background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; }
+    .avatar-ai   { background: linear-gradient(135deg, var(--purple), var(--purple-light)); color: #fff; }
     .avatar-user { background: linear-gradient(135deg, var(--navy), #3a5a9a); color: #fff; }
 
     .bubble {
@@ -235,7 +274,7 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--teal-light);
+      background: var(--purple-light);
       animation: bounce 1.2s infinite;
     }
     .thinking-dots span:nth-child(2) { animation-delay: .2s; }
@@ -274,11 +313,11 @@
       max-height: 140px;
       transition: border-color .2s;
     }
-    #userInput:focus { border-color: var(--teal); }
+    #userInput:focus { border-color: var(--purple); }
     #userInput::placeholder { color: var(--text-muted); }
 
     #sendBtn {
-      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
       color: #fff;
       border: none;
       border-radius: 14px;
@@ -291,7 +330,7 @@
       justify-content: center;
       flex-shrink: 0;
       transition: opacity .2s, transform .1s;
-      box-shadow: 0 2px 8px rgba(26,122,107,.35);
+      box-shadow: 0 2px 8px rgba(92,45,145,.35);
     }
     #sendBtn:hover:not(:disabled) { opacity: .88; }
     #sendBtn:active:not(:disabled) { transform: scale(.95); }
@@ -313,41 +352,6 @@
     #messages::-webkit-scrollbar-track { background: transparent; }
     #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-    /* ── Tools Nav ── */
-    .tools-nav {
-      background: rgba(0,0,0,.18);
-      border-top: 1px solid rgba(255,255,255,.1);
-    }
-    .tools-nav-inner {
-      max-width: 860px;
-      margin: 0 auto;
-      display: flex;
-      gap: 0;
-    }
-    .tools-nav a {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 9px 20px;
-      font-size: .82rem;
-      font-weight: 600;
-      color: rgba(255,255,255,.65);
-      text-decoration: none;
-      border-bottom: 3px solid transparent;
-      transition: color .2s, border-color .2s;
-      white-space: nowrap;
-    }
-    .tools-nav a:hover {
-      color: rgba(255,255,255,.9);
-    }
-    .tools-nav a.active {
-      color: #fff;
-      border-bottom-color: var(--gold-light);
-    }
-    .tools-nav a .tool-emoji {
-      font-size: 1rem;
-    }
-
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .logo-text h1 { font-size: 1.1rem; }
@@ -360,7 +364,7 @@
     #code-gate {
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--teal) 100%);
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--purple) 60%, var(--purple-light) 100%);
       z-index: 999;
       display: flex;
       align-items: center;
@@ -398,15 +402,15 @@
       border-radius: 12px;
       padding: 14px 16px;
       font-family: 'Heebo', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       text-align: center;
-      letter-spacing: 6px;
+      letter-spacing: 2px;
       outline: none;
       color: var(--text);
       margin-bottom: 16px;
       transition: border-color .2s;
     }
-    #codeInput:focus { border-color: var(--teal); }
+    #codeInput:focus { border-color: var(--purple); }
     #codeError {
       color: #c0392b;
       font-size: .85rem;
@@ -415,7 +419,7 @@
     }
     #codeSubmit {
       width: 100%;
-      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
       color: #fff;
       border: none;
       border-radius: 12px;
@@ -457,10 +461,10 @@
 <!-- Code Gate Overlay -->
 <div id="code-gate">
   <div class="code-gate-box">
-    <div class="code-gate-icon">🧭</div>
-    <h2>ברוכים הבאים למסע</h2>
-    <p>כדי להתחיל, אנא הכניסו את קוד הגישה</p>
-    <input type="text" id="codeInput" placeholder="_ _ _" maxlength="10" autocomplete="off" inputmode="numeric">
+    <div class="code-gate-icon">⚡</div>
+    <h2>מכפיל היעילות</h2>
+    <p>כלי ה-80/20 של מכון בינת הלב<br>אנא הכניסו את קוד הגישה</p>
+    <input type="text" id="codeInput" placeholder="קוד גישה" maxlength="20" autocomplete="off">
     <div id="codeError"></div>
     <button id="codeSubmit">כניסה ←</button>
   </div>
@@ -472,7 +476,7 @@
   <header>
     <div class="header-inner">
       <div class="logo-block">
-        <div class="logo-icon">🧭</div>
+        <div class="logo-icon">⚡</div>
         <div class="logo-text">
           <h1>מכון בינת הלב</h1>
           <p>כלים מתקדמים לאבחון אישיות ומימוש פוטנציאל</p>
@@ -480,17 +484,17 @@
       </div>
       <div class="agent-tag">
         <span class="dot"></span>
-        מסע · פעיל
+        מכפיל היעילות · פעיל
       </div>
     </div>
     <!-- Tools Nav -->
     <nav class="tools-nav">
       <div class="tools-nav-inner">
-        <a href="/masav.html" class="active">
+        <a href="/masav.html">
           <span class="tool-emoji">🧭</span>
           מסע
         </a>
-        <a href="/makhpil.html">
+        <a href="/makhpil.html" class="active">
           <span class="tool-emoji">⚡</span>
           מכפיל היעילות
         </a>
@@ -500,7 +504,7 @@
 
   <!-- Hero strip -->
   <div class="hero-strip">
-    מסע — כלי בינה מלאכותית לגילוי הרצונות העמוקים שלך &nbsp;|&nbsp;
+    מכפיל היעילות — מוצא את ה-20% שמניבים 80% מהתוצאות &nbsp;|&nbsp;
     <a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">לאתר המכון ←</a>
   </div>
 
@@ -524,7 +528,7 @@
 
   <!-- Footer -->
   <footer>
-    מסע הוא פרויקט מבית
+    מכפיל היעילות הוא פרויקט מבית
     <a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">מכון בינת הלב</a>
     &nbsp;·&nbsp; כל הזכויות שמורות
   </footer>
@@ -533,13 +537,19 @@
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────
-const ACCESS_CODE    = '613';
+const ACCESS_CODE    = 'בינת הלב';
 const MSG_LIMIT      = 60;
-const LS_COUNT_KEY   = 'masav_msg_count';
-const SS_AUTH_KEY    = 'masav_authed';
+const LS_COUNT_KEY   = 'makhpil_msg_count';
+const SS_AUTH_KEY    = 'makhpil_authed';
 const BINAT_URL      = 'https://a0533161912.wixsite.com/my-site-8';
 
-const OPENING_MESSAGE = `ברוך הבא למסע אישי להבנת הרצונות העמוקים שלך. התהליך יתבצע באמצעות דיאלוגים שבהם אשאל שאלות קצרות אך משמעותיות. כל תשובה שלך תוביל לשאלות נוספות שיעמיקו את ההבנה שלנו יחד. דרך השיח תוכל לגלות מה באמת חשוב לך, מהם הערכים שמנחים אותך, ואילו צעדים יובילו אותך לחיים מספקים ומשמעותיים יותר. המטרה היא לעזור לך להתמקד, לקבל בהירות, ולהתחבר למי שאתה באמת רוצה להיות. מסע הוא פרויקט מבית מכון בינת הלב – המתמחה ביצירת כלים מתקדמים לאבחוני אישיות העוזרים להצליח ולממש את הפוטנציאל הגלום בנו. בהצלחה`;
+const OPENING_MESSAGE = `ברוך הבא למכפיל היעילות — כלי ה-80/20 של מכון בינת הלב.
+
+אני כאן כדי לעזור לך לעצור את ה"עומס", לפלח אותו, ולמצוא את הפעולות הספציפיות שיניבו לך את מרבית התוצאות.
+
+מכון בינת הלב מתמחה ביצירת כלים מתקדמים לאבחוני אישיות שעוזרים לאנשים להצליח ולממש את הפוטנציאל הגלום בהם.
+
+בהצלחה!`;
 
 const PROMO_MESSAGE = `- - - - - - - - - - -\n\n___________________________\nנ.ב.\nלמכון בינת הלב יש אבחון מהפכני, שאנשי מקצוע מעידים עליו שהוא טוב יותר מכל האבחונים שהם מכירים, אם מסקרן אתכם לראות יותר פרטים - היכנסו לקישור המצורף: ${BINAT_URL}\n\nבהצלחה`;
 
@@ -565,7 +575,7 @@ function scrollBottom() {
 
 function linkify(text) {
   return text.replace(/(https?:\/\/[^\s<]+)/g, url =>
-    `<a href="${url}" target="_blank" rel="noopener" style="color:var(--teal);text-decoration:underline;">${url}</a>`
+    `<a href="${url}" target="_blank" rel="noopener" style="color:var(--purple);text-decoration:underline;">${url}</a>`
   );
 }
 
@@ -576,7 +586,7 @@ function addBubble(role, text) {
 
   const avatar = document.createElement('div');
   avatar.className = `avatar ${isAI ? 'avatar-ai' : 'avatar-user'}`;
-  avatar.textContent = isAI ? '🧭' : '👤';
+  avatar.textContent = isAI ? '⚡' : '👤';
 
   const bubble = document.createElement('div');
   bubble.className = `bubble ${isAI ? 'bubble-ai' : 'bubble-user'}`;
@@ -617,7 +627,6 @@ function showLimitBanner() {
     `<br><a href="${BINAT_URL}" target="_blank" rel="noopener">מכון בינת הלב ←</a>`;
   messagesEl.appendChild(div);
   scrollBottom();
-  // Disable input permanently
   inputEl.disabled = true;
   sendBtn.disabled = true;
   inputEl.placeholder = 'הגעת למגבלת ההודעות';
@@ -629,7 +638,7 @@ function showThinking() {
   wrap.id = 'thinking';
   const avatar = document.createElement('div');
   avatar.className = 'avatar avatar-ai';
-  avatar.textContent = '🧭';
+  avatar.textContent = '⚡';
   const dots = document.createElement('div');
   dots.className = 'thinking-dots';
   dots.innerHTML = '<span></span><span></span><span></span>';
@@ -679,13 +688,12 @@ codeInputEl.addEventListener('keydown', e => {
 // ── Init: show opening message then ask first question ───────────
 async function startChat() {
   const openingBubble = addBubble('ai', OPENING_MESSAGE);
-  // Add link button inside the opening bubble
   const btn = document.createElement('a');
   btn.href = BINAT_URL;
   btn.target = '_blank';
   btn.rel = 'noopener';
   btn.textContent = 'לאתר מכון בינת הלב ←';
-  btn.style.cssText = 'display:block;margin-top:12px;padding:8px 18px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-radius:20px;font-weight:700;font-size:.85rem;text-decoration:none;width:fit-content;';
+  btn.style.cssText = 'display:block;margin-top:12px;padding:8px 18px;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border-radius:20px;font-weight:700;font-size:.85rem;text-decoration:none;width:fit-content;';
   openingBubble.appendChild(btn);
   if (msgCount >= MSG_LIMIT) {
     showLimitBanner();
@@ -698,7 +706,7 @@ async function startChat() {
   const timer = setTimeout(() => ctrl.abort(), 30000);
   try {
     const trigger = [{ role: 'user', content: 'התחל' }];
-    const res = await fetch('/api/masav', {
+    const res = await fetch('/api/makhpil', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ messages: trigger }),
@@ -709,7 +717,6 @@ async function startChat() {
     if (res.ok) {
       const data  = await res.json();
       const reply = data.reply || '';
-      // Store in history so conversation continues naturally
       history.push({ role: 'assistant', content: reply });
       addBubble('ai', reply);
       aiRespCount++;
@@ -729,29 +736,25 @@ async function send() {
   const text = inputEl.value.trim();
   if (!text || isLoading) return;
 
-  // Enforce message limit
   if (msgCount >= MSG_LIMIT) {
     showLimitBanner();
     return;
   }
 
-  // Add user bubble
   addBubble('user', text);
   inputEl.value = '';
   autoResize();
 
-  // Increment and persist count
   msgCount++;
   localStorage.setItem(LS_COUNT_KEY, msgCount);
 
-  // Add to history
   history.push({ role: 'user', content: text });
 
   setLoading(true);
   showThinking();
 
   try {
-    const res = await fetch('/api/masav', {
+    const res = await fetch('/api/makhpil', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ messages: history }),
@@ -772,13 +775,11 @@ async function send() {
     history.push({ role: 'assistant', content: reply });
     addBubble('ai', reply);
 
-    // Promo every 10 AI responses
     aiRespCount++;
     if (aiRespCount % 10 === 0) {
       addPromo();
     }
 
-    // Show limit banner after last allowed message
     if (msgCount >= MSG_LIMIT) {
       showLimitBanner();
     }

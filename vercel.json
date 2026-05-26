@@ -14,6 +14,12 @@
     },
     "api/room.js": {
       "maxDuration": 35
+    },
+    "api/masav-config.js": {
+      "maxDuration": 60
+    },
+    "api/makhpil.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
