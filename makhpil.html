@@ -706,10 +706,10 @@ async function startChat() {
   const timer = setTimeout(() => ctrl.abort(), 30000);
   try {
     const trigger = [{ role: 'user', content: 'התחל' }];
-    const res = await fetch('/api/makhpil', {
+    const res = await fetch('/api/masav', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages: trigger }),
+      body:    JSON.stringify({ messages: trigger, tool: 'makhpil' }),
       signal:  ctrl.signal,
     });
     clearTimeout(timer);
@@ -754,10 +754,10 @@ async function send() {
   showThinking();
 
   try {
-    const res = await fetch('/api/makhpil', {
+    const res = await fetch('/api/masav', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages: history }),
+      body:    JSON.stringify({ messages: history, tool: 'makhpil' }),
     });
 
     hideThinking();
