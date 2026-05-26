@@ -284,6 +284,34 @@
       30%          { transform: translateY(-8px); }
     }
 
+    /* ── Binat link strip ── */
+    .binat-link-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 0 10px;
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+    .binat-link-strip a {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--purple);
+      font-weight: 700;
+      text-decoration: none;
+      border: 1.5px solid var(--purple);
+      border-radius: 20px;
+      padding: 3px 12px;
+      transition: background .18s, color .18s;
+      font-size: .78rem;
+    }
+    .binat-link-strip a:hover {
+      background: var(--purple);
+      color: #fff;
+    }
+
     /* ── Input area ── */
     .input-area {
       padding: 14px 0 20px;
@@ -514,6 +542,12 @@
 
     <!-- Input -->
     <div class="input-area">
+      <div class="binat-link-strip">
+        <span>כלי מבית</span>
+        <a href="https://a0533161912.wixsite.com/my-site-8" target="_blank" rel="noopener">
+          🏛️ מכון בינת הלב ←
+        </a>
+      </div>
       <div class="input-row">
         <textarea
           id="userInput"
