@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>יצירת תמונה</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0f0f1a; min-height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+    }
+    .glow-btn {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px rgba(124,58,237,0.4);
+    }
+    .glow-btn:hover:not(:disabled) { box-shadow: 0 0 35px rgba(124,58,237,0.7); transform: translateY(-1px); }
+    .glow-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    textarea, input, select {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(167,139,250,0.25) !important;
+      color: #e0e0e0 !important;
+      border-radius: 12px !important;
+      transition: border-color 0.2s;
+    }
+    textarea:focus, input:focus, select:focus {
+      outline: none !important;
+      border-color: rgba(167,139,250,0.7) !important;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15) !important;
+    }
+    select option { background: #1e1e35; color: #e0e0e0; }
+
+    label { color: #c4b5fd; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.03em; }
+
+    /* Progress bar */
+    .progress-track {
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      transition: width 0.6s ease;
+      box-shadow: 0 0 10px rgba(167,139,250,0.6);
+    }
+
+    /* Step dots */
+    .step { display: flex; align-items: center; gap: 8px; }
+    .step-dot {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: bold; flex-shrink: 0;
+      border: 2px solid rgba(167,139,250,0.3);
+      color: rgba(167,139,250,0.4);
+      transition: all 0.4s ease;
+    }
+    .step-dot.active { border-color: #a78bfa; color: #a78bfa; background: rgba(124,58,237,0.2); box-shadow: 0 0 10px rgba(167,139,250,0.4); }
+    .step-dot.done { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.15); }
+    .step-dot.failed { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.15); }
+    .step-label { font-size: 0.82rem; transition: color 0.4s ease; color: rgba(156,163,175,0.5); }
+    .step-label.active { color: #c4b5fd; }
+    .step-label.done { color: #6ee7b7; }
+    .step-label.failed { color: #fca5a5; }
+
+    .img-preview { border: 2px solid rgba(167,139,250,0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 0 40px rgba(124,58,237,0.2); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-6">
+
+  <!-- Password gate -->
+  <div id="passwordGate" class="card w-full max-w-sm p-8 space-y-6 text-center">
+    <div class="text-4xl">🔒</div>
+    <h2 class="text-xl font-bold text-purple-300">סיסמא נדרשת</h2>
+    <div>
+      <input id="passwordInput" type="password" class="w-full px-4 py-3 text-sm text-center"
+        placeholder="הזן סיסמא..." onkeydown="if(event.key==='Enter') checkPassword()" />
+    </div>
+    <button onclick="checkPassword()" class="glow-btn w-full py-3 rounded-xl text-white font-bold">כניסה</button>
+    <p id="passwordError" class="hidden text-red-400 text-sm">סיסמא שגויה, נסה שוב</p>
+  </div>
+
+  <!-- Main app (hidden until password correct) -->
+  <div id="mainApp" class="hidden w-full">
+  <div class="card w-full max-w-xl p-8 space-y-6">
+
+    <!-- Header -->
+    <div class="text-center space-y-1">
+      <div class="text-4xl mb-2">✨</div>
+      <h1 class="text-2xl font-bold text-purple-300">יצירת תמונה עם AI</h1>
+      <p class="text-gray-500 text-sm">הזן פרומפט, בחר מודל, ושלח לאימייל</p>
+    </div>
+
+    <!-- Form -->
+    <div id="formSection" class="space-y-5">
+      <div>
+        <label class="block mb-2">בחר מודל</label>
+        <select id="model" class="w-full px-4 py-3 text-sm">
+          <option value="openai/gpt-5.4-image-2">GPT 5.4 Image 2 – OpenAI</option>
+          <option value="google/gemini-3.1-flash-image-preview">Gemini 3.1 Flash Image – Nano Banana 2 (Google)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block mb-2">פרומפט לתמונה</label>
+        <textarea id="prompt" rows="4" class="w-full px-4 py-3 text-sm resize-none"
+          placeholder="Describe the image you want to generate..."></textarea>
+      </div>
+
+      <div>
+        <label class="block mb-2">כתובת אימייל לשליחת התמונה</label>
+        <input id="email" type="email" class="w-full px-4 py-3 text-sm"
+          placeholder="you@example.com" dir="ltr" />
+      </div>
+
+      <button id="generateBtn" onclick="generate()" class="glow-btn w-full py-3 rounded-xl text-white font-bold text-base">
+        צור תמונה ושלח במייל
+      </button>
+      <p class="text-center text-xs" style="color:rgba(156,163,175,0.6);">יצירת תמונה עשויה לקחת 30–60 שניות</p>
+    </div>
+
+    <!-- Progress section -->
+    <div id="progressSection" class="hidden space-y-5">
+      <!-- Bar -->
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill" style="width:0%"></div>
+      </div>
+
+      <!-- Steps -->
+      <div class="space-y-3">
+        <div class="step">
+          <div class="step-dot" id="dot1">1</div>
+          <span class="step-label" id="lbl1">שולח בקשה לשרת</span>
+        </div>
+        <div class="step">
+          <div class="step-dot" id="dot2">2</div>
+          <span class="step-label" id="lbl2">יוצר תמונה עם AI</span>
+        </div>
+        <div class="step">
+          <div class="step-dot" id="dot3">3</div>
+          <span class="step-label" id="lbl3">שולח למייל</span>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="errorBox" class="hidden rounded-xl px-4 py-3 text-sm text-center"
+        style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#fca5a5;">
+      </div>
+
+      <!-- Retry button -->
+      <button id="retryBtn" onclick="retry()" class="hidden w-full py-2 rounded-xl text-sm font-semibold transition"
+        style="border:1px solid rgba(167,139,250,0.4);color:#c4b5fd;">
+        נסה שוב
+      </button>
+    </div>
+
+    <!-- Result -->
+    <div id="result" class="hidden space-y-4">
+      <div class="img-preview">
+        <img id="resultImg" src="" alt="Generated" class="w-full block" />
+      </div>
+      <p class="text-green-400 text-sm text-center font-semibold">✅ התמונה נשלחה לאימייל שלך!</p>
+      <div class="flex gap-3">
+        <a id="downloadLink" href="#" download="image.png"
+          class="flex-1 text-center py-2 rounded-xl text-sm font-medium transition"
+          style="border:1px solid rgba(167,139,250,0.5);color:#c4b5fd;">
+          הורד תמונה
+        </a>
+        <button onclick="resetForm()"
+          class="flex-1 py-2 rounded-xl text-sm font-medium transition"
+          style="border:1px solid rgba(107,114,128,0.4);color:#9ca3af;">
+          צור תמונה נוספת
+        </button>
+      </div>
+    </div>
+
+  </div>
+  </div><!-- /mainApp -->
+
+  <script>
+    let progressTimer = null;
+    let currentProgress = 0;
+
+    function setStep(n, state) {
+      const dot = document.getElementById('dot' + n);
+      const lbl = document.getElementById('lbl' + n);
+      dot.className = 'step-dot ' + state;
+      lbl.className = 'step-label ' + state;
+      if (state === 'done') dot.textContent = '✓';
+      if (state === 'failed') dot.textContent = '✗';
+    }
+
+    function setProgress(pct) {
+      currentProgress = pct;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function startFakeProgress() {
+      // Slowly advances from 5% to 85% while waiting for the API
+      setProgress(5);
+      let p = 5;
+      progressTimer = setInterval(() => {
+        // Gets slower as it approaches 85%
+        const step = Math.max(0.3, (85 - p) * 0.03);
+        p = Math.min(85, p + step);
+        setProgress(p);
+      }, 600);
+    }
+
+    function stopFakeProgress() {
+      clearInterval(progressTimer);
+    }
+
+    async function generate() {
+      const prompt = document.getElementById('prompt').value.trim();
+      const model  = document.getElementById('model').value;
+      const email  = document.getElementById('email').value.trim();
+
+      if (!prompt) return alert('אנא הזן פרומפט לתמונה');
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('אנא הזן כתובת אימייל תקנית');
+
+      // Switch to progress view
+      document.getElementById('formSection').classList.add('hidden');
+      document.getElementById('progressSection').classList.remove('hidden');
+      document.getElementById('result').classList.add('hidden');
+      document.getElementById('errorBox').classList.add('hidden');
+      document.getElementById('retryBtn').classList.add('hidden');
+
+      [1,2,3].forEach(n => setStep(n, ''));
+      setProgress(0);
+
+      try {
+        // Step 1: fetch API key from server
+        setStep(1, 'active');
+        const keyRes = await fetch('/api/masav-config?_tzvi=1');
+        const keyData = await keyRes.json();
+        if (!keyRes.ok || !keyData.key) throw new Error('לא ניתן לאחזר מפתח API');
+        setStep(1, 'done');
+        setProgress(10);
+
+        // Step 2: call OpenRouter directly from browser (no timeout)
+        setStep(2, 'active');
+        startFakeProgress();
+
+        const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${keyData.key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://www.chavruta-letalmudtorah.uk',
+            'X-Title': 'Image Generator',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            modalities: ['image', 'text'],
+          }),
+        });
+
+        stopFakeProgress();
+
+        const rawText = await orRes.text();
+        let data;
+        try { data = JSON.parse(rawText); } catch {
+          throw new Error(`OpenRouter החזיר תגובה לא תקינה (${orRes.status}):\n${rawText.slice(0, 300)}`);
+        }
+
+        if (!orRes.ok) {
+          const msg = data?.error?.message || data?.error || JSON.stringify(data);
+          throw new Error(`OpenRouter (${orRes.status}): ${msg}`);
+        }
+
+        // Extract image URL from response — try all known formats
+        const msg = data?.choices?.[0]?.message;
+        const content = msg?.content;
+        let imageUrl = null;
+
+        // Format 1: message.images[] (OpenAI gpt-5.4-image-2)
+        if (!imageUrl && Array.isArray(msg?.images)) {
+          const img = msg.images[0];
+          imageUrl = img?.image_url?.url || null;
+        }
+
+        // Format 2: message.content is array of parts
+        if (!imageUrl && Array.isArray(content)) {
+          const imgPart = content.find(p => p.type === 'image_url');
+          imageUrl = imgPart?.image_url?.url || null;
+        }
+
+        // Format 3: message.content is a data: or http string
+        if (!imageUrl && typeof content === 'string' && (content.startsWith('data:') || content.startsWith('http'))) {
+          imageUrl = content;
+        }
+
+        // Format 4: data[] (images/generations style)
+        if (!imageUrl && data?.data?.[0]) {
+          const d = data.data[0];
+          imageUrl = d.url || (d.b64_json ? `data:image/png;base64,${d.b64_json}` : null);
+        }
+
+        if (!imageUrl) {
+          throw new Error(`לא הוחזרה תמונה. תגובה מלאה:\n${JSON.stringify(data)?.slice(0, 600)}`);
+        }
+
+        setStep(2, 'done');
+        setProgress(92);
+
+        // Step 3: send email via server
+        setStep(3, 'active');
+        const mailRes = await fetch('/api/masav-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _action: 'send-image-email', imageUrl, email, prompt, model }),
+        });
+        if (!mailRes.ok) throw new Error('שליחת המייל נכשלה');
+
+        setStep(3, 'done');
+        setProgress(100);
+        await new Promise(r => setTimeout(r, 400));
+        showResult(imageUrl);
+
+      } catch (err) {
+        stopFakeProgress();
+        const activeStep = [1,2,3].find(n => document.getElementById('dot'+n).classList.contains('active'));
+        if (activeStep) setStep(activeStep, 'failed');
+
+        const errorBox = document.getElementById('errorBox');
+        errorBox.textContent = '❌ ' + (err.message || 'אירעה שגיאה, נסה שוב');
+        errorBox.classList.remove('hidden');
+        document.getElementById('retryBtn').classList.remove('hidden');
+      }
+    }
+
+    function showResult(imageUrl) {
+      document.getElementById('progressSection').classList.add('hidden');
+      const img  = document.getElementById('resultImg');
+      const link = document.getElementById('downloadLink');
+      img.src  = imageUrl;
+      link.href = imageUrl;
+      document.getElementById('result').classList.remove('hidden');
+    }
+
+    function retry() {
+      document.getElementById('progressSection').classList.add('hidden');
+      document.getElementById('formSection').classList.remove('hidden');
+    }
+
+    function resetForm() {
+      document.getElementById('prompt').value = '';
+      document.getElementById('email').value  = '';
+      document.getElementById('result').classList.add('hidden');
+      document.getElementById('formSection').classList.remove('hidden');
+    }
+
+    function checkPassword() {
+      const val = document.getElementById('passwordInput').value;
+      if (val === 'צבי וכטפוגל') {
+        sessionStorage.setItem('tzvi_auth', '1');
+        document.getElementById('passwordGate').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+      } else {
+        document.getElementById('passwordError').classList.remove('hidden');
+        document.getElementById('passwordInput').value = '';
+      }
+    }
+
+    // Auto-unlock if already authenticated this session
+    if (sessionStorage.getItem('tzvi_auth') === '1') {
+      document.getElementById('passwordGate').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
