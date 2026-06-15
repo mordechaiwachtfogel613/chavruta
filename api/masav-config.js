@@ -31,35 +31,59 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
   if (!key) return;
 
   const subject = 'התמונה שלך מוכנה!';
-  const html = `
+
+  // Get raw base64 + mime regardless of whether imageUrl is data: or http
+  let b64 = null;
+  let mime = 'image/png';
+
+  if (imageUrl.startsWith('data:')) {
+    const [meta, data] = imageUrl.split(',');
+    const mimeMatch = meta.match(/data:([^;]+)/);
+    mime = mimeMatch ? mimeMatch[1] : 'image/png';
+    b64 = data;
+  } else if (imageUrl.startsWith('http')) {
+    try {
+      const imgRes = await fetch(imageUrl);
+      const buffer = await imgRes.arrayBuffer();
+      mime = (imgRes.headers.get('content-type') || 'image/png').split(';')[0];
+      b64 = Buffer.from(buffer).toString('base64');
+    } catch { /* silent */ }
+  }
+
+  // Wrap the image inside an HTML file with the image embedded as a data URI.
+  // Network-level content filters (e.g. Netspark) scan binary image files but
+  // treat HTML attachments as plain text — so the image passes through unfiltered.
+  // The recipient simply opens the .html file in any browser to view the image.
+  let attachments = undefined;
+  if (b64) {
+    const imgTag = `<img src="data:${mime};base64,${b64}" alt="Generated Image" style="max-width:100%;height:auto;border-radius:12px;display:block;margin:auto;">`;
+    const htmlFile = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>התמונה שלך</title>
+  <style>
+    body{margin:0;padding:24px;background:#0f0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Arial,sans-serif;color:#e0e0e0;box-sizing:border-box}
+    p{color:#9ca3af;font-size:14px;text-align:center;margin-top:16px}
+  </style>
+</head>
+<body>
+  ${imgTag}
+  <p>${escHtml(prompt)}</p>
+</body>
+</html>`;
+    const htmlB64 = Buffer.from(htmlFile, 'utf8').toString('base64');
+    attachments = [{ filename: 'image.html', content: htmlB64 }];
+  }
+
+  const emailHtml = `
     <div style="font-family:Arial,sans-serif;background:#0f0f1a;padding:32px;border-radius:16px;max-width:600px;margin:auto;color:#e0e0e0;">
       <h2 style="color:#a78bfa;margin-top:0;">✨ התמונה שלך מוכנה</h2>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">מודל:</strong> ${escHtml(modelLabel)}</p>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">פרומפט:</strong> ${escHtml(prompt)}</p>
-      <p style="color:#9ca3af;">התמונה מצורפת למייל זה כקובץ.</p>
+      <p style="color:#9ca3af;">התמונה מצורפת כקובץ <strong style="color:#c4b5fd;">image.html</strong> — פתח אותה בדפדפן לצפייה.</p>
     </div>`;
-
-  // Ensure image is always sent as an attachment (not an external URL),
-  // so email filters / content blockers on the recipient's side can't blur it.
-  let attachments = undefined;
-  if (imageUrl.startsWith('data:')) {
-    const [meta, b64] = imageUrl.split(',');
-    const mimeMatch = meta.match(/data:([^;]+)/);
-    const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-    const ext = mime.split('/')[1] || 'png';
-    attachments = [{ filename: `image.${ext}`, content: b64 }];
-  } else if (imageUrl.startsWith('http')) {
-    // Fetch the image server-side so it arrives as a file attachment,
-    // bypassing any client-side URL filtering that blurs external images.
-    try {
-      const imgRes = await fetch(imageUrl);
-      const buffer = await imgRes.arrayBuffer();
-      const contentType = imgRes.headers.get('content-type') || 'image/png';
-      const ext = (contentType.split('/')[1] || 'png').split(';')[0];
-      const b64 = Buffer.from(buffer).toString('base64');
-      attachments = [{ filename: `image.${ext}`, content: b64 }];
-    } catch { /* silent — email will still be sent without attachment */ }
-  }
 
   try {
     await fetch('https://api.resend.com/emails', {
@@ -69,7 +93,7 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
         from: `Image Generator <${FROM}>`,
         to: [toEmail],
         subject,
-        html,
+        html: emailHtml,
         ...(attachments ? { attachments } : {}),
       }),
     });
