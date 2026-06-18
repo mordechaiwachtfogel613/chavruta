@@ -50,57 +50,13 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
     } catch { /* silent */ }
   }
 
-  // Build an HTML file where the image is assembled at runtime via JavaScript
-  // using Blob + createObjectURL — no data:image/ URI appears in the static HTML.
-  // Network-level proxies (e.g. Netspark) scan the downloaded file as text and
-  // see only JavaScript code; they do NOT execute JS during scanning, so the image
-  // content is invisible to the filter. The browser executes the script on open
-  // and renders the full image locally from memory, never triggering a network request.
+  // Send the image as a regular file attachment.
+  // Netspark filters images loaded in the browser but does NOT block email attachments,
+  // so sending as PNG/JPG directly is the correct approach here.
   let attachments = undefined;
   if (b64) {
-    // XOR-encode the base64 string with key 7 so the raw payload is not recognisable
-    // as base64 image data even to deep-packet inspection heuristics.
-    const XOR_KEY = 7;
-    const encoded = Buffer.from(b64).toString('utf8')
-      .split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ XOR_KEY)).join('');
-    const encodedB64 = Buffer.from(encoded, 'binary').toString('base64');
-
-    const htmlFile = `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>התמונה שלך</title>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;padding:24px;background:#0f0f1a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#e0e0e0}
-    img{max-width:100%;height:auto;border-radius:12px;display:block}
-    p{color:#9ca3af;font-size:14px;text-align:center;margin-top:16px}
-  </style>
-</head>
-<body>
-  <div id="c"></div>
-  <p id="lbl">טוען...</p>
-  <script>
-  (function(){
-    var k=7,e=atob("${encodedB64}");
-    var d='';for(var i=0;i<e.length;i++)d+=String.fromCharCode(e.charCodeAt(i)^k);
-    var m="${mime}";
-    var bytes=atob(d),arr=new Uint8Array(bytes.length);
-    for(var j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
-    var blob=new Blob([arr],{type:m});
-    var url=URL.createObjectURL(blob);
-    var img=document.createElement('img');
-    img.src=url;
-    img.alt='Generated Image';
-    document.getElementById('c').appendChild(img);
-    document.getElementById('lbl').textContent='${escHtml(prompt)}';
-  })();
-  </script>
-</body>
-</html>`;
-    const htmlB64 = Buffer.from(htmlFile, 'utf8').toString('base64');
-    attachments = [{ filename: 'image.html', content: htmlB64 }];
+    const ext = (mime.split('/')[1] || 'png').split(';')[0];
+    attachments = [{ filename: `image.${ext}`, content: b64 }];
   }
 
   const emailHtml = `
@@ -108,7 +64,7 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
       <h2 style="color:#a78bfa;margin-top:0;">✨ התמונה שלך מוכנה</h2>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">מודל:</strong> ${escHtml(modelLabel)}</p>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">פרומפט:</strong> ${escHtml(prompt)}</p>
-      <p style="color:#9ca3af;">התמונה מצורפת כקובץ <strong style="color:#c4b5fd;">image.html</strong> — פתח אותה בדפדפן לצפייה.</p>
+      <p style="color:#9ca3af;">התמונה מצורפת למייל זה כקובץ.</p>
     </div>`;
 
   try {
