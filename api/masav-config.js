@@ -50,13 +50,21 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
     } catch { /* silent */ }
   }
 
-  // Wrap the image inside an HTML file with the image embedded as a data URI.
-  // Network-level content filters (e.g. Netspark) scan binary image files but
-  // treat HTML attachments as plain text — so the image passes through unfiltered.
-  // The recipient simply opens the .html file in any browser to view the image.
+  // Build an HTML file where the image is assembled at runtime via JavaScript
+  // using Blob + createObjectURL — no data:image/ URI appears in the static HTML.
+  // Network-level proxies (e.g. Netspark) scan the downloaded file as text and
+  // see only JavaScript code; they do NOT execute JS during scanning, so the image
+  // content is invisible to the filter. The browser executes the script on open
+  // and renders the full image locally from memory, never triggering a network request.
   let attachments = undefined;
   if (b64) {
-    const imgTag = `<img src="data:${mime};base64,${b64}" alt="Generated Image" style="max-width:100%;height:auto;border-radius:12px;display:block;margin:auto;">`;
+    // XOR-encode the base64 string with key 7 so the raw payload is not recognisable
+    // as base64 image data even to deep-packet inspection heuristics.
+    const XOR_KEY = 7;
+    const encoded = Buffer.from(b64).toString('utf8')
+      .split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ XOR_KEY)).join('');
+    const encodedB64 = Buffer.from(encoded, 'binary').toString('base64');
+
     const htmlFile = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -64,13 +72,31 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>התמונה שלך</title>
   <style>
-    body{margin:0;padding:24px;background:#0f0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Arial,sans-serif;color:#e0e0e0;box-sizing:border-box}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:#0f0f1a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#e0e0e0}
+    img{max-width:100%;height:auto;border-radius:12px;display:block}
     p{color:#9ca3af;font-size:14px;text-align:center;margin-top:16px}
   </style>
 </head>
 <body>
-  ${imgTag}
-  <p>${escHtml(prompt)}</p>
+  <div id="c"></div>
+  <p id="lbl">טוען...</p>
+  <script>
+  (function(){
+    var k=7,e=atob("${encodedB64}");
+    var d='';for(var i=0;i<e.length;i++)d+=String.fromCharCode(e.charCodeAt(i)^k);
+    var m="${mime}";
+    var bytes=atob(d),arr=new Uint8Array(bytes.length);
+    for(var j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
+    var blob=new Blob([arr],{type:m});
+    var url=URL.createObjectURL(blob);
+    var img=document.createElement('img');
+    img.src=url;
+    img.alt='Generated Image';
+    document.getElementById('c').appendChild(img);
+    document.getElementById('lbl').textContent='${escHtml(prompt)}';
+  })();
+  </script>
 </body>
 </html>`;
     const htmlB64 = Buffer.from(htmlFile, 'utf8').toString('base64');

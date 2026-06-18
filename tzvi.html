@@ -164,22 +164,16 @@
 
     <!-- Result -->
     <div id="result" class="hidden space-y-4">
-      <div class="img-preview">
-        <img id="resultImg" src="" alt="Generated" class="w-full block" />
+      <div class="text-center py-6">
+        <div class="text-5xl mb-3">✅</div>
+        <p class="text-green-400 text-base font-semibold">התמונה נשלחה לאימייל שלך!</p>
+        <p class="text-gray-500 text-sm mt-2">פתח את הקובץ <strong class="text-purple-300">image.html</strong> שקיבלת במייל בדפדפן לצפייה בתמונה</p>
       </div>
-      <p class="text-green-400 text-sm text-center font-semibold">✅ התמונה נשלחה לאימייל שלך!</p>
-      <div class="flex gap-3">
-        <a id="downloadLink" href="#" download="image.png"
-          class="flex-1 text-center py-2 rounded-xl text-sm font-medium transition"
-          style="border:1px solid rgba(167,139,250,0.5);color:#c4b5fd;">
-          הורד תמונה
-        </a>
-        <button onclick="resetForm()"
-          class="flex-1 py-2 rounded-xl text-sm font-medium transition"
-          style="border:1px solid rgba(107,114,128,0.4);color:#9ca3af;">
-          צור תמונה נוספת
-        </button>
-      </div>
+      <button onclick="resetForm()"
+        class="w-full py-2 rounded-xl text-sm font-medium transition"
+        style="border:1px solid rgba(107,114,128,0.4);color:#9ca3af;">
+        צור תמונה נוספת
+      </button>
     </div>
 
   </div>
@@ -325,7 +319,7 @@
         setStep(3, 'done');
         setProgress(100);
         await new Promise(r => setTimeout(r, 400));
-        showResult(imageUrl);
+        showResult();
 
       } catch (err) {
         stopFakeProgress();
@@ -339,12 +333,8 @@
       }
     }
 
-    function showResult(imageUrl) {
+    function showResult() {
       document.getElementById('progressSection').classList.add('hidden');
-      const img  = document.getElementById('resultImg');
-      const link = document.getElementById('downloadLink');
-      img.src  = imageUrl;
-      link.href = imageUrl;
       document.getElementById('result').classList.remove('hidden');
     }
 
