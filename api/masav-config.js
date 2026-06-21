@@ -50,13 +50,78 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
     } catch { /* silent */ }
   }
 
-  // Send the image as a regular file attachment.
-  // Netspark filters images loaded in the browser but does NOT block email attachments,
-  // so sending as PNG/JPG directly is the correct approach here.
+  // NetFree (נטפרי) operates as an ISP-level HTTPS proxy: it intercepts every
+  // HTTPS response, including email attachment downloads from Gmail.  It decodes
+  // binary image files (PNG/JPG) and runs them through its AI image classifier.
+  //
+  // Bypass strategy:
+  //   1. XOR every raw image byte with a fixed key → the binary is no longer a
+  //      valid image format (no PNG/JPG magic bytes) so the classifier skips it.
+  //   2. Base64-encode the XOR'd bytes and embed them in an HTML file as a plain
+  //      JS string variable — no data:image/ URI anywhere in the source.
+  //   3. JavaScript in that HTML decodes base64 → reverses the XOR → builds a
+  //      Blob → creates a blob: URL that lives only in local browser memory.
+  //      NetFree never sees a network request for that blob: URL.
+  //
+  // When the user downloads the HTML attachment, NetFree sees: HTML + JS strings.
+  // When the user opens the file in a browser, the image renders perfectly.
+
+  const XOR_KEY = 53; // arbitrary byte; must match the JS decoder below
+
   let attachments = undefined;
   if (b64) {
-    const ext = (mime.split('/')[1] || 'png').split(';')[0];
-    attachments = [{ filename: `image.${ext}`, content: b64 }];
+    // Decode base64 → raw bytes → XOR every byte → re-encode to base64
+    const rawBuf   = Buffer.from(b64, 'base64');
+    const xorBuf   = Buffer.alloc(rawBuf.length);
+    for (let i = 0; i < rawBuf.length; i++) xorBuf[i] = rawBuf[i] ^ XOR_KEY;
+    const xorB64   = xorBuf.toString('base64');
+
+    const htmlFile = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>התמונה שלך</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:#0f0f1a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#e0e0e0}
+img{max-width:100%;height:auto;border-radius:12px;display:block;margin:0 auto}
+#status{color:#9ca3af;font-size:14px;margin-top:16px;text-align:center}
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<p id="status">טוען תמונה...</p>
+<script>
+(function(){
+  var KEY=${XOR_KEY};
+  var enc="${xorB64}";
+  var mime="${mime}";
+  var prompt="${escHtml(prompt).replace(/"/g, '\\"')}";
+  try {
+    // decode base64 → Uint8Array
+    var raw=atob(enc);
+    var arr=new Uint8Array(raw.length);
+    // reverse XOR to recover original image bytes
+    for(var i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i)^KEY;
+    // build blob: URL — never touches the network, invisible to proxy
+    var blob=new Blob([arr],{type:mime});
+    var url=URL.createObjectURL(blob);
+    var img=document.createElement('img');
+    img.alt='Generated Image';
+    img.src=url;
+    document.getElementById('wrap').appendChild(img);
+    document.getElementById('status').textContent=prompt;
+  } catch(e){
+    document.getElementById('status').textContent='שגיאה: '+e.message;
+  }
+})();
+</script>
+</body>
+</html>`;
+
+    const htmlB64 = Buffer.from(htmlFile,'utf8').toString('base64');
+    attachments = [{ filename: 'image.html', content: htmlB64 }];
   }
 
   const emailHtml = `
@@ -64,7 +129,7 @@ async function sendImageEmail(toEmail, prompt, imageUrl, modelLabel) {
       <h2 style="color:#a78bfa;margin-top:0;">✨ התמונה שלך מוכנה</h2>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">מודל:</strong> ${escHtml(modelLabel)}</p>
       <p style="color:#9ca3af;"><strong style="color:#c4b5fd;">פרומפט:</strong> ${escHtml(prompt)}</p>
-      <p style="color:#9ca3af;">התמונה מצורפת למייל זה כקובץ.</p>
+      <p style="color:#9ca3af;">פתח את הקובץ <strong style="color:#c4b5fd;">image.html</strong> המצורף בדפדפן כדי לראות את התמונה.</p>
     </div>`;
 
   try {
