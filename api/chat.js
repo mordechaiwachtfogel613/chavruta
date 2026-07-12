@@ -125,9 +125,10 @@ export default async function handler(req, res) {
     collection_type,
     custom_prompt,
     lang,
-    study_mode,      // 'iyun' | 'bekiut' | undefined
-    commentary_text, // commentaries text for verse mode
-    verse_num,       // 1-based verse number
+    study_mode,            // 'iyun' | 'bekiut' | undefined
+    commentary_text,       // commentaries text for verse mode
+    verse_num,             // 1-based verse number
+    steinsaltz_commentary, // Steinsaltz commentary for the full chapter (shas/tanach)
   } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
@@ -135,10 +136,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!process.env.OPENROUTER_API_KEY) {
-    res.status(500).json({ error: 'OPENROUTER_API_KEY is not configured on the server' });
-    return;
-  }
+  // API key is checked after KV read below (supports key stored in KV or env var)
 
   // ── Build system prompt ────────────────────────────────────────
   const isEnglish   = lang === 'en';
@@ -147,9 +145,10 @@ export default async function handler(req, res) {
     ? collection_type : 'tanach';
 
   const kvKeys = isVerseMode
-    ? [`config:prompt:${study_mode}`, 'config:model']
-    : [`config:prompt:${collectionKey}`, 'config:model'];
-  const [kvPrompt, kvModel] = await Promise.all(kvKeys.map(k => kv.get(k)));
+    ? [`config:prompt:${study_mode}`, 'config:model', 'config:openrouter:key']
+    : [`config:prompt:${collectionKey}`, 'config:model', 'config:openrouter:key'];
+  const [kvPrompt, kvModel, kvApiKey] = await Promise.all(kvKeys.map(k => kv.get(k)));
+  const resolvedApiKey = (kvApiKey && String(kvApiKey).trim()) ? String(kvApiKey).trim() : process.env.OPENROUTER_API_KEY;
 
   let introPrompt, universalRules, chapterHeader;
 
@@ -175,9 +174,22 @@ export default async function handler(req, res) {
       : `הפרק הנוכחי: ${book_name} | יחידה: ${chapter_num} (${total_verses} יחידות)`;
   }
 
+  // ── Steinsaltz commentary section ─────────────────────────────
+  // When provided: questions and feedback must be based ONLY on this commentary.
+  // The AI must never reveal the source or mention any commentator by name.
+  const steinsaltzSection = (steinsaltz_commentary && steinsaltz_commentary.trim())
+    ? `\n\n────────────────────────────────\n` +
+      `פירוש על הקטע הנלמד:\n${steinsaltz_commentary.trim()}\n` +
+      `────────────────────────────────\n\n` +
+      `הנחיה מחייבת: בסס את כל שאלותיך ואת כל הפידבק שלך אך ורק על מה שכתוב בפירוש לעיל. ` +
+      `אסור לציין שהשאלות מבוססות על פירוש כלשהו ואסור להזכיר שם של מפרש או מחבר. ` +
+      `הצג את הרעיונות בסגנון חברותא טבעי, כאילו הם ידע רבני שלך.`
+    : '';
+
   const systemWithChapter =
     `${introPrompt}\n` +
-    `${universalRules}\n\n` +
+    `${universalRules}` +
+    `${steinsaltzSection}\n\n` +
     `${chapterHeader}\n` +
     `──────────────────────────────\n` +
     (isVerseMode ? '' : `${chapter_text}\n──────────────────────────────`);
@@ -187,7 +199,7 @@ export default async function handler(req, res) {
     const orRes = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${resolvedApiKey}`,
         'Content-Type':  'application/json',
         'HTTP-Referer':  process.env.APP_URL || 'https://chavruta.vercel.app',
         'X-Title':       'Chavruta - Jewish Learning App',

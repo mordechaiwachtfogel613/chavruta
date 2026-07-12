@@ -62,16 +62,18 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
   if (req.method === 'GET') {
-    const [model, greeting, shareCard, thinkingMsgs, verseModeEnabled, ...prompts] = await Promise.all([
+    const [model, greeting, shareCard, thinkingMsgs, verseModeEnabled, openrouterKey, ...prompts] = await Promise.all([
       kv.get('config:model'),
       kv.get('config:greeting'),
       kv.get('config:shareCard'),
       kv.get('config:thinkingMsgs'),
       kv.get('config:verseModeEnabled'),
+      kv.get('config:openrouter:key'),
       ...PROMPT_KEYS.map(k => kv.get(`config:prompt:${k}`)),
     ]);
     const promptsObj = {};
     PROMPT_KEYS.forEach((k, i) => { if (prompts[i]) promptsObj[k] = prompts[i]; });
+    const keyStr = openrouterKey ? String(openrouterKey) : null;
     return res.json({
       model: model || DEFAULT_MODEL,
       greeting: greeting || null,
@@ -79,13 +81,15 @@ export default async function handler(req, res) {
       shareCard: shareCard || DEFAULT_SHARE_CARD,
       thinkingMsgs: thinkingMsgs || null,
       verseModeEnabled: verseModeEnabled === true,
+      apiKeySet: !!keyStr,
+      apiKeyMasked: keyStr ? `${keyStr.slice(0, 14)}...${keyStr.slice(-4)}` : null,
     });
   }
 
   if (req.method === 'POST') {
     if (!isAdminAuthed(req)) return res.status(403).json({ error: 'Forbidden' });
 
-    const { model, greeting, prompts, shareCard, thinkingMsgs, verseModeEnabled } = req.body || {};
+    const { model, greeting, prompts, shareCard, thinkingMsgs, verseModeEnabled, openrouterKey } = req.body || {};
     const ops = [];
 
     if (model !== undefined && model !== '') {
@@ -118,6 +122,10 @@ export default async function handler(req, res) {
     }
     if (verseModeEnabled !== undefined) {
       ops.push(verseModeEnabled ? kv.set('config:verseModeEnabled', true) : kv.del('config:verseModeEnabled'));
+    }
+    if (openrouterKey !== undefined) {
+      const key = String(openrouterKey || '').trim();
+      ops.push(key ? kv.set('config:openrouter:key', key) : kv.del('config:openrouter:key'));
     }
     await Promise.all(ops);
     return res.json({ ok: true });

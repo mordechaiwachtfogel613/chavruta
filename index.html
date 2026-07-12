@@ -600,6 +600,26 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
+     ANALYTICS MODAL (admin only)
+═══════════════════════════════════════════════ -->
+<div id="modal-analytics" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width:720px;max-height:90vh;overflow-y:auto;">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold text-navy">📊 נתוני לומדים</h2>
+      <button onclick="closeAnalytics()" class="text-gray-400 hover:text-red-500 text-2xl leading-none">&times;</button>
+    </div>
+
+    <!-- Summary cards -->
+    <div id="analytics-summary" class="grid grid-cols-3 gap-3 mb-5 text-center"></div>
+
+    <!-- Learners table -->
+    <div id="analytics-table" class="space-y-3">
+      <p class="text-sm text-gray-400 text-center">טוען נתונים...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      ADMIN MODAL
 ═══════════════════════════════════════════════ -->
 <div id="modal-admin" class="modal-overlay hidden">
@@ -835,6 +855,23 @@
       </div>
       <div id="admin-save-msg" class="hidden mt-3 text-green-700 text-sm text-center font-semibold">✓ נשמר בהצלחה</div>
 
+      <!-- OpenRouter API Key -->
+      <hr class="border-gray-200 my-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-navy">🔑 מפתח OpenRouter API</span>
+        <span id="admin-api-key-status" class="text-xs text-gray-400"></span>
+      </div>
+      <div class="flex gap-2">
+        <input id="admin-api-key" type="password" dir="ltr" placeholder="sk-or-v1-..."
+               class="flex-1 p-2 border border-gray-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-navy focus:border-transparent">
+        <button onclick="saveApiKey()"
+                class="px-4 py-2 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors whitespace-nowrap">
+          שמור מפתח
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mt-1 text-right">השדה ריק? המפתח הנוכחי נשמר — רק הכנס ערך חדש כדי לשנות.</p>
+      <div id="admin-api-key-save-msg" class="hidden mt-2 text-green-700 text-xs font-semibold text-center">✓ מפתח נשמר בהצלחה</div>
+
       <!-- Email Templates -->
       <hr class="border-gray-200 my-5">
       <div class="flex items-center justify-between mb-3">
@@ -1041,6 +1078,11 @@
               style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#F0C040;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;"
               data-i18n="adminBtn">
         ⚙️ ניהול
+      </button>
+
+      <button id="analytics-btn" onclick="openAnalytics()" class="hidden"
+              style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#a8d8a8;border-radius:8px;padding:5px 11px;font-size:0.8rem;cursor:pointer;">
+        📊 לומדים
       </button>
 
       <button id="header-new-btn" onclick="resetSession()" class="hidden"

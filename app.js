@@ -629,10 +629,11 @@ const S = {
   adminAuthed:    false,
   sessionStarted: false,
   greetingMode:   false,
-  studyMode:      null,     // 'iyun' | 'bekiut' | null
-  commentaryText: null,     // commentary text for verse mode
-  studyVerseIdx:  null,     // verse index for verse mode
-  wrongAttempts:  0,        // consecutive wrong answers on current unit (reset on correct)
+  studyMode:            null,  // 'iyun' | 'bekiut' | null
+  commentaryText:       null,  // commentary text for verse mode
+  studyVerseIdx:        null,  // verse index for verse mode
+  wrongAttempts:        0,     // consecutive wrong answers on current unit (reset on correct)
+  steinsaltzCommentary: null,  // Steinsaltz commentary for current chapter (shas/tanach)
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -725,6 +726,7 @@ function logout() {
   document.getElementById('logout-btn').classList.add('hidden');
   document.getElementById('history-btn').classList.add('hidden');
   document.getElementById('admin-btn').classList.add('hidden');
+  document.getElementById('analytics-btn').classList.add('hidden');
 }
 
 function getAdminSecret() { return sessionStorage.getItem('chavruta_admin_secret') || ''; }
@@ -749,6 +751,7 @@ function updateUserUI() {
     document.getElementById('history-btn').classList.remove('hidden');
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
+      document.getElementById('analytics-btn').classList.remove('hidden');
       S.adminAuthed = true;
     }
     showGreeting();
@@ -824,6 +827,18 @@ function showAdminEditor() {
   }
   document.getElementById('admin-verse-mode-enabled').checked = GLOBAL_VERSE_MODE_ENABLED;
 
+  // Load API key status
+  fetch('/api/config').then(r => r.json()).then(cfg => {
+    const statusEl = document.getElementById('admin-api-key-status');
+    if (cfg.apiKeySet) {
+      statusEl.textContent = `מוגדר: ${cfg.apiKeyMasked}`;
+      statusEl.className = 'text-xs text-green-600 font-mono';
+    } else {
+      statusEl.textContent = 'לא מוגדר';
+      statusEl.className = 'text-xs text-red-500';
+    }
+  }).catch(() => {});
+
   loadAdminUsers();
   loadEmailTemplates();
 }
@@ -864,6 +879,99 @@ async function setUserStatus(email, status) {
   });
   loadAdminUsers();
 }
+
+// ── Analytics Dashboard ─────────────────────────────────────────────
+function openAnalytics() {
+  if (!isAdmin()) return;
+  document.getElementById('modal-analytics').classList.remove('hidden');
+  loadAnalytics();
+}
+
+function closeAnalytics() {
+  document.getElementById('modal-analytics').classList.add('hidden');
+}
+
+const COLLECTION_LABELS = {
+  tanach: 'תנ"ך', mishnah: 'משנה', shas: 'ש"ס', rambam: 'רמב"ם', shulchan: 'שו"ע'
+};
+
+function fmtTime(ms) {
+  if (!ms) return '—';
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `${m} דק'`;
+  const h = Math.floor(m / 60), rem = m % 60;
+  return rem ? `${h}ש' ${rem}ד'` : `${h} שעות`;
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+async function loadAnalytics() {
+  const tableEl   = document.getElementById('analytics-table');
+  const summaryEl = document.getElementById('analytics-summary');
+  tableEl.innerHTML = '<p class="text-sm text-gray-400 text-center">טוען נתונים...</p>';
+  summaryEl.innerHTML = '';
+
+  try {
+    const res  = await fetch('/api/analytics', { headers: adminHeaders() });
+    if (!res.ok) { tableEl.innerHTML = '<p class="text-sm text-red-500 text-center">שגיאה בטעינת נתונים</p>'; return; }
+    const data = await res.json();
+
+    if (!data.length) {
+      tableEl.innerHTML = '<p class="text-sm text-gray-400 text-center">אין נתוני לומדים עדיין</p>';
+      return;
+    }
+
+    // Summary cards
+    const totalSessions = data.reduce((s, d) => s + (d.analytics.sessions || 0), 0);
+    const totalTimeMs   = data.reduce((s, d) => s + (d.analytics.totalTimeMs || 0), 0);
+    const activeUsers   = data.filter(d => d.analytics.lastSeen).length;
+    summaryEl.innerHTML = `
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+        <div class="text-2xl font-bold text-navy">${data.length}</div>
+        <div class="text-xs text-gray-500 mt-1">לומדים רשומים</div>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-xl p-3">
+        <div class="text-2xl font-bold text-green-700">${totalSessions}</div>
+        <div class="text-xs text-gray-500 mt-1">סה"כ מפגשים</div>
+      </div>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+        <div class="text-2xl font-bold text-yellow-700">${fmtTime(totalTimeMs)}</div>
+        <div class="text-xs text-gray-500 mt-1">סה"כ זמן לימוד</div>
+      </div>`;
+
+    // Learners list
+    tableEl.innerHTML = data.map(({ user, analytics: a }) => {
+      const topicsStr = Object.entries(a.topics || {})
+        .map(([k, v]) => `<span class="inline-block px-1.5 py-0.5 bg-navy text-white text-xs rounded-md">${COLLECTION_LABELS[k] || k} ×${v}</span>`)
+        .join(' ');
+      const avgScore = a.sessions ? Math.round((a.totalScore || 0) / a.sessions) : 0;
+
+      return `<div class="border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-50 px-4 py-2 flex items-center justify-between">
+          <div>
+            <span class="font-semibold text-navy text-sm">${esc(user.name || '')}</span>
+            <span class="text-xs text-gray-400 mr-2">${esc(user.email || '')}</span>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded-full ${user.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${user.status === 'approved' ? 'מאושר' : 'ממתין'}</span>
+        </div>
+        <div class="p-3 grid grid-cols-4 gap-2 text-center text-xs text-gray-600 border-b border-gray-100">
+          <div><div class="font-bold text-navy text-base">${a.sessions || 0}</div><div>מפגשים</div></div>
+          <div><div class="font-bold text-navy text-base">${fmtTime(a.totalTimeMs)}</div><div>זמן לימוד</div></div>
+          <div><div class="font-bold text-navy text-base">${avgScore || '—'}</div><div>ניקוד ממוצע</div></div>
+          <div><div class="font-bold text-navy text-base">${fmtDate(a.lastSeen)}</div><div>פעילות אחרונה</div></div>
+        </div>
+        ${topicsStr ? `<div class="px-3 py-2 flex flex-wrap gap-1">${topicsStr}</div>` : ''}
+      </div>`;
+    }).join('');
+
+  } catch {
+    tableEl.innerHTML = '<p class="text-sm text-red-500 text-center">שגיאה בטעינת נתונים</p>';
+  }
+}
+// ── End Analytics Dashboard ─────────────────────────────────────────
 
 function _applyVerseModeEnabled(enabled) {
   const DISABLED_STYLE = 'flex:1;background:#9CA3AF;color:#e5e7eb;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:inherit;opacity:0.6;';
@@ -921,6 +1029,30 @@ function resetPrompt(k) {
   else if (k === 'friend_envelope') document.getElementById('admin-prompt-friend_envelope').value = DEFAULT_FRIEND_ENVELOPE;
   else if (k.startsWith('friend_')) document.getElementById(`admin-prompt-${k}`).value = DEFAULT_FRIEND_COLLECTION_PROMPTS[k.replace('friend_', '')] || '';
   else document.getElementById(`admin-prompt-${k}`).value = DEFAULT_ADMIN_PROMPTS[k];
+}
+
+async function saveApiKey() {
+  const keyInput = document.getElementById('admin-api-key');
+  const msgEl    = document.getElementById('admin-api-key-save-msg');
+  const statusEl = document.getElementById('admin-api-key-status');
+  const key = keyInput.value.trim();
+  if (!key) return;
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openrouterKey: key }),
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    keyInput.value = '';
+    statusEl.textContent = `מוגדר: ${key.slice(0, 14)}...${key.slice(-4)}`;
+    statusEl.className = 'text-xs text-green-600 font-mono';
+    msgEl.textContent = '✓ מפתח נשמר בהצלחה';
+  } catch {
+    msgEl.textContent = '⚠ שגיאה בשמירה';
+  }
+  msgEl.classList.remove('hidden');
+  setTimeout(() => msgEl.classList.add('hidden'), 3000);
 }
 
 async function saveAdminPrompts() {
@@ -1237,6 +1369,22 @@ async function _fetchCommentary(comm, verseIdx) {
   }
 }
 
+// ── Fetch Steinsaltz commentary from Sefaria ─────────────────────
+async function fetchSteinsaltz(collectionKey, item, unit) {
+  const col = COLLECTIONS[collectionKey];
+  const ref = col.fetchRef(item, unit);
+  try {
+    const res = await fetch(`/api/sefaria?ref=${encodeURIComponent(ref)}&steinsaltz=1`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const entries = Array.isArray(data.steinsaltz) ? data.steinsaltz : [];
+    if (!entries.length) return null;
+    return entries.map(e => e.he).join('\n\n');
+  } catch {
+    return null;
+  }
+}
+
 // ── Fetch content from Sefaria ───────────────────────────────────
 async function fetchContent(collectionKey, item, unit) {
   const col = COLLECTIONS[collectionKey];
@@ -1269,13 +1417,14 @@ async function fetchContent(collectionKey, item, unit) {
 async function startLearning() {
   if (!S.book || !S.unit) return;
 
-  S.messages       = [];
-  S.sessionScore   = 0;
-  S.sessionStarted = false;
-  S.greetingMode   = false;
-  S.studyMode      = null;
-  S.commentaryText = null;
-  S.studyVerseIdx  = null;
+  S.messages             = [];
+  S.sessionScore         = 0;
+  S.sessionStarted       = false;
+  S.greetingMode         = false;
+  S.studyMode            = null;
+  S.commentaryText       = null;
+  S.studyVerseIdx        = null;
+  S.steinsaltzCommentary = null;
 
   const btn     = document.getElementById('gp-start');
   const spinner = document.getElementById('header-spinner');
@@ -1288,6 +1437,11 @@ async function startLearning() {
 
   try {
     S.verses = await fetchContent(S.collectionKey, S.book, S.unit);
+
+    // Fetch Steinsaltz commentary for shas and tanach
+    if (S.collectionKey === 'shas' || S.collectionKey === 'tanach') {
+      S.steinsaltzCommentary = await fetchSteinsaltz(S.collectionKey, S.book, S.unit);
+    }
 
     // Show input area (learning mode — hide picker, show textarea)
     document.getElementById('greeting-picker').classList.add('hidden');
@@ -1382,6 +1536,9 @@ async function callAI() {
       body.study_mode      = S.studyMode;
       body.commentary_text = S.commentaryText || '';
       body.verse_num       = (S.studyVerseIdx !== null ? S.studyVerseIdx : 0) + 1;
+    }
+    if (S.steinsaltzCommentary) {
+      body.steinsaltz_commentary = S.steinsaltzCommentary;
     }
     if (GLOBAL_MODEL) body.model = GLOBAL_MODEL;
 

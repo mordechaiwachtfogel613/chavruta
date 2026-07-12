@@ -83,13 +83,15 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!process.env.OPENROUTER_API_KEY) {
-    res.status(500).json({ error: 'OPENROUTER_API_KEY is not configured' });
-    return;
-  }
-
   try {
-    const kvModel    = await kv.get('config:model');
+    const [kvModel, kvApiKey] = await Promise.all([
+      kv.get('config:model'),
+      kv.get('config:openrouter:key'),
+    ]);
+    const apiKey = (kvApiKey && String(kvApiKey).trim()) ? String(kvApiKey).trim() : process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'OPENROUTER_API_KEY is not configured' });
+    }
     const primaryModel = (kvModel && String(kvModel).trim()) ? String(kvModel).trim() : DEFAULT_MODEL;
     const modelsToTry  = [primaryModel, ...FALLBACK_MODELS.filter(m => m !== primaryModel)];
 
@@ -99,7 +101,7 @@ export default async function handler(req, res) {
       const orRes = await fetch(OPENROUTER_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type':  'application/json',
           'HTTP-Referer':  process.env.APP_URL || 'https://chavruta.vercel.app',
           'X-Title':       'Masav - Binat HaLev Institute',
