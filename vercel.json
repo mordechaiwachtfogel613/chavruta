@@ -14,8 +14,7 @@
     },
     "api/room.js": {
       "maxDuration": 35
-    },
-
+    }
   },
   "headers": [
     {
