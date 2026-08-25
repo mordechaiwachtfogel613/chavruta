@@ -16,9 +16,6 @@
       "maxDuration": 35
     }
   },
-  "rewrites": [
-    { "source": "/", "destination": "/netfree-test.html" }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
