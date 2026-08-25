@@ -1,0 +1,29 @@
+/* Noto Serif Hebrew - self-hosted */
+@font-face {
+  font-family: 'Noto Serif Hebrew';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/k3k0o9MMPvpLmixYH7euCwmkS9DohjX1-kRyiqyBqIxnoLbp93i9IKrXKF_qVFISAG8.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Noto Serif Hebrew';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/k3k0o9MMPvpLmixYH7euCwmkS9DohjX1-kRyiqyBqIxnoLbp93i9IKrXKF_qVAwSAG8.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Noto Serif Hebrew';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/k3k0o9MMPvpLmixYH7euCwmkS9DohjX1-kRyiqyBqIxnoLbp93i9IKrXKF_qVNIVAG8.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Noto Serif Hebrew';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/k3k0o9MMPvpLmixYH7euCwmkS9DohjX1-kRyiqyBqIxnoLbp93i9IKrXKF_qVOsVAG8.ttf') format('truetype');
+}
