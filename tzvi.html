@@ -232,90 +232,35 @@
       setProgress(0);
 
       try {
-        // Step 1: fetch API key from server
+        // Step 1: send request to server (server calls OpenRouter + sends email)
         setStep(1, 'active');
-        const keyRes = await fetch('/api/masav-config?_tzvi=1');
-        const keyData = await keyRes.json();
-        if (!keyRes.ok || !keyData.key) throw new Error('לא ניתן לאחזר מפתח API');
-        setStep(1, 'done');
-        setProgress(10);
-
-        // Step 2: call OpenRouter directly from browser (no timeout)
+        setProgress(5);
         setStep(2, 'active');
         startFakeProgress();
 
-        const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const serverRes = await fetch('/api/masav-config', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${keyData.key}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://www.chavruta-letalmudtorah.uk',
-            'X-Title': 'Image Generator',
-          },
-          body: JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            modalities: ['image', 'text'],
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _action: 'generate-image', prompt, model, email }),
         });
 
         stopFakeProgress();
 
-        const rawText = await orRes.text();
-        let data;
-        try { data = JSON.parse(rawText); } catch {
-          throw new Error(`OpenRouter החזיר תגובה לא תקינה (${orRes.status}):\n${rawText.slice(0, 300)}`);
+        const data = await serverRes.json();
+        if (!serverRes.ok) {
+          throw new Error(data?.error || `שגיאת שרת (${serverRes.status})`);
+        }
+        if (!data?.imageUrl) {
+          throw new Error(data?.error || 'לא הוחזרה תמונה מהשרת');
         }
 
-        if (!orRes.ok) {
-          const msg = data?.error?.message || data?.error || JSON.stringify(data);
-          throw new Error(`OpenRouter (${orRes.status}): ${msg}`);
-        }
-
-        // Extract image URL from response — try all known formats
-        const msg = data?.choices?.[0]?.message;
-        const content = msg?.content;
-        let imageUrl = null;
-
-        // Format 1: message.images[] (OpenAI gpt-5.4-image-2)
-        if (!imageUrl && Array.isArray(msg?.images)) {
-          const img = msg.images[0];
-          imageUrl = img?.image_url?.url || null;
-        }
-
-        // Format 2: message.content is array of parts
-        if (!imageUrl && Array.isArray(content)) {
-          const imgPart = content.find(p => p.type === 'image_url');
-          imageUrl = imgPart?.image_url?.url || null;
-        }
-
-        // Format 3: message.content is a data: or http string
-        if (!imageUrl && typeof content === 'string' && (content.startsWith('data:') || content.startsWith('http'))) {
-          imageUrl = content;
-        }
-
-        // Format 4: data[] (images/generations style)
-        if (!imageUrl && data?.data?.[0]) {
-          const d = data.data[0];
-          imageUrl = d.url || (d.b64_json ? `data:image/png;base64,${d.b64_json}` : null);
-        }
-
-        if (!imageUrl) {
-          throw new Error(`לא הוחזרה תמונה. תגובה מלאה:\n${JSON.stringify(data)?.slice(0, 600)}`);
-        }
-
+        setStep(1, 'done');
         setStep(2, 'done');
         setProgress(92);
 
-        // Step 3: send email via server
+        // Step 3: email already sent by server
         setStep(3, 'active');
-        const mailRes = await fetch('/api/masav-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ _action: 'send-image-email', imageUrl, email, prompt, model }),
-        });
-        if (!mailRes.ok) throw new Error('שליחת המייל נכשלה');
-
+        await new Promise(r => setTimeout(r, 400));
         setStep(3, 'done');
         setProgress(100);
         await new Promise(r => setTimeout(r, 400));

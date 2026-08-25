@@ -139,15 +139,32 @@ async function handleImageGeneration(req, res) {
       return res.status(502).json({ error: `OpenRouter (${orRes.status}): ${errMsg}` });
     }
 
-    // Extract image — handle array or string content
-    const content = data?.choices?.[0]?.message?.content;
+    // Extract image — handle all known response formats
+    const msg = data?.choices?.[0]?.message;
+    const content = msg?.content;
     let imageUrl = null;
 
-    if (Array.isArray(content)) {
+    // Format 1: message.images[] (OpenAI gpt-5.4-image-2)
+    if (!imageUrl && Array.isArray(msg?.images)) {
+      const img = msg.images[0];
+      imageUrl = img?.image_url?.url || null;
+    }
+
+    // Format 2: message.content is array of parts
+    if (!imageUrl && Array.isArray(content)) {
       const imgPart = content.find(p => p.type === 'image_url');
       imageUrl = imgPart?.image_url?.url || null;
-    } else if (typeof content === 'string' && content.startsWith('data:')) {
+    }
+
+    // Format 3: message.content is a data: or http string
+    if (!imageUrl && typeof content === 'string' && (content.startsWith('data:') || content.startsWith('http'))) {
       imageUrl = content;
+    }
+
+    // Format 4: data[] (images/generations style)
+    if (!imageUrl && data?.data?.[0]) {
+      const d = data.data[0];
+      imageUrl = d.url || (d.b64_json ? `data:image/png;base64,${d.b64_json}` : null);
     }
 
     if (!imageUrl) {
@@ -169,13 +186,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
 
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
-
-  // Return API key to hidden page so browser can call OpenRouter directly
-  if (req.method === 'GET' && req.query._tzvi === '1') {
-    const key = process.env.OPENROUTER_API_KEY;
-    if (!key) return res.status(500).json({ error: 'no key' });
-    return res.json({ key });
-  }
 
   // Send image email (browser already generated the image, just send email)
   if (req.method === 'POST' && req.body?._action === 'send-image-email') {
