@@ -1683,8 +1683,8 @@ function renderAI(data) {
   }
 
   if (data.explanation) {
-    html += `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-sm text-blue-800 leading-relaxed">
-               <strong>${t('explanationLabel')}</strong> ${esc(data.explanation)}
+    html += `<div style="background:#F1EEE6;border:1px solid #DCD6C8;border-radius:12px;padding:12px;margin-bottom:12px;font-size:0.875rem;color:#262220;line-height:1.6;">
+               <strong style="color:#C1694F;">${t('explanationLabel')}</strong> ${esc(data.explanation)}
              </div>`;
   }
 
@@ -1697,7 +1697,7 @@ function renderAI(data) {
 
   if (!data.is_finished && data.next_question) {
     html += `<div class="text-base font-medium leading-relaxed">
-               <span class="text-navy">❓</span> ${esc(data.next_question)}
+               ${esc(data.next_question)}
              </div>`;
   }
 
