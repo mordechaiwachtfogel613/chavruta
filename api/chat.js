@@ -10,7 +10,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4';
 
 // ── Default system prompt intros per collection ──────────────────
-const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
+const RABBI_PERSONA = `אתה החברותא — לומד חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
 
 const DEFAULT_PROMPT_IYUN = RABBI_PERSONA + `אתה לומד בעיון עמוק פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.
 צטט את המפרשים בשמם, הצג מחלוקות ביניהם, וחבר בין דבריהם לפשט הפסוק. שאל שאלות מעמיקות שמעוררות מחשבה.`;

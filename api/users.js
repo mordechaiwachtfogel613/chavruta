@@ -24,7 +24,7 @@ async function sendEmail(to, subject, html) {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `רבי בניהו – חברותא <${FROM}>`, to: [to], subject, html })
+      body: JSON.stringify({ from: `החברותא – חברותא <${FROM}>`, to: [to], subject, html })
     });
   } catch { /* silent */ }
 }
@@ -52,7 +52,7 @@ const DEFAULTS = {
     subject: 'אושרת לחברותא! 🎉',
     html: (name) => wrap(`<h2 style="color:#1a2744;">בשורות טובות, ${escHtml(name)}! 🎉</h2>
       <p style="color:#444;line-height:1.7;">הרשמתך לאפליקציית <strong>חברותא</strong> <strong style="color:green;">אושרה!</strong></p>
-      <p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם רבי בניהו.</p>
+      <p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם החברותא.</p>
       <a href="https://chavruta-iota.vercel.app" style="display:inline-block;background:#1a2744;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:bold;margin-top:20px;">התחל ללמוד ✦</a>
       <p style="color:#B8860B;font-weight:bold;margin-top:28px;">יחד נעמיק בתורה הקדושה 📖</p>`),
   },

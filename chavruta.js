@@ -18,13 +18,13 @@ let CHAVRUTA_THINKING_MSGS = null;
 })();
 
 const DEFAULT_CHAVRUTA_THINKING_MSGS = [
-  'רבי בניהו בוחן את שתי התשובות...',
-  'רבי בניהו מדייק בניסוחים...',
-  'רבי בניהו מחלק בין המשיבים...',
-  'רבי בניהו שוקל את הטיעונים...',
-  'רבי בניהו מסתכל בשני הכיוונים...',
-  'רבי בניהו מתעמק בסוגיא...',
-  'רבי בניהו מחפש את הראיה המכרעת...',
+  'החברותא בוחן את שתי התשובות...',
+  'החברותא מדייק בניסוחים...',
+  'החברותא מחלק בין המשיבים...',
+  'החברותא שוקל את הטיעונים...',
+  'החברותא מסתכל בשני הכיוונים...',
+  'החברותא מתעמק בסוגיא...',
+  'החברותא מחפש את הראיה המכרעת...',
 ];
 
 // ── Collections data ─────────────────────────────────────────────
@@ -681,7 +681,7 @@ function renderVerdict(msg, room) {
   const el = document.createElement('div');
   el.className = 'chavruta-verdict-bubble';
   el.innerHTML = `
-    <img src="rabbi.png" alt="רבי בניהו">
+    <img src="rabbi.png" alt="החברותא">
     <div class="chavruta-verdict-content">
       <div class="chavruta-verdict-winner">${winnerText}</div>
       <div class="chavruta-verdict-players">
@@ -709,7 +709,7 @@ function showChavrutaThinking() {
   const el = document.createElement('div');
   el.className = 'chavruta-thinking-bubble';
   el.innerHTML = `
-    <img src="rabbi.png" alt="רבי בניהו">
+    <img src="rabbi.png" alt="החברותא">
     <div class="chavruta-thinking-content">
       <div class="chavruta-thinking-text" id="chavruta-thinking-msg">${esc(msgs[0])}</div>
       <div class="chavruta-thinking-bar-wrap">

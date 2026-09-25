@@ -3,7 +3,7 @@
 // ================================================================
 
 // ── Default prompts (must be before all functions that reference them) ──
-const RABBI_PERSONA = `אתה רבי בניהו — רב חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
+const RABBI_PERSONA = `אתה החברותא — לומד חכם, סבלני ואוהב תורה, שלומד יחד עם התלמיד בשמחה. דבר בחמימות ובעידוד, כאילו אתה יושב לימוד עם תלמיד יקר. `;
 const DEFAULT_ADMIN_PROMPTS = {
   tanach:   RABBI_PERSONA + `תלמד תנ"ך פסוק אחר פסוק, ותשאל שאלות על פשט, הקשר ספרותי, ומשמעות רוחנית.`,
   mishnah:  RABBI_PERSONA + `תלמד משנה אחת בכל פעם, ותשאל שאלות על הדין, מחלוקת התנאים, טעם ההלכה ויישומה.`,
@@ -14,7 +14,7 @@ const DEFAULT_ADMIN_PROMPTS = {
 const DEFAULT_IYUN_PROMPT   = RABBI_PERSONA + `אתה לומד בעיון עמוק פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nצטט את המפרשים בשמם, הצג מחלוקות ביניהם, וחבר בין דבריהם לפשט הפסוק. שאל שאלות מעמיקות שמעוררות מחשבה.`;
 const DEFAULT_BEKIUT_PROMPT = RABBI_PERSONA + `אתה לומד בבקיאות פסוק אחד עם התלמיד. הפסוק ופירושי המפרשים שנבחרו מסופקים לך.\nהצג את עיקר הפסוק ועיקר דברי כל מפרש בקצרה. שאל שאלות קצרות שבודקות הבנה בסיסית של הפסוק ודברי המפרשים.`;
 const DEFAULT_FRIEND_ENVELOPE =
-`אתה רבי בניהו לומד **בחברותא עם שני תלמידים**: {HOST} ו-{GUEST}.
+`אתה החברותא, לומד **בחברותא עם שני תלמידים**: {HOST} ו-{GUEST}.
 
 שניהם ענו על אותה שאלה. תפקידך:
 1. תן פידבק חם ומכבד **לכל תלמיד בנפרד** — אל תשווה ביניהם בתוך הפידבק עצמו.
@@ -35,7 +35,7 @@ const DEFAULT_FRIEND_COLLECTION_PROMPTS = {
   shulchan: `שאל שאלות על ההלכה, מחלוקות הפוסקים, ומנהג.`,
 };
 
-const DEFAULT_GREETING = `שלום! כאן רבי בניהו 👋
+const DEFAULT_GREETING = `שלום! כאן החברותא 👋
 יחד נעמיק בתורה הקדושה.
 בחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.
 מה תרצה ללמוד היום? 📖`;
@@ -104,15 +104,15 @@ const TRANSLATIONS = {
     historyBtn: '📚 הלמידה שלי',
     logoutBtn: 'יציאה',
     langToggle: '🌐 EN',
-    rabbiName: 'רבי בניהו',
-    landingTitle: 'שלום, כאן רבי בניהו',
+    rabbiName: 'החברותא',
+    landingTitle: 'שלום, כאן החברותא',
     landingSub: 'חברותא – חברותא דיגיטלית ללימוד תורה',
     landingAccurate: 'שתמיד נשאר מדויק',
     landingHook: 'מתקשה להתרכז לאורך זמן?',
     landingHookSub: 'החברותא החדש שלך יגרום לך להתמכר ללימוד תורה',
-    landingBtn: 'אני מעוניין ללמוד עם רבי בניהו ✦',
+    landingBtn: 'אני מעוניין ללמוד עם החברותא ✦',
     registerTitle: 'ברוכים הבאים לחברותא',
-    registerSub: 'הצטרפו ותלמדו עם רבי בניהו 📖',
+    registerSub: 'הצטרפו ותלמדו עם החברותא 📖',
     registerCollections: 'תנ"ך • משנה • גמרא • רמב"ם • שולחן ערוך',
     fullNameLabel: 'שם מלא',
     emailLabel: 'כתובת מייל',
@@ -124,13 +124,13 @@ const TRANSLATIONS = {
     errNetwork: 'שגיאת רשת, נסה שוב',
     sendingBtn: 'שולח...',
     pendingTitle: 'בקשתך התקבלה!',
-    pendingMsg: 'רבי בניהו מחכה לך — חשבונך ממתין לאישור המנהל.',
+    pendingMsg: 'החברותא מחכה לך — חשבונך ממתין לאישור המנהל.',
     pendingSubmsg: 'לאחר שהמנהל יאשר את הצטרפותך, תוכל להתחיל ללמוד.',
     logoutConfirmBtn: 'התנתק',
     greetingHello: 'שלום',
-    greetingName: 'אני רבי בניהו',
+    greetingName: 'אני החברותא שלך',
     greetingSubtitle: 'יחד נעמיק בתורה הקדושה',
-    greetingStartBtn: 'אני רוצה ללמוד עם רבי בניהו',
+    greetingStartBtn: 'אני רוצה ללמוד עם החברותא',
     chooseStudy: '📖 בחר מה ללמוד:',
     startBtn: 'התחל ✦',
     chatPlaceholder: 'כתוב את תשובתך כאן...',
@@ -178,15 +178,15 @@ const TRANSLATIONS = {
     finMsg: (book, unit) => `סיימת את ${book} ${unit}!`,
     finScore: (session, total) => `צברת ${session} נקודות (סה"כ: ${total})`,
     thinkingMsgs: [
-      'רבי בניהו הולך לאוצר הספרים',
-      'רבי בניהו מצא את הספר במדף גבוה',
-      'רבי בניהו מעלעל בדפי הספר',
-      'רבי בניהו חוכך בדעתו',
-      'רבי בניהו לוגם מהקפה שלו (אחרי שהתקרר)',
-      'רבי בניהו נזכר בסברא מיוחדת',
-      'רבי בניהו מתעמק בסוגיא',
+      'החברותא הולך לאוצר הספרים',
+      'החברותא מצא את הספר במדף גבוה',
+      'החברותא מעלעל בדפי הספר',
+      'החברותא חוכך בדעתו',
+      'החברותא לוגם מהקפה שלו (אחרי שהתקרר)',
+      'החברותא נזכר בסברא מיוחדת',
+      'החברותא מתעמק בסוגיא',
     ],
-    defaultGreeting: `שלום! כאן רבי בניהו 👋\nיחד נעמיק בתורה הקדושה.\nבחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.\nמה תרצה ללמוד היום? 📖`,
+    defaultGreeting: `שלום! כאן החברותא 👋\nיחד נעמיק בתורה הקדושה.\nבחר אוסף, ספר ויחידה — ואני אתחיל ללמוד איתך חברותא.\nמה תרצה ללמוד היום? 📖`,
   },
   en: {
     appName: 'Chavruta',
@@ -291,6 +291,31 @@ function toggleLang() {
   currentLang = currentLang === 'he' ? 'en' : 'he';
   localStorage.setItem('chavruta_lang', currentLang);
   applyLang();
+}
+
+// ── Header "⋯" menu ─────────────────────────────────────────────
+function toggleHeaderMenu() {
+  document.getElementById('header-menu').classList.toggle('hidden');
+}
+function closeHeaderMenu() {
+  document.getElementById('header-menu').classList.add('hidden');
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('header-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeHeaderMenu();
+});
+
+// ── Sidebar (rail) ──────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('expanded');
+}
+
+// ── "Under construction" placeholder ─────────────────────────────
+function openUnderConstruction() {
+  document.getElementById('modal-construction').classList.remove('hidden');
+}
+function closeUnderConstruction() {
+  document.getElementById('modal-construction').classList.add('hidden');
 }
 
 function applyLang() {
@@ -724,7 +749,7 @@ function logout() {
   document.getElementById('landing-page').classList.remove('hidden');
   document.getElementById('user-greeting').classList.add('hidden');
   document.getElementById('logout-btn').classList.add('hidden');
-  document.getElementById('history-btn').classList.add('hidden');
+  document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('admin-btn').classList.add('hidden');
   document.getElementById('analytics-btn').classList.add('hidden');
 }
@@ -748,7 +773,8 @@ function updateUserUI() {
     greet.textContent = t('userGreeting')(user.name);
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
-    document.getElementById('history-btn').classList.remove('hidden');
+    document.getElementById('sidebar').classList.remove('hidden');
+    loadHistory();
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
       document.getElementById('analytics-btn').classList.remove('hidden');
@@ -805,13 +831,13 @@ function showAdminEditor() {
     (GLOBAL_THINKING_MSGS || t('thinkingMsgs')).join('\n');
   document.getElementById('admin-chavruta-thinking-msgs').value =
     (GLOBAL_CHAVRUTA_THINKING_MSGS || [
-      'רבי בניהו בוחן את שתי התשובות...',
-      'רבי בניהו מדייק בניסוחים...',
-      'רבי בניהו מחלק בין המשיבים...',
-      'רבי בניהו שוקל את הטיעונים...',
-      'רבי בניהו מסתכל בשני הכיוונים...',
-      'רבי בניהו מתעמק בסוגיא...',
-      'רבי בניהו מחפש את הראיה המכרעת...',
+      'החברותא בוחן את שתי התשובות...',
+      'החברותא מדייק בניסוחים...',
+      'החברותא מחלק בין המשיבים...',
+      'החברותא שוקל את הטיעונים...',
+      'החברותא מסתכל בשני הכיוונים...',
+      'החברותא מתעמק בסוגיא...',
+      'החברותא מחפש את הראיה המכרעת...',
     ]).join('\n');
 
   const keys = ['tanach', 'mishnah', 'shas', 'rambam', 'shulchan'];
@@ -975,8 +1001,8 @@ async function loadAnalytics() {
 
 function _applyVerseModeEnabled(enabled) {
   const DISABLED_STYLE = 'flex:1;background:#9CA3AF;color:#e5e7eb;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:inherit;opacity:0.6;';
-  const IYUN_STYLE     = 'flex:1;background:#1B3A6B;color:#F0C040;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
-  const BEKIUT_STYLE   = 'flex:1;background:#B8860B;color:#fff;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
+  const IYUN_STYLE     = 'flex:1;background:#262220;color:#D98362;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
+  const BEKIUT_STYLE   = 'flex:1;background:#C1694F;color:#fff;border:none;border-radius:10px;padding:6px 8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;';
 
   const iyunBtn   = document.getElementById('panel-btn-iyun');
   const bekiutBtn = document.getElementById('panel-btn-bekiut');
@@ -1193,7 +1219,7 @@ async function startLearningFromPanel(mode) {
     : `פסוק ${toHebrew(verseIdx + 1)}`;
   const header = document.createElement('div');
   header.className = 'text-center text-sm text-gray-400 mb-4 pb-2 border-b border-parchmentDark';
-  header.innerHTML = `<span class="font-semibold" style="color:#B8860B;">${esc(S.book.he)}</span> · <span class="font-semibold text-navy">${esc(unitLabel)}</span> · ${esc(verseLabel)} · <span style="color:#B8860B;">${modeLabel}</span>`;
+  header.innerHTML = `<span class="font-semibold" style="color:#C1694F;">${esc(S.book.he)}</span> · <span class="font-semibold text-navy">${esc(unitLabel)}</span> · ${esc(verseLabel)} · <span style="color:#C1694F;">${modeLabel}</span>`;
   chatEl.appendChild(header);
 
   // Trigger first AI call
@@ -1459,7 +1485,7 @@ async function startLearning() {
     const unitLabel = buildUnitLabel();
     const sessionHeader = document.createElement('div');
     sessionHeader.className = 'text-center text-sm text-gray-400 mb-4 pb-2 border-b border-parchmentDark';
-    sessionHeader.innerHTML = `<span class="font-semibold" style="color:#B8860B;">${col.label}</span> | <span class="font-semibold text-navy">${S.book.he}</span> | ${unitLabel}`;
+    sessionHeader.innerHTML = `<span class="font-semibold" style="color:#C1694F;">${col.label}</span> | <span class="font-semibold text-navy">${S.book.he}</span> | ${unitLabel}`;
     chatEl.appendChild(sessionHeader);
 
     S.sessionStarted = true;
@@ -1640,8 +1666,8 @@ function renderAI(data) {
   outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;';
   outer.innerHTML = `
     <div style="flex-shrink:0;text-align:center;">
-      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;display:block;">
-      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;white-space:nowrap;">${t('rabbiName')}</div>
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #C1694F;display:block;">
+      <div style="font-size:0.6rem;color:#C1694F;font-weight:700;margin-top:2px;white-space:nowrap;">${t('rabbiName')}</div>
     </div>
     <div class="rabbi-bubble-inner" style="flex:1;min-width:0;"></div>`;
   box.appendChild(outer);
@@ -1663,11 +1689,9 @@ function renderAI(data) {
   }
 
   if (!data.is_finished && data.next_verse) {
+    const numPrefix = S.collectionKey !== 'shas' ? `<span class="text-gold">${toHebrew(data.next_verse_num)}.</span> ` : '';
     html += `<div class="verse-box p-4 mb-3">
-               <div class="flex items-start gap-3">
-                 ${S.collectionKey !== 'shas' ? `<span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(data.next_verse_num)}</span>` : ''}
-                 <p class="text-lg font-semibold leading-loose">${esc(data.next_verse)}</p>
-               </div>
+               <p class="font-torah text-lg font-bold leading-loose">${numPrefix}${esc(data.next_verse)}</p>
              </div>`;
   }
 
@@ -1712,13 +1736,13 @@ function showTyping() {
 
   d.innerHTML = `
     <div style="flex-shrink:0;text-align:center;">
-      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;">רבי בניהו</div>
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #C1694F;">
+      <div style="font-size:0.6rem;color:#C1694F;font-weight:700;margin-top:2px;">החברותא</div>
     </div>
     <div class="bubble-ai rounded-2xl px-4 py-3" style="flex:1;">
-      <div id="${id}-msg" style="font-size:0.97rem;font-weight:700;color:#1B3A6B;margin-bottom:10px;">${msgs[0]}</div>
-      <div style="background:#e8e0d0;border-radius:99px;height:6px;overflow:hidden;">
-        <div id="${id}-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#B8860B,#F0C040);border-radius:99px;transition:width 0.4s ease;"></div>
+      <div id="${id}-msg" style="font-size:0.97rem;font-weight:700;color:#262220;margin-bottom:10px;">${msgs[0]}</div>
+      <div style="background:#DCD6C8;border-radius:99px;height:6px;overflow:hidden;">
+        <div id="${id}-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#C1694F,#D98362);border-radius:99px;transition:width 0.4s ease;"></div>
       </div>
     </div>`;
 
@@ -1874,8 +1898,8 @@ function buildGreetingHtml(text) {
   const lines = (text || t('defaultGreeting')).split('\n').filter(l => l.trim());
   return lines.map((line, i) => {
     const e = esc(line);
-    if (i === 0)               return `<div style="font-weight:800;font-size:1.05rem;color:#1B3A6B;">${e}</div>`;
-    if (i === lines.length - 1) return `<div style="margin-top:8px;color:#B8860B;font-weight:700;">${e}</div>`;
+    if (i === 0)               return `<div style="font-weight:800;font-size:1.05rem;color:#262220;">${e}</div>`;
+    if (i === lines.length - 1) return `<div style="margin-top:8px;color:#C1694F;font-weight:700;">${e}</div>`;
     return `<div>${e}</div>`;
   }).join('');
 }
@@ -1890,13 +1914,13 @@ function resetThinkingMsgs() {
 
 function resetChavrutaThinkingMsgs() {
   document.getElementById('admin-chavruta-thinking-msgs').value = [
-    'רבי בניהו בוחן את שתי התשובות...',
-    'רבי בניהו מדייק בניסוחים...',
-    'רבי בניהו מחלק בין המשיבים...',
-    'רבי בניהו שוקל את הטיעונים...',
-    'רבי בניהו מסתכל בשני הכיוונים...',
-    'רבי בניהו מתעמק בסוגיא...',
-    'רבי בניהו מחפש את הראיה המכרעת...',
+    'החברותא בוחן את שתי התשובות...',
+    'החברותא מדייק בניסוחים...',
+    'החברותא מחלק בין המשיבים...',
+    'החברותא שוקל את הטיעונים...',
+    'החברותא מסתכל בשני הכיוונים...',
+    'החברותא מתעמק בסוגיא...',
+    'החברותא מחפש את הראיה המכרעת...',
   ].join('\n');
 }
 
@@ -1921,19 +1945,19 @@ async function generateShareCard() {
 
   const cfg = SHARE_CARD_CONFIG;
   const dark = cfg.theme !== 'light';
-  const GOLD   = '#F0C040';
-  const GOLDDARK = '#B8860B';
-  const textMain = dark ? '#FDF8EF' : '#1B3A6B';
+  const GOLD   = '#D98362';
+  const GOLDDARK = '#C1694F';
+  const textMain = dark ? '#FAF9F5' : '#262220';
 
   // ── Background ──
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   if (dark) {
-    bg.addColorStop(0,   '#0A1628');
-    bg.addColorStop(0.5, '#1B3A6B');
-    bg.addColorStop(1,   '#0A1628');
+    bg.addColorStop(0,   '#1A1714');
+    bg.addColorStop(0.5, '#262220');
+    bg.addColorStop(1,   '#1A1714');
   } else {
-    bg.addColorStop(0, '#FDF8EF');
-    bg.addColorStop(1, '#F0E6C8');
+    bg.addColorStop(0, '#FAF9F5');
+    bg.addColorStop(1, '#F1EEE6');
   }
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
@@ -2146,15 +2170,6 @@ async function saveSessionToHistory(record) {
   } catch { /* silent */ }
 }
 
-function openHistory() {
-  document.getElementById('modal-history').classList.remove('hidden');
-  loadHistory();
-}
-
-function closeHistory() {
-  document.getElementById('modal-history').classList.add('hidden');
-}
-
 async function loadHistory() {
   const user = getUser();
   if (!user) return;
@@ -2172,18 +2187,8 @@ async function loadHistory() {
           <p class="text-gray-500 font-medium">${t('historyEmpty')}</p>
           <p class="text-gray-400 text-sm mt-1">${t('historyEmptySub')}</p>
         </div>`;
-      document.getElementById('stat-units').textContent = '0';
-      document.getElementById('stat-score').textContent = '0';
-      document.getElementById('stat-books').textContent = '0';
       return;
     }
-
-    // Stats
-    const totalScore = history.reduce((s, r) => s + (r.score || 0), 0);
-    const uniqueBooks = new Set(history.map(r => r.book)).size;
-    document.getElementById('stat-units').textContent = history.length;
-    document.getElementById('stat-score').textContent = totalScore.toLocaleString();
-    document.getElementById('stat-books').textContent = uniqueBooks;
 
     // Group by date
     const groups = {};
@@ -2207,24 +2212,24 @@ async function loadHistory() {
       const total   = b.total;
       const pct     = total ? Math.round((studied / total) * 100) : 0;
       return `
-        <div style="background:white;border-radius:12px;padding:12px 14px;border:1px solid #e8e0d0;margin-bottom:8px;">
+        <div style="background:white;border-radius:12px;padding:12px 14px;border:1px solid #DCD6C8;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
             <span style="font-size:1.3rem;">${b.icon}</span>
             <div style="flex:1">
-              <div style="font-weight:700;color:#1a2744;font-size:0.9rem;">${esc(b.book)}</div>
+              <div style="font-weight:700;color:#262220;font-size:0.9rem;">${esc(b.book)}</div>
               <div style="color:#9CA3AF;font-size:0.72rem;">${esc(b.collectionLabel)}</div>
             </div>
-            <div style="font-weight:700;color:#B8860B;font-size:0.85rem;">${studied}${total ? `/${total}` : ''}</div>
+            <div style="font-weight:700;color:#C1694F;font-size:0.85rem;">${studied}${total ? `/${total}` : ''}</div>
           </div>
           ${total ? `
-            <div style="background:#f0e6c8;border-radius:99px;height:6px;overflow:hidden;">
-              <div style="background:linear-gradient(90deg,#B8860B,#F0C040);height:100%;width:${pct}%;border-radius:99px;transition:width 0.6s;"></div>
+            <div style="background:#F1EEE6;border-radius:99px;height:6px;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,#C1694F,#D98362);height:100%;width:${pct}%;border-radius:99px;transition:width 0.6s;"></div>
             </div>` : ''}
         </div>`;
     }).join('');
 
     list.innerHTML = `
-      <div class="mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">${t('recentChats')}</div>
+      <div class="mb-2" style="font-weight:700;color:#262220;font-size:0.85rem;">${t('recentChats')}</div>
       ${Object.entries(groups).map(([date, records]) => `
         <div class="mb-5">
           <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
@@ -2234,15 +2239,15 @@ async function loadHistory() {
           </div>
           <div class="space-y-2">
             ${records.map(r => `
-              <div style="background:white;border-radius:14px;padding:12px 14px;border:1px solid #e8e0d0;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+              <div style="background:white;border-radius:14px;padding:12px 14px;border:1px solid #DCD6C8;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
                 <div style="font-size:1.6rem;flex-shrink:0;">${COLLECTION_ICONS[r.collection] || '📖'}</div>
                 <div style="flex:1;min-width:0;">
-                  <div style="font-weight:700;color:#1a2744;font-size:0.9rem;">${esc(r.book)}</div>
+                  <div style="font-weight:700;color:#262220;font-size:0.9rem;">${esc(r.book)}</div>
                   <div style="color:#6B7280;font-size:0.78rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
                   ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:1px;">${r.exchanges} ${t('exchanges')}</div>` : ''}
                 </div>
                 <div style="text-align:center;flex-shrink:0;">
-                  <div style="color:#B8860B;font-weight:800;font-size:1rem;">★ ${r.score}</div>
+                  <div style="color:#C1694F;font-weight:800;font-size:1rem;">★ ${r.score}</div>
                   <div style="color:#9CA3AF;font-size:0.68rem;">${new Date(r.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
               </div>
@@ -2250,7 +2255,7 @@ async function loadHistory() {
           </div>
         </div>
       `).join('')}
-      <div class="mt-4 mb-2" style="font-weight:700;color:#1a2744;font-size:0.85rem;">${t('progressByBook')}</div>
+      <div class="mt-4 mb-2" style="font-weight:700;color:#262220;font-size:0.85rem;">${t('progressByBook')}</div>
       ${progressHTML}
     `;
 
@@ -2363,9 +2368,9 @@ function showGreeting() {
     const welcomeDiv = document.createElement('div');
     welcomeDiv.id = 'welcome';
     welcomeDiv.innerHTML = `
-      <img src="rabbi.png" alt="רבי בניהו" class="rabbi-avatar-lg anim-line anim-1">
-      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#1B3A6B;margin:0;" data-i18n="greetingHello">${t('greetingHello')}</p>
-      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#B8860B;margin:0;" data-i18n="greetingName">${t('greetingName')}</p>
+      <img src="rabbi.png" alt="החברותא" class="rabbi-avatar-lg anim-line anim-1">
+      <p class="anim-line anim-2" style="font-size:2rem;font-weight:800;color:#262220;margin:0;" data-i18n="greetingHello">${t('greetingHello')}</p>
+      <p class="anim-line anim-3" style="font-size:1.25rem;font-weight:700;color:#C1694F;margin:0;" data-i18n="greetingName">${t('greetingName')}</p>
       <p class="anim-line anim-sub" style="font-size:1rem;color:#6B7280;margin:0;" data-i18n="greetingSubtitle">${t('greetingSubtitle')}</p>
     `;
     chatEl.appendChild(welcomeDiv);
@@ -2383,7 +2388,7 @@ function showGreeting() {
     const startBtn = document.createElement('button');
     startBtn.className = 'start-learning-btn';
     startBtn.textContent = t('greetingStartBtn');
-    startBtn.style.cssText = 'display:block;margin:28px auto 0;background:#1B3A6B;color:#F0C040;border:none;border-radius:14px;padding:14px 32px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
+    startBtn.style.cssText = 'display:block;margin:28px auto 0;background:#262220;color:#D98362;border:none;border-radius:14px;padding:14px 32px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:all .2s;';
     startBtn.onmouseenter = () => { startBtn.style.transform='translateY(-2px)'; startBtn.style.boxShadow='0 8px 24px rgba(27,58,107,0.35)'; };
     startBtn.onmouseleave = () => { startBtn.style.transform=''; startBtn.style.boxShadow=''; };
     startBtn.onclick = () => {
@@ -2395,8 +2400,8 @@ function showGreeting() {
       bubble.style.cssText = 'flex:1;line-height:1.9;font-size:1rem;';
       outer.innerHTML = `
         <div style="flex-shrink:0;text-align:center;">
-          <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-          <div style="font-size:0.62rem;color:#B8860B;font-weight:700;margin-top:3px;">${t('rabbiName')}</div>
+          <img src="rabbi.png" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #C1694F;">
+          <div style="font-size:0.62rem;color:#C1694F;font-weight:700;margin-top:3px;">${t('rabbiName')}</div>
         </div>`;
       outer.appendChild(bubble);
       chatEl.appendChild(outer);
@@ -2419,8 +2424,8 @@ function showGreeting() {
         const isFirst = lineIdx === 0;
         const isLast  = lineIdx === totalLines - 1;
         const el = document.createElement('div');
-        if (isFirst) el.style.cssText = 'font-weight:800;font-size:1.05rem;color:#1B3A6B;';
-        if (isLast)  el.style.cssText = 'margin-top:8px;color:#B8860B;font-weight:700;';
+        if (isFirst) el.style.cssText = 'font-weight:800;font-size:1.05rem;color:#262220;';
+        if (isLast)  el.style.cssText = 'margin-top:8px;color:#C1694F;font-weight:700;';
         bubble.appendChild(el);
 
         const words = line.split(' ');
@@ -2505,8 +2510,8 @@ function rabbiSayBubble(html) {
   outer.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;';
   outer.innerHTML = `
     <div style="flex-shrink:0;text-align:center;">
-      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #B8860B;">
-      <div style="font-size:0.6rem;color:#B8860B;font-weight:700;margin-top:2px;">רבי בניהו</div>
+      <img src="rabbi.png" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #C1694F;">
+      <div style="font-size:0.6rem;color:#C1694F;font-weight:700;margin-top:2px;">החברותא</div>
     </div>
     <div class="bubble-ai rounded-2xl p-4" style="flex:1;line-height:1.75;">${html}</div>`;
   box.appendChild(outer);
@@ -2542,8 +2547,8 @@ const DEFAULT_EMAIL_SUBJECTS = {
   admin_notify: 'משתמש חדש נרשם – חברותא',
 };
 const DEFAULT_EMAIL_BODIES = {
-  welcome:      `<h2 style="color:#1a2744;">שלום {{name}}! 👋</h2>\n<p style="color:#444;line-height:1.7;">קיבלנו את בקשת ההרשמה שלך לאפליקציית <strong>חברותא</strong>.</p>\n<p style="color:#444;line-height:1.7;">בקשתך בבדיקה ותקבל מייל נוסף ברגע שתאושר.</p>\n<p style="color:#B8860B;font-weight:bold;margin-top:24px;">יחד נעמיק בתורה הקדושה 📖</p>`,
-  approval:     `<h2 style="color:#1a2744;">בשורות טובות, {{name}}! 🎉</h2>\n<p style="color:#444;line-height:1.7;">הרשמתך לאפליקציית <strong>חברותא</strong> <strong style="color:green;">אושרה!</strong></p>\n<p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם רבי בניהו.</p>\n<p style="color:#B8860B;font-weight:bold;margin-top:28px;">יחד נעמיק בתורה הקדושה 📖</p>`,
+  welcome:      `<h2 style="color:#1a2744;">שלום {{name}}! 👋</h2>\n<p style="color:#444;line-height:1.7;">קיבלנו את בקשת ההרשמה שלך לאפליקציית <strong>חברותא</strong>.</p>\n<p style="color:#444;line-height:1.7;">בקשתך בבדיקה ותקבל מייל נוסף ברגע שתאושר.</p>\n<p style="color:#C1694F;font-weight:bold;margin-top:24px;">יחד נעמיק בתורה הקדושה 📖</p>`,
+  approval:     `<h2 style="color:#1a2744;">בשורות טובות, {{name}}! 🎉</h2>\n<p style="color:#444;line-height:1.7;">הרשמתך לאפליקציית <strong>חברותא</strong> <strong style="color:green;">אושרה!</strong></p>\n<p style="color:#444;line-height:1.7;">כעת תוכל להיכנס ולהתחיל ללמוד עם החברותא.</p>\n<p style="color:#C1694F;font-weight:bold;margin-top:28px;">יחד נעמיק בתורה הקדושה 📖</p>`,
   admin_notify: `<h2 style="color:#1a2744;">משתמש חדש נרשם</h2>\n<p style="color:#444;"><strong>שם:</strong> {{name}}</p>\n<p style="color:#444;"><strong>מייל:</strong> {{email}}</p>\n<p style="color:#888;font-size:0.9rem;">כנס לפאנל הניהול כדי לאשר או לדחות.</p>`,
 };
 
