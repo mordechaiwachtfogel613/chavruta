@@ -307,16 +307,28 @@ document.addEventListener('click', (e) => {
 
 // ── Sidebar (rail) ──────────────────────────────────────────────
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('expanded');
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+  sb.classList.toggle('collapsed');
+  localStorage.setItem('chavruta_sidebar_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
 }
 
-// ── "Under construction" placeholder ─────────────────────────────
-function openUnderConstruction() {
-  document.getElementById('modal-construction').classList.remove('hidden');
+function toggleSidebarHistory() {
+  const sec = document.getElementById('sidebar-history-section');
+  const sb  = document.getElementById('sidebar');
+  if (!sec) return;
+  if (sb && sb.classList.contains('collapsed')) {
+    sb.classList.remove('collapsed');
+    localStorage.setItem('chavruta_sidebar_collapsed', '0');
+  }
+  const opening = sec.style.display === 'none' || !sec.style.display;
+  sec.style.display = opening ? 'flex' : 'none';
 }
-function closeUnderConstruction() {
-  document.getElementById('modal-construction').classList.add('hidden');
-}
+
+(function () {
+  const sb = document.getElementById('sidebar');
+  if (sb && localStorage.getItem('chavruta_sidebar_collapsed') === '1') sb.classList.add('collapsed');
+})();
 
 function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -774,6 +786,8 @@ function updateUserUI() {
     greet.classList.remove('hidden');
     document.getElementById('logout-btn').classList.remove('hidden');
     document.getElementById('sidebar').classList.remove('hidden');
+    const avatar = document.getElementById('sidebar-avatar');
+    if (avatar) avatar.textContent = (user.name || '').charAt(0) || '?';
     loadHistory();
     if (isAdmin()) {
       document.getElementById('admin-btn').classList.remove('hidden');
@@ -1689,9 +1703,12 @@ function renderAI(data) {
   }
 
   if (!data.is_finished && data.next_verse) {
-    const numPrefix = S.collectionKey !== 'shas' ? `<span class="text-gold">${toHebrew(data.next_verse_num)}.</span> ` : '';
+    const numBadge = S.collectionKey !== 'shas' ? `<span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(data.next_verse_num)}</span>` : '';
     html += `<div class="verse-box p-4 mb-3">
-               <p class="font-torah text-lg font-bold leading-loose">${numPrefix}${esc(data.next_verse)}</p>
+               <div class="flex items-start gap-3">
+                 ${numBadge}
+                 <p class="text-lg font-semibold leading-loose">${esc(data.next_verse)}</p>
+               </div>
              </div>`;
   }
 

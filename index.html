@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>חברותא – לימוד אינטראקטיבי</title>
   <link rel="icon" href="rabbi.png">
-  <link rel="stylesheet" href="/fonts/noto-serif-hebrew.css">
   <link rel="stylesheet" href="/fonts/heebo.css">
+  <link rel="stylesheet" href="/fonts/frank-ruhl-libre.css">
   <script src="/tailwind.js"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { hebrew: ['Noto Serif Hebrew', 'serif'], sans: ['Heebo', 'sans-serif'] },
+          fontFamily: { sans: ['Heebo', 'sans-serif'] },
           colors: {
             parchment:     '#FAF9F5',
             parchmentDark: '#F1EEE6',
@@ -28,7 +28,6 @@
   </script>
   <style>
     * { font-family: 'Heebo', sans-serif; }
-    .font-torah { font-family: 'Noto Serif Hebrew', serif; }
     html, body { height: 100%; margin: 0; padding: 0; }
     body { background-color: #FAF9F5; color: #262220; display: flex; flex-direction: column; }
 
@@ -38,6 +37,7 @@
       border-right: 2px solid #DCD6C8;
       border-radius: 0;
     }
+    .verse-box p { font-family: 'Frank Ruhl Libre', serif !important; font-weight: 600; }
 
     /* ── Chat bubbles ── */
     .bubble-ai   { background: transparent; border: none; }
@@ -104,86 +104,17 @@
     #main-column { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
     /* ── Sidebar (rail) ── */
-    #sidebar {
-      flex-shrink: 0;
-      width: 58px;
-      background: #FAF9F5;
-      border-left: 1px solid #E7E3D9;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: width 0.2s ease;
-    }
-    #sidebar.expanded { width: 250px; }
-    #sidebar-toggle-btn {
-      flex-shrink: 0;
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      color: #262220;
-      cursor: pointer;
-      padding: 14px;
-      text-align: center;
-    }
-    #sidebar-nav {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding: 0 6px;
-    }
-    .sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: none;
-      background: none;
-      color: #262220;
-      font-size: 0.85rem;
-      font-family: inherit;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-      overflow: hidden;
-      width: 100%;
-      text-align: right;
-    }
-    .sidebar-item:hover { background: #F1EEE6; }
-    .sidebar-item-icon { flex-shrink: 0; font-size: 1.1rem; width: 22px; text-align: center; }
-    .sidebar-item-label { opacity: 0; width: 0; overflow: hidden; transition: opacity 0.15s; }
-    #sidebar.expanded .sidebar-item-label { opacity: 1; width: auto; }
-    #sidebar-history {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px 10px 4px;
-      border-top: 1px solid #E7E3D9;
-      margin-top: 8px;
-      display: none;
-    }
-    #sidebar.expanded #sidebar-history { display: block; }
-    #sidebar-history-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      color: #262220;
-      font-size: 0.85rem;
-      margin-bottom: 10px;
-    }
-    #sidebar-history-title .sidebar-item-label,
-    #sidebar-history-title .sidebar-item-icon { opacity: 1; width: auto; }
-    #sidebar-footer {
-      flex-shrink: 0;
-      border-top: 1px solid #E7E3D9;
-      padding: 6px;
-    }
-    @media (max-width: 640px) {
-      #sidebar { position: fixed; inset: 0 0 0 auto; z-index: 40; height: 100%; box-shadow: -4px 0 20px rgba(0,0,0,0.15); }
-      #sidebar:not(.expanded) { width: 0; border-left: none; }
-      #sidebar:not(.expanded) #sidebar-toggle-btn { position: fixed; left: 8px; bottom: 8px; background: #262220; color: #fff; border-radius: 50%; width: 40px; height: 40px; padding: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-    }
+    #sidebar { flex-shrink:0; width:222px; border-right:1px solid #E7E3D9; background:#FAF9F5; display:flex; flex-direction:column; overflow:hidden; transition:width .18s ease; }
+    #sidebar.collapsed { width:58px; }
+    #sidebar.collapsed .sidebar-label { display:none !important; }
+    #sidebar.collapsed .sidebar-row { justify-content:center; }
+    #sidebar.collapsed #sidebar-history-section { display:none !important; }
+    #sidebar.collapsed #sidebar-expand-btn { display:flex !important; }
+    .sidebar-toprow { justify-content:flex-start; }
+    #sidebar.collapsed .sidebar-toprow { justify-content:center; flex-direction: column; gap: 8px; }
+    .chv-menu-item:hover { background:#F1EEE6; }
+    .chv-rail-btn:hover { background:#F1EEE6; }
+    @media (max-width: 640px) { #sidebar { display:none; } }
 
     /* ── Header ── */
     #app-header {
@@ -1317,52 +1248,52 @@
 
   <!-- ── Sidebar (rail) ── -->
   <div id="sidebar" class="hidden">
-    <button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="פתח/סגור סרגל">☰</button>
+    <div class="sidebar-toprow" style="flex-shrink:0;display:flex;align-items:center;padding:14px 14px 6px;gap:8px;">
+      <div style="width:30px;height:30px;border-radius:8px;background:#F1EEE6;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#262220;">ח</div>
+      <span class="sidebar-label" style="flex:1;font-size:13px;font-weight:600;color:#8A8378;" data-i18n="appName">חברותא</span>
+      <button onclick="toggleSidebar()" class="chv-rail-btn sidebar-label" style="width:28px;height:28px;border-radius:8px;background:none;border:none;cursor:pointer;color:#8A8378;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="כווץ">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button onclick="toggleSidebar()" id="sidebar-expand-btn" class="chv-rail-btn" style="display:none;width:28px;height:28px;border-radius:8px;background:none;border:none;cursor:pointer;color:#8A8378;align-items:center;justify-content:center;flex-shrink:0;" title="הרחב">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
 
-    <nav id="sidebar-nav">
-      <a href="/chavruta.html" id="learn-friend-btn" class="sidebar-item" title="ללמוד עם חבר">
-        <span class="sidebar-item-icon">👥</span><span class="sidebar-item-label">ללמוד עם חבר</span>
+    <div style="flex-shrink:0;padding:8px 10px 6px;display:flex;flex-direction:column;gap:1px;">
+      <a href="/chavruta.html" id="learn-friend-btn" class="chv-menu-item sidebar-row" title="ללמוד עם חבר" style="display:flex;align-items:center;gap:10px;text-decoration:none;border-radius:8px;padding:9px 10px;font-family:inherit;font-size:13.5px;color:#262220;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M10 20c0-3 2.7-5 6-5s6 2 6 5"/></svg>
+        <span class="sidebar-label">ללמוד עם חבר</span>
       </a>
-      <button class="sidebar-item" onclick="openUnderConstruction()" title="לזכור את הלימוד">
-        <span class="sidebar-item-icon">🧠</span><span class="sidebar-item-label">לזכור את הלימוד</span>
+      <button onclick="toggleSidebarHistory()" class="chv-menu-item sidebar-row" style="display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:none;border:none;border-radius:8px;padding:9px 10px;cursor:pointer;font-family:inherit;font-size:13.5px;color:#262220;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 3h12v18l-6-4-6 4Z"/></svg>
+        <span class="sidebar-label">לזכור את הלימוד</span>
       </button>
-      <button class="sidebar-item" onclick="openUnderConstruction()" title="החידושים שלי">
-        <span class="sidebar-item-icon">💡</span><span class="sidebar-item-label">החידושים שלי</span>
+      <button class="chv-menu-item sidebar-row" title="בקרוב" disabled style="display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:none;border:none;border-radius:8px;padding:9px 10px;cursor:not-allowed;font-family:inherit;font-size:13.5px;color:#ABA598;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.3V16h6v-1.2c0-.9.4-1.7 1-2.3A6 6 0 0 0 12 2Z"/></svg>
+        <span class="sidebar-label">החידושים שלי</span>
       </button>
-      <button class="sidebar-item" onclick="openUnderConstruction()" title="המחייבים שלי">
-        <span class="sidebar-item-icon">📌</span><span class="sidebar-item-label">המחייבים שלי</span>
+      <button class="chv-menu-item sidebar-row" title="בקרוב" disabled style="display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:none;border:none;border-radius:8px;padding:9px 10px;cursor:not-allowed;font-family:inherit;font-size:13.5px;color:#ABA598;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+        <span class="sidebar-label">המחייבים שלי</span>
       </button>
-    </nav>
+    </div>
 
-    <div id="sidebar-history">
-      <div id="sidebar-history-title"><span class="sidebar-item-icon">📚</span><span class="sidebar-item-label" data-i18n="historyTitle">הלמידה שלי</span></div>
-      <div id="history-list">
+    <div id="sidebar-history-section" style="display:none;flex-direction:column;flex:1;min-height:0;">
+      <div style="height:1px;background:#E7E3D9;margin:2px 16px 8px;"></div>
+      <div id="history-list" style="flex:1;overflow-y:auto;padding:0 10px 10px;min-height:0;">
         <div class="text-center text-gray-400 py-8" style="font-size:0.8rem;">טוען...</div>
       </div>
     </div>
+    <div style="flex:1;"></div>
 
-    <div id="sidebar-footer">
-      <button class="sidebar-item" onclick="openUnderConstruction()" title="מרכז ידע">
-        <span class="sidebar-item-icon">🗂️</span><span class="sidebar-item-label">מרכז ידע</span>
-      </button>
+    <div style="flex-shrink:0;border-top:1px solid #E7E3D9;padding:8px 10px;display:flex;justify-content:center;">
+      <div id="sidebar-avatar" style="width:30px;height:30px;border-radius:50%;background:#E7E3D9;color:#262220;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex-shrink:0;"></div>
     </div>
   </div><!-- /#sidebar -->
 
   </div><!-- /#body-row -->
 
 </div><!-- /#app -->
-
-<!-- ═══════════════════════════════════════════════
-     UNDER CONSTRUCTION PLACEHOLDER
-═══════════════════════════════════════════════ -->
-<div id="modal-construction" class="modal-overlay hidden">
-  <div class="modal-card" style="text-align:center;">
-    <div style="font-size:3rem;margin-bottom:14px;">🚧</div>
-    <h2 style="color:#262220;font-size:1.2rem;font-weight:700;margin-bottom:8px;">האזור הזה בבניה</h2>
-    <p style="color:#6B7280;font-size:0.9rem;margin-bottom:22px;">התכונה הזו תהיה זמינה בקרוב.</p>
-    <button onclick="closeUnderConstruction()" style="background:#262220;color:#fff;border:none;border-radius:10px;padding:10px 26px;font-weight:700;cursor:pointer;">סגור</button>
-  </div>
-</div>
 
 <script src="app.js"></script>
 </body>
