@@ -671,6 +671,14 @@ const S = {
   studyVerseIdx:        null,  // verse index for verse mode
   wrongAttempts:        0,     // consecutive wrong answers on current unit (reset on correct)
   steinsaltzCommentary: null,  // Steinsaltz commentary for current chapter (shas/tanach)
+  unitsPerStep:         1,     // 1 | 2 | 3 | 5 units shown at a time (learner-chosen)
+  studyStyle:           'particular', // 'general' | 'particular' | 'free' | 'deep' (learner-chosen)
+  currentUnits:         [],    // [{num, text}] shown in the latest AI turn
+  learned:              new Set(), // unit numbers shown so far in this session
+  answers:              0,     // learner answers in this session
+  offerBaseline:        0,     // S.answers when cards were last offered
+  finishedShown:        false,
+  convId:               null,  // id of the saved conversation
 };
 
 // ── Hebrew numeral converter ─────────────────────────────────────
@@ -754,6 +762,10 @@ function regHandleKey(e) {
 }
 
 function logout() {
+  confirmLeave(_doLogout);
+}
+
+function _doLogout() {
   if (!confirm(t('logoutConfirmMsg'))) return;
   localStorage.removeItem('chavruta_user');
   document.getElementById('pending-screen').classList.add('hidden');
@@ -1169,7 +1181,7 @@ function _openSplitView() {
   SV.active = true;
   document.getElementById('app').classList.add('split-mode');
   const btn = document.getElementById('split-view-btn');
-  if (btn) btn.textContent = '✕ סגור פרק';
+  if (btn) btn.textContent = '✕ סגור את המקור';
   renderTextPanel();
 }
 
@@ -1177,7 +1189,7 @@ function _closeSplitView() {
   SV.active = false;
   document.getElementById('app').classList.remove('split-mode');
   const btn = document.getElementById('split-view-btn');
-  if (btn) btn.textContent = '📖 פתח פרק';
+  if (btn) btn.textContent = '📖 טקסט המקור';
   document.getElementById('chapter-text-scroll').innerHTML = '';
   document.getElementById('commentary-area').style.display = 'none';
   document.getElementById('commentary-content').innerHTML = '';
@@ -1213,6 +1225,7 @@ async function startLearningFromPanel(mode) {
   S.commentaryText = commentaryParts.join('\n\n');
   S.studyVerseIdx  = verseIdx;
   S.waitingForFirstQuestion = true;
+  resetAnkiSession();
 
   // Show chat UI
   document.getElementById('greeting-picker').classList.add('hidden');
@@ -1465,6 +1478,7 @@ async function startLearning() {
   S.commentaryText       = null;
   S.studyVerseIdx        = null;
   S.steinsaltzCommentary = null;
+  resetAnkiSession();
 
   const btn     = document.getElementById('gp-start');
   const spinner = document.getElementById('header-spinner');
@@ -1491,8 +1505,8 @@ async function startLearning() {
     document.getElementById('split-view-btn').classList.remove('hidden');
     document.getElementById('modal-finished').classList.add('hidden');
 
-    // Auto-open the text panel
-    if (!SV.active) _openSplitView();
+    // Auto-open the text panel (desktop only — on mobile it is a drawer over the chat)
+    if (!SV.active && !isMobileView()) _openSplitView();
 
     // Add session header inside chat
     const col = COLLECTIONS[S.collectionKey];
@@ -1571,7 +1585,9 @@ async function callAI() {
       total_verses:    isVerseMode ? 1 : S.verses.length,
       collection_type: S.collectionKey,
       lang:            currentLang,
+      study_style:     S.studyStyle,
     };
+    if (!isVerseMode) body.units_per_step = S.unitsPerStep;
     if (isVerseMode) {
       body.study_mode      = S.studyMode;
       body.commentary_text = S.commentaryText || '';
@@ -1618,11 +1634,33 @@ async function callAI() {
   }
 }
 
+// Fill data._units from the authoritative local source (Sefaria) instead of
+// trusting the model's copy of the text. Also used when replaying a saved chat.
+function attachUnits(data) {
+  const isVerseMode = S.studyMode === 'iyun' || S.studyMode === 'bekiut';
+  data._units = [];
+  if (isVerseMode) {
+    const idx = S.studyVerseIdx ?? 0;
+    if (S.verses[idx] !== undefined) data._units.push({ num: idx + 1, text: S.verses[idx] });
+  } else if (data.next_verse_num && S.verses[data.next_verse_num - 1] !== undefined) {
+    const count = Math.max(1, Math.min(Number(data.next_verse_count) || 1, 5));
+    for (let i = 0; i < count; i++) {
+      const v = S.verses[data.next_verse_num - 1 + i];
+      if (v === undefined) break;
+      data._units.push({ num: data.next_verse_num + i, text: v });
+    }
+  }
+  if (data._units.length) data.next_verse = data._units[0].text;
+  return data._units;
+}
+
 // ── Process AI JSON ──────────────────────────────────────────────
 function processResponse(data) {
   const isInitial = S.waitingForFirstQuestion;
   S.waitingForFirstQuestion = false;
-  if (data.score > 0) {
+  if (S.studyStyle === 'free') {
+    // free discussion has no scoring
+  } else if (data.score > 0) {
     addScore(data.score);
     S.wrongAttempts = 0;
   } else if (!isInitial && data.score === 0 && data.feedback && data.feedback.trim()) {
@@ -1631,15 +1669,18 @@ function processResponse(data) {
     wrongAnswer();
   }
 
-  // Override verse from authoritative local source
-  if (data.next_verse_num && S.verses[data.next_verse_num - 1]) {
-    data.next_verse = S.verses[data.next_verse_num - 1];
+  attachUnits(data);
+  if (!data.is_finished && data._units.length) {
+    S.currentUnits = data._units;
+    data._units.forEach(u => S.learned.add(u.num));
   }
 
   renderAI(data);
 
   // Auto-highlight the current verse in the split-view panel
-  if (data.next_verse_num) _autoHighlightVerse(data.next_verse_num - 1);
+  if (data._units.length) _autoHighlightVerse(data._units[0].num - 1);
+
+  saveConversationSoon();
 
   if (data.is_finished) {
     showFinished();
@@ -1655,8 +1696,10 @@ async function sendMessage() {
   const text = ta.value.trim();
   if (!text || S.loading) return;
   ta.value = '';
+  autoGrowInput(ta);
   renderUser(text);
   if (S.greetingMode) { await handleGreetingResponse(text); return; }
+  S.answers++;
   S.messages.push({ role: 'user', content: text });
   await callAI();
 }
@@ -1702,14 +1745,18 @@ function renderAI(data) {
              </div>`;
   }
 
-  if (!data.is_finished && data.next_verse) {
-    const numBadge = S.collectionKey !== 'shas' ? `<span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(data.next_verse_num)}</span>` : '';
-    html += `<div class="verse-box p-4 mb-3">
+  if (!data.is_finished && (data._units?.length || data.next_verse)) {
+    const units = data._units?.length ? data._units : [{ num: data.next_verse_num, text: data.next_verse }];
+    html += units.map((u, i) => {
+      const numBadge = S.collectionKey !== 'shas' && u.num
+        ? `<span class="flex-shrink-0 font-bold text-gold text-xl mt-0.5">${toHebrew(u.num)}</span>` : '';
+      return `<div class="verse-box p-4 ${i === units.length - 1 ? 'mb-3' : 'mb-1'}">
                <div class="flex items-start gap-3">
                  ${numBadge}
-                 <p class="text-lg font-semibold leading-loose">${esc(data.next_verse)}</p>
+                 <p class="text-lg font-semibold leading-loose">${esc(u.text)}</p>
                </div>
              </div>`;
+    }).join('');
   }
 
   if (!data.is_finished && data.next_question) {
@@ -1852,6 +1899,8 @@ function wrongAnswer() {
 
 // ── Finished ─────────────────────────────────────────────────────
 function showFinished() {
+  S.finishedShown = true;
+  resetFinAnki();
   setInput(false);
   document.getElementById('input-area').classList.add('hidden');
   const unitLabel = buildUnitLabel();
@@ -1861,6 +1910,11 @@ function showFinished() {
 }
 
 function resetSession() {
+  confirmLeave(_doResetSession);
+}
+
+function _doResetSession() {
+  saveConversationNow();
   document.getElementById('modal-finished').classList.add('hidden');
   document.getElementById('input-area').classList.add('hidden');
   document.getElementById('header-new-btn').classList.add('hidden');
@@ -1892,6 +1946,7 @@ function resetSession() {
   S.sessionScore   = 0;
   S.loading        = false;
   S.sessionStarted = false;
+  resetAnkiSession();
 
   showGreeting();
 }
@@ -1900,6 +1955,7 @@ function resetSession() {
 function setInput(on) {
   const area = document.getElementById('input-area');
   area.querySelectorAll('button, textarea').forEach(el => {
+    if (el.hasAttribute('data-keep')) return;
     el.disabled      = !on;
     el.style.opacity = on ? '' : '0.5';
   });
@@ -2187,99 +2243,7 @@ async function saveSessionToHistory(record) {
   } catch { /* silent */ }
 }
 
-async function loadHistory() {
-  const user = getUser();
-  if (!user) return;
-  const list = document.getElementById('history-list');
-  list.innerHTML = `<div class="text-center text-gray-400 py-8">${t('historyLoading')}</div>`;
-
-  try {
-    const res = await fetch(`/api/history?email=${encodeURIComponent(user.email)}`);
-    const history = await res.json();
-
-    if (!history.length) {
-      list.innerHTML = `
-        <div class="text-center py-12">
-          <div style="font-size:3rem;margin-bottom:12px;">🌱</div>
-          <p class="text-gray-500 font-medium">${t('historyEmpty')}</p>
-          <p class="text-gray-400 text-sm mt-1">${t('historyEmptySub')}</p>
-        </div>`;
-      return;
-    }
-
-    // Group by date
-    const groups = {};
-    history.forEach(r => {
-      const d = new Date(r.ts);
-      const key = d.toLocaleDateString('he-IL', { year:'numeric', month:'long', day:'numeric' });
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(r);
-    });
-
-    // Build book progress
-    const bookMap = {};
-    history.forEach(r => {
-      const key = `${r.collection}|${r.book}`;
-      if (!bookMap[key]) bookMap[key] = { book: r.book, collectionLabel: r.collectionLabel, icon: COLLECTION_ICONS[r.collection] || '📖', units: new Set(), total: r.bookTotal || 0 };
-      if (r.unitRaw) bookMap[key].units.add(String(r.unitRaw));
-    });
-
-    const progressHTML = Object.values(bookMap).map(b => {
-      const studied = b.units.size;
-      const total   = b.total;
-      const pct     = total ? Math.round((studied / total) * 100) : 0;
-      return `
-        <div style="background:white;border-radius:12px;padding:12px 14px;border:1px solid #DCD6C8;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <span style="font-size:1.3rem;">${b.icon}</span>
-            <div style="flex:1">
-              <div style="font-weight:700;color:#262220;font-size:0.9rem;">${esc(b.book)}</div>
-              <div style="color:#9CA3AF;font-size:0.72rem;">${esc(b.collectionLabel)}</div>
-            </div>
-            <div style="font-weight:700;color:#C1694F;font-size:0.85rem;">${studied}${total ? `/${total}` : ''}</div>
-          </div>
-          ${total ? `
-            <div style="background:#F1EEE6;border-radius:99px;height:6px;overflow:hidden;">
-              <div style="background:linear-gradient(90deg,#C1694F,#D98362);height:100%;width:${pct}%;border-radius:99px;transition:width 0.6s;"></div>
-            </div>` : ''}
-        </div>`;
-    }).join('');
-
-    list.innerHTML = `
-      <div class="mb-2" style="font-weight:700;color:#262220;font-size:0.85rem;">${t('recentChats')}</div>
-      ${Object.entries(groups).map(([date, records]) => `
-        <div class="mb-5">
-          <div class="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2">
-            <span class="flex-1 border-t border-gray-200"></span>
-            <span>${date}</span>
-            <span class="flex-1 border-t border-gray-200"></span>
-          </div>
-          <div class="space-y-2">
-            ${records.map(r => `
-              <div style="background:white;border-radius:14px;padding:12px 14px;border:1px solid #DCD6C8;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-                <div style="font-size:1.6rem;flex-shrink:0;">${COLLECTION_ICONS[r.collection] || '📖'}</div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-weight:700;color:#262220;font-size:0.9rem;">${esc(r.book)}</div>
-                  <div style="color:#6B7280;font-size:0.78rem;">${esc(r.collectionLabel)} • ${esc(r.unit)}</div>
-                  ${r.exchanges ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:1px;">${r.exchanges} ${t('exchanges')}</div>` : ''}
-                </div>
-                <div style="text-align:center;flex-shrink:0;">
-                  <div style="color:#C1694F;font-weight:800;font-size:1rem;">★ ${r.score}</div>
-                  <div style="color:#9CA3AF;font-size:0.68rem;">${new Date(r.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `).join('')}
-      <div class="mt-4 mb-2" style="font-weight:700;color:#262220;font-size:0.85rem;">${t('progressByBook')}</div>
-      ${progressHTML}
-    `;
-
-  } catch {
-    list.innerHTML = `<div class="text-center text-red-500 py-8">${t('historyError')}</div>`;
-  }
-}
+// loadHistory() — the conversation list — lives in study-tools.js
 
 // ── Greeting picker ──────────────────────────────────────────────
 function gpCollectionChange() {

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>כרטיסי זיכרון – חברותא</title>
+  <link rel="icon" href="rabbi.png">
+  <link rel="stylesheet" href="/fonts/heebo.css">
+  <link rel="stylesheet" href="/fonts/frank-ruhl-libre.css">
+  <style>
+    :root {
+      --bg: #FAF9F5;  --surface: #F1EEE6;  --line: #E7E3D9;  --line-strong: #DCD6C8;
+      --ink: #262220; --muted: #8A8378;    --muted-2: #6B7280;
+      --accent: #C1694F; --accent-soft: #D98362;
+    }
+    * { box-sizing: border-box; font-family: 'Heebo', sans-serif; }
+    html, body { height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--ink); display: flex; overflow: hidden; }
+    button { font-family: inherit; }
+
+    /* ── Sidebar (same rail as the main screen) ── */
+    #sidebar { flex-shrink: 0; width: 222px; border-right: 1px solid var(--line); background: var(--bg);
+               display: flex; flex-direction: column; overflow: hidden; transition: width .18s ease; }
+    #sidebar.collapsed { width: 58px; }
+    #sidebar.collapsed .sidebar-label { display: none !important; }
+    #sidebar.collapsed .sidebar-row { justify-content: center; }
+    #sidebar.collapsed .sidebar-toprow { justify-content: center; flex-direction: column; gap: 8px; }
+    #sidebar.collapsed #sidebar-expand-btn { display: flex !important; }
+    .sidebar-toprow { flex-shrink: 0; display: flex; align-items: center; padding: 14px 14px 6px; gap: 8px; }
+    .rail-btn { width: 28px; height: 28px; border-radius: 8px; background: none; border: none; cursor: pointer;
+                color: var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .rail-btn:hover { background: var(--surface); }
+    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: right; text-decoration: none;
+                background: none; border: none; border-radius: 8px; padding: 9px 10px; cursor: pointer;
+                font-size: 13.5px; color: var(--ink); }
+    .nav-item:hover { background: var(--surface); }
+    .nav-item.active { background: var(--surface); font-weight: 600; }
+    .nav-item svg { flex-shrink: 0; }
+
+    #menu-btn { display: none; }
+    #scrim { display: none; }
+    @media (max-width: 640px) {
+      #sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 240px !important;
+                 transform: translateX(-100%); transition: transform .2s ease; box-shadow: 0 0 40px rgba(0,0,0,.18); }
+      #sidebar.open { transform: none; }
+      #sidebar .sidebar-label { display: inline !important; }
+      #sidebar .sidebar-row { justify-content: flex-start !important; }
+      #sidebar-collapse-btn, #sidebar-expand-btn { display: none !important; }
+      #scrim.show { display: block; position: fixed; inset: 0; background: rgba(38,34,32,.28); z-index: 50; }
+      #menu-btn { display: flex; position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 12px; z-index: 40; }
+    }
+
+    /* ── Micro progress bar ── */
+    #progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 30; pointer-events: none; }
+    #progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .45s ease; }
+
+    /* ── Stage ── */
+    main { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center;
+           padding: 24px 20px; overflow-y: auto; }
+    .stage { width: 100%; max-width: 640px; display: flex; flex-direction: column; align-items: center;
+             text-align: center; transition: opacity .17s ease; }
+    .stage.out { opacity: 0; }
+    .hidden { display: none !important; }
+
+    .src { font-size: .78rem; color: var(--muted); letter-spacing: .01em; margin-bottom: 22px; min-height: 1em; }
+    .front { font-size: clamp(1.35rem, 3.6vw, 1.75rem); line-height: 1.65; font-weight: 500; margin: 0;
+             white-space: pre-wrap; overflow-wrap: anywhere; }
+    .divider { width: 56px; height: 1px; background: var(--line-strong); margin: 28px auto; }
+    .back { font-size: clamp(1.1rem, 3vw, 1.3rem); line-height: 1.75; color: #3d3733; margin: 0;
+            white-space: pre-wrap; overflow-wrap: anywhere; animation: reveal .17s ease; }
+    @keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+
+    .actions { margin-top: 40px; width: 100%; display: flex; justify-content: center; }
+    .btn-primary { background: var(--ink); color: #fff; border: none; border-radius: 999px; padding: 12px 30px;
+                   font-size: .95rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: #1A1714; }
+    .btn-primary:focus-visible, .rate:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .rates { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; max-width: 480px; }
+    .rate { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 11px 6px 10px;
+            background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong);
+            border-radius: 14px; cursor: pointer; transition: background .15s, border-color .15s; }
+    .rate:hover:not(:disabled) { background: #EAE5D8; }
+    .rate:disabled { opacity: .55; cursor: default; }
+    .rate b { font-size: .95rem; font-weight: 600; }
+    .rate small { font-size: .7rem; color: var(--muted); }
+    .rate.good { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .rate.good small { color: #BDB6A8; }
+    .rate.good:hover:not(:disabled) { background: #1A1714; }
+
+    .card-tools { margin-top: 26px; font-size: .72rem; }
+    .link-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: inherit; padding: 4px 6px; }
+    .link-btn:hover { color: var(--accent); }
+
+    /* ── Empty state ── */
+    .quote { font-family: 'Frank Ruhl Libre', serif; font-weight: 600; font-size: clamp(1.5rem, 4.2vw, 2rem);
+             line-height: 1.7; margin: 0; max-width: 560px; }
+    .quote-src { margin-top: 12px; font-size: .8rem; color: var(--muted); }
+    .done-note { margin-top: 44px; font-size: .9rem; color: var(--muted-2); }
+    .sub-note { margin-top: 6px; font-size: .78rem; color: var(--muted); min-height: 1.2em; }
+    .empty-actions { margin-top: 26px; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+             padding: 10px 18px; border-radius: 999px; font-size: .85rem; z-index: 80; }
+
+    @media (max-width: 640px) {
+      main { padding: 56px 16px 24px; align-items: center; }
+      .actions { margin-top: 32px; }
+      .rates { gap: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .stage, #progress i { transition: none; } .back { animation: none; } }
+  </style>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"><i id="progress-fill"></i></div>
+
+<main>
+  <!-- Practice card -->
+  <section id="view-card" class="stage hidden" aria-live="polite">
+    <div class="src" id="card-src"></div>
+    <p class="front" id="card-front"></p>
+    <div id="answer-block" class="hidden" style="width:100%;">
+      <div class="divider"></div>
+      <p class="back" id="card-back"></p>
+    </div>
+    <div class="actions" id="reveal-row">
+      <button class="btn-primary" id="reveal-btn" type="button">הצג תשובה</button>
+    </div>
+    <div class="actions hidden" id="rate-row">
+      <div class="rates" role="group" aria-label="רמת קושי">
+        <button class="rate" type="button" data-rating="1"><b>שוב</b><small id="iv-again"></small></button>
+        <button class="rate" type="button" data-rating="2"><b>קשה</b><small id="iv-hard"></small></button>
+        <button class="rate good" type="button" data-rating="3"><b>טוב</b><small id="iv-good"></small></button>
+        <button class="rate" type="button" data-rating="4"><b>קל</b><small id="iv-easy"></small></button>
+      </div>
+    </div>
+    <div class="card-tools hidden" id="card-tools">
+      <button class="link-btn" id="delete-btn" type="button">מחק כרטיסייה</button>
+    </div>
+  </section>
+
+  <!-- Empty state -->
+  <section id="view-empty" class="stage hidden">
+    <p class="quote" id="quote-text"></p>
+    <div class="quote-src" id="quote-src"></div>
+    <div class="done-note" id="done-note"></div>
+    <div class="sub-note" id="sub-note"></div>
+    <div class="empty-actions">
+      <a class="btn-primary" href="/" style="display:inline-block;text-decoration:none;">חזרה ללימוד</a>
+    </div>
+  </section>
+
+  <section id="view-loading" class="stage">
+    <div class="sub-note">טוען…</div>
+  </section>
+</main>
+
+<!-- ── Sidebar ── -->
+<button id="menu-btn" class="rail-btn" type="button" aria-label="תפריט"
+        style="width:38px;height:38px;background:var(--bg);border:1px solid var(--line);">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+</button>
+<div id="scrim"></div>
+<aside id="sidebar">
+  <div class="sidebar-toprow">
+    <div style="width:30px;height:30px;border-radius:8px;background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">ח</div>
+    <span class="sidebar-label" style="flex:1;font-size:13px;font-weight:600;color:var(--muted);">חברותא</span>
+    <button class="rail-btn sidebar-label" id="sidebar-collapse-btn" type="button" title="כווץ" onclick="toggleSidebar()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <button class="rail-btn" id="sidebar-expand-btn" type="button" title="הרחב" style="display:none;" onclick="toggleSidebar()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <nav style="flex-shrink:0;padding:8px 10px 6px;display:flex;flex-direction:column;gap:1px;">
+    <a class="nav-item sidebar-row" href="/" title="ללמוד">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-2-1.4-4.6-2-8-2v14c3.4 0 6 .6 8 2 2-1.4 4.6-2 8-2V4c-3.4 0-6 .6-8 2Z"/><path d="M12 6v14"/></svg>
+      <span class="sidebar-label">ללמוד</span>
+    </a>
+    <a class="nav-item sidebar-row" href="/chavruta.html" title="ללמוד עם חבר">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14 15.3c.6-.2 1.3-.3 2-.3 3.3 0 6 2 6 5"/></svg>
+      <span class="sidebar-label">ללמוד עם חבר</span>
+    </a>
+    <a class="nav-item sidebar-row active" href="/anki.html" title="כרטיסי זיכרון" aria-current="page">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+      <span class="sidebar-label">כרטיסי זיכרון</span>
+    </a>
+  </nav>
+  <div style="flex:1;"></div>
+  <div style="flex-shrink:0;border-top:1px solid var(--line);padding:8px 10px;display:flex;justify-content:center;">
+    <div id="sidebar-avatar" style="width:30px;height:30px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;"></div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Auth (same localStorage user as the main screen) ──────────
+  let user = null;
+  try { user = JSON.parse(localStorage.getItem('chavruta_user') || 'null'); } catch {}
+  if (!user || !user.email) { location.replace('/'); return; }
+  const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'Asia/Jerusalem'; } })();
+  document.getElementById('sidebar-avatar').textContent = (user.name || user.email || '?').trim().charAt(0).toUpperCase();
+
+  // ── Sidebar ────────────────────────────────────────────────────
+  const sb = document.getElementById('sidebar');
+  try { if (localStorage.getItem('chavruta_sidebar_collapsed') === '1') sb.classList.add('collapsed'); } catch {}
+  window.toggleSidebar = function () {
+    sb.classList.toggle('collapsed');
+    try { localStorage.setItem('chavruta_sidebar_collapsed', sb.classList.contains('collapsed') ? '1' : '0'); } catch {}
+  };
+  const scrim = document.getElementById('scrim');
+  const setDrawer = (open) => { sb.classList.toggle('open', open); scrim.classList.toggle('show', open); };
+  document.getElementById('menu-btn').addEventListener('click', () => setDrawer(!sb.classList.contains('open')));
+  scrim.addEventListener('click', () => setDrawer(false));
+
+  // ── Elements ───────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const views = { card: $('view-card'), empty: $('view-empty'), loading: $('view-loading') };
+  let current = null;       // card on screen
+  let revealed = false;
+  let busy = false;
+  let emptyTimer = null;
+  let deleteArmed = false;
+
+  const FADE_MS = 170;
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  const haptic = () => { try { if (navigator.vibrate && matchMedia('(pointer: coarse)').matches) navigator.vibrate(10); } catch {} };
+
+  // ── API ────────────────────────────────────────────────────────
+  async function call(method, body) {
+    const url = method === 'GET'
+      ? `/api/anki?email=${encodeURIComponent(user.email)}&tz=${encodeURIComponent(TZ)}`
+      : '/api/anki';
+    const res = await fetch(url, {
+      method,
+      headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+      body: method === 'POST' ? JSON.stringify({ email: user.email, tz: TZ, ...body }) : undefined,
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    return res.json();
+  }
+
+  // ── Sayings for the empty state ────────────────────────────────
+  const QUOTES = [
+    ['לא עליך המלאכה לגמור, ולא אתה בן חורין להיבטל ממנה.', 'אבות ב, טז'],
+    ['הפוך בה והפוך בה, דכולה בה.', 'אבות ה, כב'],
+    ['עשה לך רב, וקנה לך חבר.', 'אבות א, ו'],
+    ['איזהו חכם? הלומד מכל אדם.', 'אבות ד, א'],
+    ['אל תאמר לכשאפנה אשנה, שמא לא תפנה.', 'אבות ב, ד'],
+    ['עשה תורתך קבע.', 'אבות א, טו'],
+    ['ודלא מוסיף — יסף.', 'אבות א, יג'],
+    ['הרבה למדתי מרבותי, ומחברי יותר מרבותי, ומתלמידי יותר מכולם.', 'תענית ז ע״א'],
+    ['אשרי מי שבא לכאן ותלמודו בידו.', 'פסחים נ ע״א'],
+    ['יגעת ומצאת — תאמין.', 'מגילה ו ע״ב'],
+    ['גדול תלמוד שמביא לידי מעשה.', 'קידושין מ ע״ב'],
+    ['כל השונה הלכות בכל יום, מובטח לו שהוא בן העולם הבא.', 'נידה עג ע״א'],
+    ['לעולם ילמד אדם תורה, אף על פי שלא לשמה, שמתוך שלא לשמה בא לשמה.', 'פסחים נ ע״ב'],
+    ['אם אין אני לי, מי לי? וכשאני לעצמי, מה אני? ואם לא עכשיו, אימתי?', 'אבות א, יד'],
+    ['הוי מתאבק בעפר רגליהם, ושותה בצמא את דבריהם.', 'אבות א, ד'],
+    ['כל העוסק בתורה לשמה זוכה לדברים הרבה.', 'אבות ו, א'],
+  ];
+  function pickQuote() {
+    let last = -1;
+    try { last = Number(sessionStorage.getItem('anki_last_quote')); } catch {}
+    let i;
+    do { i = Math.floor(Math.random() * QUOTES.length); } while (QUOTES.length > 1 && i === last);
+    try { sessionStorage.setItem('anki_last_quote', String(i)); } catch {}
+    return QUOTES[i];
+  }
+
+  // ── Rendering ──────────────────────────────────────────────────
+  function show(name) {
+    for (const k in views) views[k].classList.toggle('hidden', k !== name);
+  }
+
+  async function swap(name, fill) {
+    const from = Object.values(views).find(v => !v.classList.contains('hidden'));
+    if (from) { from.classList.add('out'); await wait(FADE_MS); }
+    fill();
+    show(name);
+    const to = views[name];
+    to.classList.add('out');
+    void to.offsetWidth;              // commit the hidden state so the fade-in runs
+    to.classList.remove('out');
+    if (from && from !== to) from.classList.remove('out');
+  }
+
+  function setProgress(p) { $('progress-fill').style.width = Math.round((p || 0) * 100) + '%'; }
+
+  function fillCard(card) {
+    current = card; revealed = false; deleteArmed = false;
+    $('card-src').textContent = card.src && card.src.book ? [card.src.book, card.src.unit].filter(Boolean).join(' · ') : '';
+    $('card-front').textContent = card.front;
+    $('card-back').textContent = card.back;
+    $('answer-block').classList.add('hidden');
+    $('rate-row').classList.add('hidden');
+    $('reveal-row').classList.remove('hidden');
+    $('card-tools').classList.add('hidden');
+    $('delete-btn').textContent = 'מחק כרטיסייה';
+    $('iv-again').textContent = card.preview.again;
+    $('iv-hard').textContent  = card.preview.hard;
+    $('iv-good').textContent  = card.preview.good;
+    $('iv-easy').textContent  = card.preview.easy;
+    document.querySelectorAll('.rate').forEach(b => { b.disabled = false; });
+  }
+
+  function fillEmpty(state) {
+    current = null;
+    const [text, src] = pickQuote();
+    $('quote-text').textContent = '״' + text + '״';
+    $('quote-src').textContent = src;
+    const none = !state.counts.total;
+    $('done-note').textContent = none ? 'עוד אין כרטיסיות. הן נוצרות תוך כדי הלימוד.' : 'החזרות להיום הושלמו.';
+    const sub = $('sub-note');
+    sub.textContent = '';
+    clearTimeout(emptyTimer);
+    if (state.nextLearnInSecs != null) {
+      const mins = Math.max(1, Math.round(state.nextLearnInSecs / 60));
+      sub.textContent = `כרטיסייה נוספת תחזור בעוד ${mins} דק׳`;
+      emptyTimer = setTimeout(load, Math.min(state.nextLearnInSecs, 3600) * 1000 + 1500);
+    }
+  }
+
+  async function render(state) {
+    setProgress(state.progress);
+    if (state.next) await swap('card', () => fillCard(state.next));
+    else await swap('empty', () => fillEmpty(state));
+  }
+
+  async function load() {
+    clearTimeout(emptyTimer);
+    try { await render(await call('GET')); }
+    catch (e) {
+      await swap('empty', () => {
+        current = null;
+        $('quote-text').textContent = '';
+        $('quote-src').textContent = '';
+        $('done-note').textContent = 'לא הצלחנו לטעון את הכרטיסיות.';
+        $('sub-note').textContent = e.message === 'not approved' ? 'החשבון עדיין לא אושר.' : 'נסו לרענן את העמוד.';
+      });
+    }
+  }
+
+  // ── Actions ────────────────────────────────────────────────────
+  function reveal() {
+    if (!current || revealed || busy) return;
+    revealed = true;
+    $('answer-block').classList.remove('hidden');
+    $('reveal-row').classList.add('hidden');
+    $('rate-row').classList.remove('hidden');
+    $('card-tools').classList.remove('hidden');
+  }
+
+  async function rate(rating) {
+    if (!current || !revealed || busy) return;
+    busy = true;
+    haptic();
+    document.querySelectorAll('.rate').forEach(b => { b.disabled = true; });
+    try {
+      const state = await call('POST', { action: 'review', id: current.id, rating });
+      await render(state);
+    } catch (e) {
+      document.querySelectorAll('.rate').forEach(b => { b.disabled = false; });
+      toast('לא הצלחנו לשמור את הדירוג. נסו שוב.');
+    } finally { busy = false; }
+  }
+
+  async function removeCard() {
+    if (!current || busy) return;
+    if (!deleteArmed) { deleteArmed = true; $('delete-btn').textContent = 'בטוח? לחצו שוב למחיקה'; return; }
+    busy = true;
+    try { await render(await call('POST', { action: 'delete', id: current.id })); }
+    catch { toast('המחיקה נכשלה.'); }
+    finally { busy = false; }
+  }
+
+  function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2600);
+  }
+
+  $('reveal-btn').addEventListener('click', reveal);
+  $('card-front').addEventListener('click', reveal);
+  document.querySelectorAll('.rate').forEach(b => b.addEventListener('click', () => rate(Number(b.dataset.rating))));
+  $('delete-btn').addEventListener('click', removeCard);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!current) return;
+    if (!revealed && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); reveal(); return; }
+    if (revealed && '1234'.includes(e.key) && e.key.length === 1) rate(Number(e.key));
+    else if (revealed && e.key === ' ') { e.preventDefault(); rate(3); }
+  });
+
+  // new cards may have been created in another tab while this one was idle
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !current && !busy) load();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

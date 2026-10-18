@@ -508,3 +508,45 @@ waiting_for_guest → ready → asking → evaluating → showing_feedback → a
 2. אם שתי התשובות נמצאות ו-`evaluating===false` → `kv.set(lockKey, '1', { nx:true, ex:35 })`
 3. רק המנצח בנעילה קורא ל-AI. השני מחזיר 202.
 4. אם ה-AI נכשל — הנעילה פגה ב-35s → ניסיון חוזר אפשרי
+
+
+---
+
+## כרטיסי זיכרון (Anki) — v6
+
+### קבצים
+| קובץ | תפקיד |
+|------|--------|
+| `api/_anki-scheduler.js` | הסקדולר (פורט של Anki v3): מצבי new / learning / review / relearning, פיזור, חישוב מרווחים. פונקציות טהורות |
+| `api/anki.js` | API: תור חזרות, דירוג, יצירה, מחיקה, יצירה ב-AI |
+| `anki.html` | עמוד התרגול |
+| `study-tools.js` | פקדי הלימוד בתיבת ההקלדה, יצירת כרטיסים, כוונת יציאה, היסטוריית שיחות |
+| `api/conversations.js` | שמירה ושליפה של שיחות |
+| `tests/` | בדיקות יחידה לסקדולר, שרת פיתוח עם KV בזיכרון, בדיקות דפדפן (Playwright) |
+
+### אלגוריתם (ברירות המחדל של Anki)
+- צעדי לימוד: 1 דק׳, 10 דק׳. *שוב* חוזר לצעד הראשון; *קשה* חוזר על הצעד (בצעד הראשון: ממוצע שני הצעדים, 5.5 דק׳); *טוב* לצעד הבא או סיום; *קל* מסיים מיד (4 ימים).
+- סיום לימוד: 1 יום, קלות 250%.
+- חזרה: קשה = מרווח × 1.2 (קלות −0.15); טוב = (מרווח + איחור/2) × קלות; קל = (מרווח + איחור) × קלות × 1.3 (קלות +0.15). הסדר קשה < טוב < קל מובטח ב-1 יום לפחות.
+- שוב בחזרה: קלות −0.20, חדר-למידה-מחדש של 10 דק׳, מרווח חדש 1 יום (0%). קלות מינימלית 1.3. מרווח מרבי 36,500 יום. אחרי 8 שכחות הכרטיס מסומן כ"עלוקה".
+- פיזור: ±15% / 10% / 5% לפי טווח, דטרמיניסטי לפי כרטיס וחזרה.
+- היום מתחלף ב-04:00 לפי אזור הזמן של הלומד. 20 כרטיסים חדשים ביום. כרטיס בלמידה שמגיע בתוך 20 דק׳ מוצג מוקדם אם אין מה אחר (learn ahead).
+- המקור: https://github.com/ankitects/anki — `rslib/src/scheduler/states/`.
+
+### מבנה נתונים (Vercel KV)
+- `anki:cards:{email}` — hash, שדה לכל כרטיס: `{id, front, back, src, type, left, ivl, ease, dueSecs, dueDay, reps, lapses, leech, created}`
+- `anki:daily:{email}` — `{day, done, newDone}` (מונים יומיים, פג אחרי 3 ימים)
+- `anki:gen:{email}` — מונה יצירות AI לשעה (12 לשעה)
+- `conv:idx:{email}` / `conv:{email}:{id}` — שיחות שמורות (עד 200)
+
+### API
+- `GET /api/anki?email=&tz=` → `{counts, progress, done, nextLearnInSecs, next}`; ל-`next` יש `preview` עם המרווח של כל אחד מארבעת הכפתורים.
+- `POST /api/anki` עם `action`: `review` (`id`, `rating` 1-4), `create` (`cards`), `generate` (`scope`: focus / chapter / session, `context`), `delete`.
+- כל הקריאות מחייבות משתמש מאושר (כמו שאר ה-API: זיהוי לפי אימייל, ללא טוקן).
+
+### פקדי לימוד
+`/api/chat` מקבל `units_per_step` (1/2/3/5) ו-`study_style` (general / particular / free / deep). התשובה כוללת `next_verse_count`, והטקסט מוצג מ-Sefaria ולא מהמודל. בשיח חופשי אין ניקוד.
+
+### בדיקות
+- `npm test` — סקדולר.
+- `npm run test:e2e` — דפדפן מלא מול שרת פיתוח מקומי (דורש Playwright ו-Chromium).
