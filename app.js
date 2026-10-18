@@ -1907,6 +1907,7 @@ function showFinished() {
   document.getElementById('fin-msg').textContent = t('finMsg')(S.book.he, unitLabel);
   document.getElementById('fin-score').textContent = t('finScore')(S.sessionScore, S.totalScore);
   document.getElementById('modal-finished').classList.remove('hidden');
+  window.dailyOnFinished?.();
 }
 
 function resetSession() {
@@ -2356,6 +2357,7 @@ function showGreeting() {
     `;
     chatEl.appendChild(welcomeDiv);
   }
+  window.dailyRenderCard?.();
 
   // After animations complete, add button inside the welcome div
   _greetingTimer = setTimeout(() => {

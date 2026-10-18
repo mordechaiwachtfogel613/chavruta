@@ -1120,6 +1120,15 @@
   </div>
 </div>
 
+<!-- DAILY STUDY ("הלימוד היומי שלי") -->
+<div id="modal-daily" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="daily-title" onclick="if(event.target===this)closeDaily()">
+  <div class="modal-card" style="max-width:380px;text-align:right;" dir="rtl">
+    <h3 id="daily-title" style="font-size:1.15rem;font-weight:700;margin:0 0 10px;">הלימוד היומי שלי</h3>
+    <div id="daily-body" aria-live="polite"></div>
+    <div style="margin-top:12px;text-align:center;"><button class="btn-quiet" type="button" style="border:none;font-size:0.85rem;" onclick="closeDaily()">סגור</button></div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════
      FINISHED MODAL
 ═══════════════════════════════════════════════ -->
@@ -1417,6 +1426,10 @@
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 3h12v18l-6-4-6 4Z"/></svg>
         <span class="sidebar-label">לזכור את הלימוד</span>
       </button>
+      <button id="daily-nav-btn" type="button" onclick="openDaily()" class="chv-menu-item sidebar-row" title="הלימוד היומי שלי" style="display:none;align-items:center;gap:10px;width:100%;text-align:right;background:none;border:none;border-radius:8px;padding:9px 10px;cursor:pointer;font-family:inherit;font-size:13.5px;color:#262220;">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>
+        <span class="sidebar-label">הלימוד היומי שלי</span>
+      </button>
       <button class="chv-menu-item sidebar-row" title="בקרוב" disabled style="display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:none;border:none;border-radius:8px;padding:9px 10px;cursor:not-allowed;font-family:inherit;font-size:13.5px;color:#ABA598;">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.3V16h6v-1.2c0-.9.4-1.7 1-2.3A6 6 0 0 0 12 2Z"/></svg>
         <span class="sidebar-label">החידושים שלי</span>
@@ -1446,5 +1459,6 @@
 
 <script src="app.js"></script>
 <script src="study-tools.js"></script>
+<script src="daily-ui.js" defer></script>
 </body>
 </html>

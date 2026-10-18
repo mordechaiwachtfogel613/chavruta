@@ -194,6 +194,11 @@
 
 ---
 
+### `/api/daily` — הלימוד היומי שלי
+ראה סעיף "הלימוד היומי שלי" למטה.
+
+---
+
 ### `GET /api/config` — קריאת מודל AI
 - מחזיר `{ model: "anthropic/claude-opus-4" }`
 
@@ -272,7 +277,6 @@ const S = {
 ```
 chavruta_user      → { name, email }
 chavruta_score     → מספר (ניקוד כולל)
-chavruta_streak    → { count, lastDate }
 chavruta_prompt_*  → system prompt מותאם לכל אוסף
 ```
 
@@ -301,10 +305,19 @@ chavruta_prompt_*  → system prompt מותאם לכל אוסף
 - מכילה: collection, book, unit, score, exchanges, timestamp
 - מציגה: גרופינג לפי תאריך + progress bar לפי ספר
 
-### Streak
-- מחושב לוקלית (localStorage)
-- מעודכן בסיום סשן עם ניקוד > 0
-- מציג רצף ימי למידה רצוף + אש 🔥
+### Streak (תיקון)
+- אין streak בצד לקוח: המפתח `chavruta_streak` והאש 🔥 לא קיימים בקוד (התיעוד הקודם היה מיושן).
+- רצף קיים רק בפיצ'ר "הלימוד היומי שלי" (ראה למטה), נגזר בשרת מלוג הימים שהושלמו, ומוצג מ-2 ימים ומעלה.
+
+### הלימוד היומי שלי (v7)
+- פריט בסרגל + כרטיס במסך הפתיחה. בגרסה הראשונה מוצג **למנהל בלבד** (`isAdmin()` ב-`daily-ui.js`; פתיחה לכולם = הסרת התנאי `visible()`).
+- מסלול אחד (אוסף: תנ"ך/משנה/רמב"ם/שולחן ערוך; ש"ס עדיין לא נתמך), יחידה אחת ליום, מצביע (pointer) שמתקדם ברצף. "דלג" מקדם בלי לסמן יום; החלפת מסלול שומרת את הלוג והרצף.
+- יום חדש מתחיל ב-04:00 לפי אזור הזמן של המשתמש (נשלח מהדפדפן, `validTz` נופל ל-Asia/Jerusalem). היום נקבע בשרת.
+- סיום יחידה ב-`showFinished()` קורא `window.dailyOnFinished?.()`, ורק אם היחידה היא בדיוק ה-pointer נרשם יום (אידמפוטנטי).
+- Streak: ימים שהושלמו ברצף, כשיום ריק אחד אינו שובר (ימי חסד).
+- KV: `daily:cfg:{email}` (JSON) ו-`daily:log:{email}` (hash: `YYYY-MM-DD` → JSON, עד 400 ימים).
+- קבצים: `api/_daily-logic.js` (לוגיקה טהורה), `api/daily.js`, `daily-ui.js`, `tests/daily-logic.test.mjs`.
+- `GET /api/daily?email=&tz=` → `{track, finished, today, doneToday, streak, totalDays}`; `POST /api/daily` עם `action` = `setTrack` | `done` | `skip`. שגיאות: 400 / 403 / 405.
 
 ---
 
