@@ -8,5 +8,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/anki-scheduler.test.mjs",
+    "test:e2e": "bash tests/run-e2e.sh"
   }
 }

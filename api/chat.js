@@ -102,6 +102,53 @@ Required format (these exact field names):
   "is_finished":    false
 }`;
 
+// ── Learner-controlled study settings ────────────────────────────
+const STUDY_STYLES = {
+  general: {
+    he: `סגנון הלימוד שבחר הלומד: לימוד כללי של הנושא.
+התמקד ברעיון המרכזי, בתמונה הגדולה ובקשרים בין היחידות. שאל שאלות הבנה רחבות ("מה הרעיון המרכזי כאן?", "איך זה מתחבר למה שלמדנו קודם?") ולא על פרטים קטנים או על ניואנסים של מילים בודדות.`,
+    en: `Study style chosen by the learner: general overview.
+Focus on the main idea, the big picture and the connections between units. Ask broad comprehension questions rather than questions about small details or individual words.`,
+  },
+  particular: {
+    he: `סגנון הלימוד שבחר הלומד: לימוד פרטני.
+התעמק בפרטים: משמעות מילים וביטויים, דיוק לשון הכתוב, הבדלים בין נוסחים, ופרט אחר פרט. שאל שאלות מדויקות על הכתוב עצמו.`,
+    en: `Study style chosen by the learner: detailed study.
+Go into the details: meaning of words and phrases, precision of the wording, and point-by-point reading. Ask precise questions about the text itself.`,
+  },
+  free: {
+    he: `סגנון הלימוד שבחר הלומד: שיח חופשי.
+שוחח באופן טבעי וזורם, כמו שני חברים שלומדים יחד. ענה לשאלות הלומד, התייחס לרעיונות שהוא מעלה, ופתח דיון. אין צורך בשאלה בכל תור — שאל רק כשזה מתאים לשיחה, ושאל את הלומד גם מה הוא חושב. בסגנון זה אין ניקוד: החזר תמיד score=0, ושדה feedback הוא תגובה טבעית לדברי הלומד (לא "נכון/שגוי"). בסגנון זה אין חזרה על אותה יחידה אחרי תשובה שגויה (התעלם מכלל חזרה על יחידה בציון 0). התקדם ליחידה הבאה רק כשהשיחה על היחידה הנוכחית מיצתה את עצמה או כשהלומד מבקש.`,
+    en: `Study style chosen by the learner: free discussion.
+Talk naturally and fluidly, like two friends studying together. Answer the learner's questions, respond to the ideas they raise, and open a discussion. You do not need a question every turn — ask only when it fits, and ask what the learner thinks. There is no scoring in this style: always return score=0, and "feedback" is a natural reply to what the learner said (not "right/wrong"). Do not repeat a unit after a wrong answer (ignore the repeat-on-score-0 rule). Move on to the next unit only when the discussion of the current one is exhausted or the learner asks.`,
+  },
+  deep: {
+    he: `סגנון הלימוד שבחר הלומד: לימוד מעמיק.
+העמק: הצג את דברי המפרשים והמחלוקות ביניהם, הקשרים למקורות אחרים בתורה ובדברי חז"ל, שאלות קשות ("קשיא") ותירוצים. שאל שאלות מחשבה שדורשות הבנה וניתוח, לא רק שליפה מהטקסט.`,
+    en: `Study style chosen by the learner: in-depth study.
+Go deep: bring the commentators and their disputes, connections to other sources in the Torah and in Chazal, difficulties and their resolutions. Ask analytical, thought-provoking questions that require understanding rather than recall.`,
+  },
+};
+
+const ALLOWED_UNIT_COUNTS = [1, 2, 3, 5];
+
+function studySettingsSection({ styleKey, unitsPerStep, isEnglish, isVerseMode }) {
+  const parts = [];
+  const style = STUDY_STYLES[styleKey];
+  if (style) parts.push(isEnglish ? style.en : style.he);
+
+  if (!isVerseMode && unitsPerStep > 1) {
+    parts.push(isEnglish
+      ? `Units per step: ${unitsPerStep}. The learner wants ${unitsPerStep} consecutive units at a time (instead of one). Present the next ${unitsPerStep} units in order (fewer only if the chapter has fewer left): set "next_verse_num" to the number of the FIRST unit of the group, add the field "next_verse_count" with the number of units in the group, and ask ONE question about the group as a whole. Advance by that many units each step. If the learner answers wrongly, re-present the same group. (This overrides "present the next unit" in the rules above.)`
+      : `כמות יחידות בכל שלב: ${unitsPerStep}. הלומד ביקש ללמוד ${unitsPerStep} יחידות רצופות בכל פעם (במקום יחידה אחת). הצג בכל שלב את ${unitsPerStep} היחידות הבאות לפי הסדר (פחות רק אם נשארו פחות בפרק): קבע את "next_verse_num" למספר היחידה הראשונה בקבוצה, הוסף שדה "next_verse_count" עם מספר היחידות בקבוצה, ושאל שאלה אחת על הקבוצה כולה. התקדם בכל שלב בכמות הזו של יחידות. אם הלומד טעה — הצג שוב את אותה קבוצה. (זה גובר על "הצג את היחידה הבאה" בכללים שלמעלה.)`);
+  }
+  if (!parts.length) return '';
+  return `\n\n────────────────────────────────\n` +
+         (isEnglish ? 'Learner settings (apply from now on, even if they differ from earlier messages):\n'
+                    : 'הגדרות הלומד (חלות מעכשיו, גם אם הן שונות מהודעות קודמות בשיחה):\n') +
+         parts.join('\n\n') + `\n────────────────────────────────`;
+}
+
 export default async function handler(req, res) {
   // ── CORS ──────────────────────────────────────────────────────
   const reqOrigin    = req.headers.origin || '';
@@ -129,6 +176,8 @@ export default async function handler(req, res) {
     commentary_text,       // commentaries text for verse mode
     verse_num,             // 1-based verse number
     steinsaltz_commentary, // Steinsaltz commentary for the full chapter (shas/tanach)
+    study_style,           // 'general' | 'particular' | 'free' | 'deep' (learner-chosen)
+    units_per_step,        // 1 | 2 | 3 | 5 units shown at a time
   } = req.body || {};
 
   if (!messages?.length || !chapter_text) {
@@ -186,9 +235,14 @@ export default async function handler(req, res) {
       `הצג את הרעיונות בסגנון חברותא טבעי, כאילו הם ידע רבני שלך.`
     : '';
 
+  const styleKey      = Object.hasOwn(STUDY_STYLES, study_style) ? study_style : null;
+  const unitsPerStep  = ALLOWED_UNIT_COUNTS.includes(Number(units_per_step)) ? Number(units_per_step) : 1;
+  const settingsSection = studySettingsSection({ styleKey, unitsPerStep, isEnglish, isVerseMode });
+
   const systemWithChapter =
     `${introPrompt}\n` +
     `${universalRules}` +
+    `${settingsSection}` +
     `${steinsaltzSection}\n\n` +
     `${chapterHeader}\n` +
     `──────────────────────────────\n` +
@@ -238,6 +292,9 @@ export default async function handler(req, res) {
     parsed.is_finished = Boolean(parsed.is_finished);
     parsed.explanation = parsed.explanation || '';
     parsed.feedback    = parsed.feedback    || '';
+    const groupSize = Math.floor(Number(parsed.next_verse_count));
+    parsed.next_verse_count = groupSize >= 1 ? Math.min(groupSize, 5) : 1;
+    if (styleKey === 'free') parsed.score = 0;
 
     res.status(200).json(parsed);
 
