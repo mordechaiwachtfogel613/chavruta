@@ -60,7 +60,9 @@ async function handler(name) {
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname.startsWith('/api/')) {
-    const name = u.pathname.slice(5).replace(/\/$/, '');
+    let name = u.pathname.slice(5).replace(/\/$/, '');
+    // mirrors the rewrites in vercel.json (history / email-templates / analytics -> api/misc.js)
+    if (['history', 'email-templates', 'analytics'].includes(name)) { u.searchParams.set('fn', name); name = 'misc'; }
     if (!/^[a-z-]+$/.test(name) || !fs.existsSync(path.join(root, 'api', name + '.js'))) { res.writeHead(404); return res.end(); }
     let raw = ''; for await (const c of req) raw += c;
     req.query = Object.fromEntries(u.searchParams);

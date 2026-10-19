@@ -19,6 +19,11 @@
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    { "source": "/api/history",         "destination": "/api/misc?fn=history" },
+    { "source": "/api/email-templates", "destination": "/api/misc?fn=email-templates" },
+    { "source": "/api/analytics",       "destination": "/api/misc?fn=analytics" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
