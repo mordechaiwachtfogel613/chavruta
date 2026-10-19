@@ -235,6 +235,47 @@ await json('/api/users', { method: 'POST', headers: { 'Content-Type': 'applicati
   ok(await page.locator('#modal-anki-exit.hidden').count() === 1, '"לא, תודה" closes the dialog');
 }
 
+// ───────────── daily study ("הלימוד היומי שלי") ─────────────
+{
+  const page = await newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(BASE + '/');
+  await page.waitForSelector('#daily-nav-btn', { state: 'visible', timeout: 15000 });
+  ok(true, 'daily: sidebar item is shown to the admin');
+  await page.click('#daily-nav-btn');
+  await page.waitForSelector('#modal-daily:not(.hidden) #daily-col');
+  await page.selectOption('#daily-book', { label: 'בראשית' });
+  await page.selectOption('#daily-unit', { index: 2 });          // chapter ג
+  await page.click('#daily-body .btn-dark');
+  await page.waitForFunction(() => document.getElementById('daily-body').textContent.includes('היום: בראשית'));
+  ok((await page.locator('#daily-body').textContent()).includes("פרק ג'"), 'daily: track saved, status shows today\'s unit');
+  await page.screenshot({ path: `${SHOTS}/20-daily-modal.png` });
+  let st = await json(`/api/daily?email=${encodeURIComponent(EMAIL)}&tz=Asia/Jerusalem`);
+  ok(st.track && st.track.pointer === 3 && !st.doneToday, 'daily: server state has pointer 3, not done');
+
+  await page.click('#daily-body .btn-dark');                       // התחל
+  await page.waitForSelector('.verse-box', { timeout: 15000 });
+  ok(await page.evaluate(() => S.book.sf === 'Genesis' && S.unit === '3'), 'daily: lesson started on the pointer unit');
+  for (let i = 0; i < 6 && !(await page.locator('#modal-finished:not(.hidden)').count()); i++) {
+    const n = await page.locator('#chat .bubble-user').count();
+    await page.fill('#user-input', 'תשובה');
+    await page.click('#send-btn');
+    await page.waitForFunction((k) => document.querySelectorAll('#chat .bubble-user').length > k && !S.loading, n);
+  }
+  await page.waitForSelector('#fin-daily', { timeout: 8000 });
+  ok((await page.locator('#fin-daily').textContent()).includes('הלימוד היומי הושלם'), 'daily: finishing the unit marks the day done');
+  st = await json(`/api/daily?email=${encodeURIComponent(EMAIL)}&tz=Asia/Jerusalem`);
+  ok(st.doneToday && st.track.pointer === 4 && st.totalDays === 1, 'daily: server shows done today, pointer advanced to 4');
+  const again = await json('/api/daily', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: EMAIL, tz: 'Asia/Jerusalem', action: 'done', collectionKey: 'tanach', bookKey: 'Genesis', unit: 3 }) });
+  ok(again.counted === false && again.track.pointer === 4, 'daily: repeated "done" is idempotent');
+  const bad = await fetch(BASE + '/api/daily', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: EMAIL, action: 'setTrack', collectionKey: 'tanach', bookKey: 'Genesis', unit: 999 }) });
+  ok(bad.status === 400, 'daily: out-of-range unit rejected with 400');
+  const forbidden = await fetch(BASE + '/api/daily?email=stranger@example.com');
+  ok(forbidden.status === 403, 'daily: unapproved user gets 403');
+  await page.close();
+}
+
 await browser.close();
 console.log(failed ? `\n${failed} FAILED` : '\nall checks passed');
 process.exit(failed ? 1 : 0);

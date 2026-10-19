@@ -967,7 +967,7 @@ async function loadAnalytics() {
   summaryEl.innerHTML = '';
 
   try {
-    const res  = await fetch('/api/analytics', { headers: adminHeaders() });
+    const res  = await fetch('/api/misc?fn=analytics', { headers: adminHeaders() });
     if (!res.ok) { tableEl.innerHTML = '<p class="text-sm text-red-500 text-center">שגיאה בטעינת נתונים</p>'; return; }
     const data = await res.json();
 
@@ -1907,6 +1907,7 @@ function showFinished() {
   document.getElementById('fin-msg').textContent = t('finMsg')(S.book.he, unitLabel);
   document.getElementById('fin-score').textContent = t('finScore')(S.sessionScore, S.totalScore);
   document.getElementById('modal-finished').classList.remove('hidden');
+  window.dailyOnFinished?.();
 }
 
 function resetSession() {
@@ -2235,7 +2236,7 @@ async function saveSessionToHistory(record) {
   const user = getUser();
   if (!user) return;
   try {
-    await fetch('/api/history', {
+    await fetch('/api/misc?fn=history', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: user.email, record })
@@ -2356,6 +2357,7 @@ function showGreeting() {
     `;
     chatEl.appendChild(welcomeDiv);
   }
+  window.dailyRenderCard?.();
 
   // After animations complete, add button inside the welcome div
   _greetingTimer = setTimeout(() => {
@@ -2535,7 +2537,7 @@ const DEFAULT_EMAIL_BODIES = {
 
 async function loadEmailTemplates() {
   try {
-    const res  = await fetch('/api/email-templates', { headers: adminHeaders() });
+    const res  = await fetch('/api/misc?fn=email-templates', { headers: adminHeaders() });
     const data = await res.json();
     for (const type of ['welcome', 'approval', 'admin_notify']) {
       const tmpl = data[type];
@@ -2550,7 +2552,7 @@ async function saveEmailTemplate(type) {
   const body    = document.getElementById(`email-body-${type}`).value.trim();
   if (!subject || !body) return;
   try {
-    await fetch('/api/email-templates', {
+    await fetch('/api/misc?fn=email-templates', {
       method: 'PATCH',
       headers: adminHeaders(),
       body: JSON.stringify({ type, subject, body })
